@@ -1,0 +1,82 @@
+﻿@model PolicyDetails
+
+<div data-name="PolicyDetailsContainer">
+	<form class="form" data-name="formPolicyDetails">
+		@{
+			Html.RenderPartial("~/Views/Shared/PolicyDetailsHeader.cshtml", Model);
+		}
+		<div class="card border-0 main-card mb-3">
+			<div class="policy-menu">
+				<div class="policy-menu-heading toggle-menu-btn-lob" style="cursor:pointer;z-index:9"><i class="ri-arrow-left-double-line me-0"></i></div>
+				<div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical">
+					<a class="nav-link active" id="v-pills-general-info-tab" data-bs-toggle="pill" data-name="btntab" data-tab-name="generalInfo" data-policy-id="@Model?.Id" href="#v-pills-general-info" role="tab" aria-controls="v-pills-general-info" aria-selected="true">
+						<i class="ri-file-info-line"></i> General Info
+					</a>
+					<a class="nav-link" id="v-pills-agents-tab" data-bs-toggle="pill" data-name="btntab" data-tab-name="agents" data-policy-id="@Model?.Id" href="#v-pills-agents" role="tab" aria-controls="v-pills-agents" aria-selected="false">
+						<i class="ri-shield-check-line"></i> Agents
+					</a>
+					<a class="nav-link" id="v-pills-carriers-tab" data-bs-toggle="pill" data-name="btntab" data-tab-name="carriers" data-policy-id="@Model?.Id" href="#v-pills-carriers" role="tab" aria-controls="v-pills-carriers" aria-selected="false">
+						<i class="ri-briefcase-line"></i> Carriers
+					</a>
+					<a class="nav-link" id="v-pills-insureds-tab" data-bs-toggle="pill" data-name="btntab" data-tab-name="insureds" data-policy-id="@Model?.Id" href="#v-pills-insureds" role="tab" aria-controls="v-pills-insureds" aria-selected="false">
+						<i class="ri-user-line"></i> Insureds
+					</a>
+					<a class="nav-link" id="v-pills-finances-tab" data-bs-toggle="pill" data-name="btntab" data-tab-name="finances" data-policy-id="@Model?.Id" href="#v-pills-finances" role="tab" aria-controls="v-pills-finances" aria-selected="false">
+						<i class="ri-money-dollar-circle-line"></i> Finances
+					</a>
+					<a class="nav-link" id="v-pills-underwriters-tab" data-bs-toggle="pill" data-name="btntab" data-tab-name="underwriters" data-policy-id="@Model?.Id" href="#v-pills-underwriters" role="tab" aria-controls="v-pills-underwriters" aria-selected="false">
+						<i class="ri-user-star-line"></i> Underwriters
+					</a>
+					<a class="nav-link" id="v-pills-interests-tab" data-bs-toggle="pill" data-name="btntab" data-tab-name="interests" data-policy-id="@Model?.Id" href="#v-pills-interests" role="tab" aria-controls="v-pills-interests" aria-selected="false">
+						<i class="ri-line-chart-line"></i> Interests
+					</a>
+				</div>
+			</div>
+
+			<div class="card-body">
+				<div class="row" id="tabPolicyDetails">
+					<nav aria-label="breadcrumb">
+						<div class="d-flex flex-grow-1 justify-content-between justify-content-lg-end align-items-center">
+							<button class="btn btn-light btn-sm d-lg-none me-2 toggle-menu-btn-lob" type="button"><i class="ri-more-2-fill" style="font-size: 18px;"></i></button>
+
+						</div>
+					</nav>
+					<div class="w-100 py-4 pb-2">
+						<div class="tab-content @(Model?.Id > 0 ? "disabled-link" : "")" id="v-pills-tabContent">
+							<div data-name="policyDetailsTabContainer"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+			@*  <div class="card-footer bg-white border-0 text-center"> <a role="button" href="javascript:void(0)" class="btn btn-primary">Save &amp; Continue</a> </div> *@
+		</div>
+	</form>
+</div>
+<script type="text/javascript">
+	@if (Model != null)
+	{
+		<text>
+												var PolicyDetails_Id = @Model.Id;
+		</text>
+	}
+	else
+	{
+		<text>
+											var PolicyDetails_Id = 0;
+		</text>
+
+	}
+</script>
+<script src="~/js/policydetails.js" asp-append-version="true"></script>
+<script type="text/javascript">
+
+	$(document).ready(function() {
+		 $('[data-name="btntab"][data-tab-name="generalInfo"]').trigger('click');
+		 appCommon.MakeButtonActive($('[data-tab-name="PolicyDetails"]'));
+	});
+</script>
+<style>
+	[data-name="policyDetailsTabContainer"] {
+		min-height: 460px !important;
+	}
+</style>

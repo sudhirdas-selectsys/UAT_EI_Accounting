@@ -1,0 +1,80 @@
+﻿
+<div class="ei-l-outer" data-name="LoginContainer">
+    <div class="box-container">
+        <div class="card-box">
+            <div class="card-body">
+                <div style="margin-top: 0; margin-bottom: 30px; text-align: center;">
+                    <span class="account-logo"><img src="~/images/ei-accounting-logo.svg" height="45" title="EI-Accounting" /></span>
+                </div>
+                <p class="h5 mb-2 text-center">Two-step verification</p>
+                <p class="mb-3 text-muted op-7 fw-normal text-center">Choose how you'd like to verify your profile</p>
+               @*  <h5 class="text-center mb-8">Two-step verification</h5>
+                <p class="color-75 mb-3 mt-0 text-center">Choose how you'd like to verify your profile</p> *@
+
+                <div class="selection-block">
+                    @* <a href="phone.html" class="phone-box">
+                        <img src="img/message.svg" alt="">
+                            <div>
+                                <div class="fs-18 mb-8"><strong>Phone</strong></div>
+                                        <div class="color-75">We'll send an SMS with a verification code to your phone.</div>
+                                        </div>
+                                    <div class="arrow">
+                                    <img src="img/arrow.svg" alt="">
+                            </div>
+                       </a> *@
+                    <a href="javascript:void(0)" data-name="btnmail" class="phone-box mb-0 pb-0">
+                        <img src="~/images/login/otp/mail.svg" />
+                        <div>
+                            <div class="fs-15 mb-8"><strong>Email</strong></div>
+                            <div class="color-75">We'll send a verification code to your email address.</div>
+                        </div>
+                        <div class="arrow">
+                            <img src="~/images/login/otp/arrow.svg" />
+                        </div>
+                    </a>
+                </div>
+
+                <div class="actions center">
+                    <a href="javascript:void(0)" id="btnbacklogin" data-name="btnbacklogin">Back</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<style>
+     .phone-box {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        border: solid 1px #b0cade;
+        padding: 8px 16px;
+        color: #333;
+        text-decoration: none;
+        border-radius: 6px;
+        margin-bottom: 24px;
+    }
+
+   
+    .fp-block a, a {
+        color: #3C2D89;
+        font-weight: 500;
+    }
+
+    .ei-l-outer {
+        display: flex;
+        height: 100vh;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+    }
+
+
+    .actions.center {
+        justify-content: center;
+    } 
+</style>
+
+
+

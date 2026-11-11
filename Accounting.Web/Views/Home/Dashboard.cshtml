@@ -1,0 +1,75 @@
+﻿@model List<PolicyDetails>
+@{
+	UserSession userSession = Context.Session.GetObjectFromJson<UserSession>("UserSession");
+	var PageSize = ViewBag.PageSize;
+	var PageIndex = ViewBag.PageIndex;
+	var TotalRecords = ViewBag.TotalRecords;
+}
+
+<div data-name="DashboardContainer">
+	<div class="search-filters mb-2">
+		<form data-name="frmDashboardSearch">
+			<div class="row align-items-end" data-name="DashboardSearchPanel">
+				<div class="col-md-3">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end">Submission Id:</label>
+						<div class="col-12 col-xl-8">
+							<input type="hidden" name="Client_Id" value="@userSession.Client_Id" />
+							<input type="text" class="form-control" placeholder="Submission Id" data-name="Submission_Id" autocomplete="off" name="Submission_Id">
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end">Insured Name:</label>
+						<div class="col-12 col-xl-8">
+							<input type="text" class="form-control" placeholder="Insured Name" data-name="InsuredName" autocomplete="off" name="InsuredName">
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end pe-1">Policy Number:</label>
+						<div class="col-12 col-xl-8">
+							<input type="text" class="form-control" placeholder="Policy Number" data-name="PolicyNumber" autocomplete="off" name="PolicyNumber">
+						</div>
+					</div>
+				</div>
+				<div class="col-md-3">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end pe-1">Agency Name:</label>
+						<div class="col-12 col-xl-8 pe-0">
+							<div class="custom-input-group w-100">
+								<input type="text" class="form-control ui-autocomplete-input" data-name="AgencyName" placeholder="Agency Name" autocomplete="off" name="AgencyName" maxlength="100">
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-12">
+					<div class="my-1 text-end">
+						<button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnResetDashboard"><i class="ri-loop-left-line me-1"></i>Reset</button>
+						<button type="button" class="btn btn-primary btn-sm fw-medium" data-name="btnSearchDashboard"><i class="ri-search-2-line me-1"></i>Search</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div data-name="DashboardGridContainer">
+	</div>
+</div>
+<script src="~/js/dashboard.js" asp-append-version="true"></script>
+<style>
+	.transactionend {
+		color: #fff !important;
+		background-color: #4092fc;
+		font-size: 11px;
+		padding: 6px 10px;
+	}
+
+	.transactionnew {
+		color: #fff !important;
+		background-color: #5f2ee5;
+		font-size: 11px;
+		padding: 6px 10px;
+	}
+</style>

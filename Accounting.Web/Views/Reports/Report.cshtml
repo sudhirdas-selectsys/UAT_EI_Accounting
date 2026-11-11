@@ -1,0 +1,204 @@
+﻿@model List<ReportOutputTables>
+@{
+    Layout = null;
+    var Report_Id = ViewBag.Report_Id;
+    bool IsSimplifiedView = ViewBag.IsSimplified != null ? (bool)ViewBag.IsSimplified : false;
+    var ActionType = ViewBag.ActionType;
+}
+@{
+    var ReportHTMLWithTemplate = ViewBag.ReportHTMLWithTemplate != null ? ViewBag.ReportHTMLWithTemplate : string.Empty;
+    var ReportTemplate = ViewBag.ReportTemplate != null ? (LU_ReportTemplates)ViewBag.ReportTemplate : null;
+}
+@if (Model != null && Model.Count > 0)
+{
+    if (Model?[0]?.DataTable?.Rows.Count > 0)
+    {
+        if ((ReportTemplate != null && Model?[3]?.DataTable?.Rows.Count > 0) ||
+    (ReportTemplate == null && Model?[0]?.DataTable?.Rows.Count > 0))
+        {
+            <div class="download-bar">
+                @{
+                    if (ViewBag.FileDownLoadSettings != null)
+                    {
+                        var FileDownLoadSettings = (List<ReportFileDownloadSettings>)ViewBag.FileDownLoadSettings;
+
+                        foreach (var FDSetting in FileDownLoadSettings)
+                        {
+                            var FileType = LookupUtility.GetFileType(FDSetting.FileType_Id);
+                            if (FileType != null)
+                            {
+                                var fileName = FileType.Name.ToLower();
+                                var label = FileType.Name;
+
+                                int sameExtensionCount = FileDownLoadSettings
+                                .Count(f => LookupUtility.GetFileType(f.FileType_Id)?.Extension.ToLower() == FileType.Extension.ToLower());
+
+                                if (FileType.SubType == "Summary")
+                                {
+                                    fileName = "pdf";
+                                    label = FileType.Name;
+                                }
+                                var btnLabel = sameExtensionCount > 1
+                                ? $"{label}"
+                                : label;
+
+                                bool isExcel = (FDSetting.FileType_Id == MasterLookup._LUFileTypes.Excel);
+                                bool isAgencyBill = (Report_Id == MasterLookup._Reports.AgencyBill);
+                                bool shouldShowButton = !isExcel || (!isAgencyBill || IsSimplifiedView);
+                                if (shouldShowButton)
+                                {
+                                    <a href="javascript:void(0);"
+                                       role="button"
+                                       class="btn btn-@fileName py-2"
+                                       data-file-type-id="@FileType.FileType_Id"
+                                       data-report-id="@FDSetting.Report_Id"
+                                       data-name="DownloadFile"
+                                       title="Download @btnLabel">
+                                        <i class="fa-solid fa-file-@fileName"></i>
+                                    </a>
+                                }
+
+                                if ((Report_Id == MasterLookup._Reports.AgencyBill || Report_Id == MasterLookup._Reports.DirectBill) && FDSetting.FileType_Id == MasterLookup._LUFileTypes.AgentSpecificPDF)
+                                {
+                                    <a href="javascript:void(0);"
+                                       role="button"
+                                       class="btn btn-export py-2"
+                                       data-file-type-id="@FileType.FileType_Id"
+                                       data-report-id="@FDSetting.Report_Id"
+                                       data-name="StatementView"
+                                       data-action-type="Sync"
+                                       title="Sync Docs to EI">
+                                        <i class="fa-solid fa-file-export"></i>
+                                    </a>
+                                }
+                                if ((Report_Id == MasterLookup._Reports.AgencyBill) && FDSetting.FileType_Id == MasterLookup._LUFileTypes.AgentSpecificPDF)
+                                {
+                                    <a href="javascript:void(0);"
+                                       role="button"
+                                       class="btn btn-export py-2"
+                                       data-file-type-id="@FileType.FileType_Id"
+                                       data-report-id="@FDSetting.Report_Id"
+                                       data-name="StatementView"
+                                       data-action-type="Email"
+                                       title="Send Docs to Email">
+                                        <i class="fa fa-envelope"></i>
+                                    </a>
+                                }
+                            }
+                        }
+                    }
+                }
+            </div>
+        }
+        else
+        {
+            <div class="record-not-found">
+                <span>No matching records found</span>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="record-not-found">
+            <span>No matching records found</span>
+        </div>
+    }
+    @if (ReportTemplate == null)
+    {
+        if (Model?.Count > 1)
+        {
+            int tableSquence = 0;
+            <ul class="nav nav-tabs" id="myTabReportstables" role="tablist">
+                @foreach (var ROT in Model.OrderBy(c => c.TableIndex))
+                {
+                    <li class="nav-item @(tableSquence == 0 ? "active" : "")" role="presentation">
+                        <button class="nav-link @(tableSquence == 0 ? "active" : "")" data-bs-toggle="tab" data-bs-target="#ReportTabPane_@($"{ROT.ReportOutputTable_Id}")" type="button" role="tab" aria-controls="reports-table-one-tab-pane" aria-selected="false" tabindex="-1">@(ROT.Name)</button>
+                    </li>
+                    tableSquence++;
+                }
+            </ul>
+            <div class="tab-content" id="myTabReportstablesContent">
+                @{
+                    tableSquence = 0;
+                }
+                @foreach (var ROT in Model.OrderBy(c => c.TableIndex))
+                {
+                    <div class="tab-pane fade @(tableSquence == 0 ? "active show" : "")" id="ReportTabPane_@($"{ROT.ReportOutputTable_Id}")" role="tabpanel" aria-labelledby="reports-table-tab-pane" tabindex="0" style="padding:10px;">
+                        @Html.Partial("ReportTableItem", ROT)
+                    </div>
+                    tableSquence++;
+                }
+            </div>
+        }
+        else
+        {
+            @Html.Partial("ReportTableItem", Model[0])
+        }
+    }
+    else
+    {
+        @Html.Raw(ReportHTMLWithTemplate)
+    }
+
+}
+<style type="text/css">
+
+
+    td {
+        word-wrap: break-word;
+        white-space: normal;
+    }
+</style>
+<script type="text/javascript">
+        $(document).ready(function ()
+        {
+            $('[data-name="DownloadFile"]').click(function () {
+                var FileType_Id = $(this).attr("data-file-type-id");
+                appCommon.SubmitForm(ExistingForm, function (response) {
+                    if (typeof response != "undefined" && response != null && response.Status) {
+                        appCommon.DownloadBase64File(response.Data);
+                    }
+                }, "/Reports/DownloadReport?Report_Id=" + Report_Id + "&FileType_Id=" + FileType_Id , true);
+                return false;
+            });
+
+            function windowPanel(){
+            $('[data-name="ReportTablePanel"]').each(function (p, panel) {
+                var ele = $('[data-name="ReportsContainer"]');
+                var reportsEle = $('[data-name="ReportForm"]');
+                var panel = $('[data-name="ReportTablePanel"]');
+
+                panel.css({
+                    'height': ele.height() - (reportsEle.height() + 85)
+                })
+
+               //  var tableOffset = $('[data-name="ReportTablePanel"]').offset().top;
+               //   var tabs = $('#tabReports [data-name="ReportForm"]');
+               // $(panel).css("min-height", window.innerHeight - tableOffset);
+               //  $(panel).css("max-height", ($(body).height() + 210) - tabs.height());
+               //  $(panel).css("height", ($(body).height() + 210) - tabs.height());
+                //$(panel).css("max-height", window.innerHeight - tableOffset);
+                // 'maxHeight': ($(window).height() + 210) - tabs.height()
+
+            });
+            }
+            windowPanel();
+            $(window).on('resize',function(){
+                windowPanel()
+            })
+            $('[data-name="StatementView"]').click(function(){
+
+                var FileType_Id = $(this).attr("data-file-type-id");
+                var ActionType = $(this).attr("data-action-type");
+            appCommon.SubmitForm(ExistingForm,function(response){
+
+                if (typeof response != "undefined" && response != null) {
+
+                        appCommon.GenericModalFunction("Statements", response);
+                            $('[data-name="GenericModal"]').find(".modal-dialog").css("--bs-modal-width", "1140px");
+                    }
+            },"/Reports/StatementView?Report_Id="+ Report_Id + "&FileType_Id=" + FileType_Id + "&ActionType=" + ActionType,true);
+
+            });
+    });
+</script>

@@ -1,0 +1,347 @@
+﻿@{
+    ViewData["Title"] = "System Configurations";
+    var ClientId = ViewBag.ClientId != null ? ViewBag.ClientId : 0;
+    var ServiceId = ViewBag.ServiceId != null ? ViewBag.ServiceId : 0;
+    UserSession userSession = Context.Session.GetObjectFromJson<UserSession>("UserSession");
+    bool IsSuperAdmin = userSession?.UserRoleMappingList?.Any(x => x.Role_Id == MasterLookup._Roles.SuperAdmin) ?? false;
+    bool IsCustomerAdmin = userSession?.UserRoleMappingList?.Any(x => x.Role_Id == MasterLookup._Roles.CustomerAdmin) ?? false;
+    var CompanyName = !string.IsNullOrEmpty(userSession?.DefaultCompanyName) ? userSession?.DefaultCompanyName : !string.IsNullOrEmpty(userSession?.ConfigurationCompanyName) ? userSession?.ConfigurationCompanyName : userSession?.CompanyName;
+    bool showCOASection = new List<int>
+    {
+        MasterLookup._Services.Intuit,
+        MasterLookup._Services.Sage
+    }.Contains(ServiceId);
+    var isCommissionRuleEnabled = LookupUtility.GetClientSettings(ClientId, MasterLookup._ClientSettings.CommissionRule);
+}
+<style>
+    .policy-menu {
+        background: linear-gradient(360deg, #6f4ef6 0%, #5F2EE5 100%);
+        width: 250px;
+        height: calc(100vh - 120px);
+    }
+
+        .policy-menu a {
+            color: #fff;
+        }
+
+    .nav-link:focus, .nav-link:hover {
+        color: #fff !important;
+    }
+
+    .policy-menu a.active, .policy-menu a:hover, .policy-menu .nav-link.active, .policy-menu .collapse .nav-link:hover {
+        color: #fff;
+        background-color: rgba(255, 255, 255, 0.15);
+    }
+
+    .collapse-arrow {
+        transition: transform 0.3s ease;
+    }
+
+    [aria-expanded="true"] .collapse-arrow {
+        transform: rotate(180deg);
+    }
+
+    .nav-pills .show > .nav-link {
+        color: #fff !important;
+        background-color: transparent;
+        cursor: pointer;
+    }
+
+        .nav-pills .show > .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+    .menu-lean .collapse-arrow {
+        display: none;
+    }
+
+    .menu-lean .ms-3 {
+        margin-left: 0 !important;
+    }
+
+    .menu-lean.policy-menu a.coa:first-child {
+        height: auto !important;
+    }
+
+    .menu-lean.policy-menu a:first-child {
+        height: auto !important;
+    }
+
+    .menu-lean.policy-menu a span {
+        display: none;
+    }
+
+    .policy-menu + .card-body, .policy-menu + .card-body + .card-footer {
+        margin-left: 265px;
+    }
+
+    .menu-lean.policy-menu + .card-body, .menu-lean.policy-menu + .card-body + .card-footer {
+        margin-left: 90px;
+    }
+
+    .policy-menu.menu-lean {
+        width: 75px;
+    }
+
+
+    .menu-close-span, .menu-lean.policy-menu .menu-close-span-expand {
+        display: none;
+    }
+
+    .menu-lean.policy-menu .menu-close-span {
+        display: block;
+    }
+
+    [data-name="ConfigurationTabContainer"] {
+        min-height: 550px !important;
+        max-height: 550px !important;
+    }
+
+    .client-selection .btn.btn-secondary {
+        background: rgb(0 0 0 / 20%);
+        border-color: #7a53ec;
+        color: #FFF;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    .policy-menu.menu-lean .client-selection .btn.btn-secondary > span {
+        display: none !important;
+    }
+
+    .menu-lean.policy-menu .client-selection a {
+        flex-direction: row !important;
+    }
+
+    .client-selection .dropdown-menu {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .client-selection .dropdown-item {
+        color: #454545 !important;
+        padding: 6px 18px;
+        flex-direction: row !important;
+    }
+
+        .client-selection .dropdown-item i {
+            margin-right: 8px !important;
+        }
+
+    .dropend.client-selection .dropdown-toggle::after {
+        vertical-align: 0;
+        right: 12px;
+        position: absolute;
+        top: 17px;
+    }
+
+    .client-selection .dropdown-item span {
+        max-width: 200px;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        overflow: hidden;
+        display: flex !important;
+    }
+
+    .client-selection .dropdown-item:hover {
+        color: #333 !important;
+        background: #e7e7ff;
+    }
+</style>
+<div data-name="ChartofAccountsContainer">
+    <div class="card border-0 main-card mb-3">
+        <div class="policy-menu" style="padding-right:0px;">
+            <div class="policy-menu-heading toggle-menu-btn-lob" style="cursor:pointer;z-index:9"><i class="ri-arrow-left-double-line me-0"></i></div>
+            <div data-name="policy-menu" style="height: calc(100vh - 136px);overflow-y: auto; overflow-x: hidden;padding-right: 20px;">
+                <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical" data-name="divChartOfAccountsMenu">
+                    <a class="nav-link d-flex justify-content-between align-items-center coa"
+                       data-bs-toggle="collapse" href="#chartSubmenu" role="button" aria-expanded="true" aria-controls="chartSubmenu">
+                        <span class="menu-close-span-expand text-truncate" style="width:170px;" title="Client Specific Configuration">
+                            Client Specific Configuration
+                        </span>
+                        <span class="menu-close-span"><i class="ri-home-gear-line" title="Client Specific Configuration"></i></span>
+                        <i class="ri-arrow-down-s-line collapse-arrow "></i>
+                    </a>
+                    @{
+                        if (!IsCustomerAdmin)
+                        {
+                            <div class="collapse show ms-3 mb-2">
+                                <div class="dropup-center dropend client-selection">
+                                    <button class="btn btn-secondary dropdown-toggle w-100 d-flex align-items-center" title="@CompanyName" data-name="SelectClient" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="ri-building-line"></i> <span class="selectedClient text-truncate d-inline-block text-start" style="max-width: 140px; min-width: 140px;">@CompanyName</span>
+                                    </button>
+                                    <ul class="dropdown-menu" style="min-width:320px;" data-name="ClientDropdown">
+                                        <li class="dropdown-loader text-center py-2" style="display:none;">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Loading...</span>
+                                            </div>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        }
+                    }
+                    <div class="collapse show ms-3" id="chartSubmenu" data-name="navChartOfAccountsMainMenu">
+                        @{
+                            if (!IsCustomerAdmin)
+                            {
+                                @if (showCOASection)
+                                {
+                                    <div style="cursor:pointer;">
+                                        <a class="nav-link" data-name="btntab" data-tab-name="btnGetChartofAccounts" role="tab" aria-controls="v-pills-Chart-of-Accounts" aria-selected="true">
+                                            <i class="ri-file-chart-line" title="Chart of Accounts"></i> <span>Chart of Accounts</span>
+                                        </a>
+                                        <a class="nav-link" data-name="btntab" data-tab-name="btnLineItemsBillingTypes" data-tab-type="ARAPLineItems" role="tab" aria-controls="v-pills-Line-Items-Billing-Types" aria-selected="false">
+                                            <i class="ri-hand-coin-line me-1" title="Line Item (Billing Types) COA"></i> <span>Line Item (Billing Types)</span>
+                                        </a>
+                                        <a class="nav-link" data-name="btntab" data-tab-name="btnLineItemsFeeTaxes" data-tab-type="FeesTaxesLineItems" role="tab" aria-controls="v-pills-Line-Items-Fee-Taxes" aria-selected="false">
+                                            <i class="ri-bill-line" title="Line Item (Fees/Taxes) COA"></i> <span>Line Item (Fees/Taxes)</span>
+                                        </a>
+                                        <a class="nav-link" data-name="btntab" data-tab-name="btnPaymentDirections" role="tab" aria-controls="v-pills-Payment-Directions" aria-selected="false">
+                                            <i class="ri-bank-card-line" title="Payment Directions COA"></i> <span>Payment Directions</span>
+                                        </a>
+                                        <a class="nav-link" data-name="btntab" data-tab-name="btnLobCarrierGrouping" role="tab" aria-controls="v-pills-Lob-Carrier-Grouping" aria-selected="false">
+                                            <i class="ri-clipboard-line" title="LOB Carrier Grouping COA"></i> <span>LOB Carrier Grouping</span>
+                                        </a>
+                                    </div>
+                                }
+                            }
+                            if (IsSuperAdmin || IsCustomerAdmin)
+                            {
+                                <a class="nav-link" data-name="btntab" data-tab-name="btnAddOperatingBank" role="tab" aria-controls="v-pills-Add-Operating-Bank" aria-selected="false">
+                                    <i class="ri-bank-line" title="Operating Banks"></i> <span>Operating Bank</span>
+                                </a>
+
+                                <a class="nav-link" data-name="btntab" data-tab-name="btnInstallmentPlan" role="tab" aria-controls="v-pills-Installment-Plan" aria-selected="false">
+                                    <i class="ri-refund-2-line" title="Installment Plan"></i> <span>Installment Plan</span>
+                                </a>
+
+                                if (!string.IsNullOrWhiteSpace(isCommissionRuleEnabled))
+                                {
+                                    if (int.TryParse(isCommissionRuleEnabled, out int isEnabled) && isEnabled == 1)
+                                    {
+                                        <a class="nav-link" data-name="btntab" data-tab-name="btnCommissionRules" role="tab" aria-controls="v-pills-Line-Item-Mapping" aria-selected="false">
+                                            <i class="ri-percent-line" title="Commission Rule"></i> <span>Commission Rule</span>
+                                        </a>
+                                    }
+                                }
+                            }
+                        }
+                        @{
+                            if (IsSuperAdmin)
+                            {
+                                <a class="nav-link" data-name="btntab" data-tab-name="btnLobMapping" role="tab" aria-controls="v-pills-Lob-Mapping" aria-selected="false">
+                                    <i class="ri-list-view" title="LOB Mapping"></i> <span>LOB Mapping</span>
+                                </a>
+                                <a class="nav-link" data-name="btntab" data-tab-name="btnLineItemMapping" role="tab" aria-controls="v-pills-Line-Item-Mapping" aria-selected="false">
+                                    <i class="ri-links-line" title="Line-Item Mapping"></i> <span>Line-Item Mapping</span>
+                                </a>
+                            }
+                        }
+                    </div>
+                </div>
+                @{
+                    if (IsSuperAdmin)
+                    {
+                        <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist" aria-orientation="vertical" data-name="divMasterDataMenu">
+                            <a class="nav-link d-flex justify-content-between align-items-center coa"
+                               data-bs-toggle="collapse" href="#chartMasterDataSubmenu" role="button" aria-expanded="true" aria-controls="chartMasterDataSubmenu">
+                                <span class="menu-close-span-expand" title="Global Configuration">
+                                    Global Configuration
+                                </span>
+                                <span class="menu-close-span"><i class="ri-stack-line" title="Global Configuration"></i></span>
+                                <i class="ri-arrow-down-s-line collapse-arrow "></i>
+                            </a>
+                            <div class="collapse show ms-3" id="chartMasterDataSubmenu" data-name="navMasterDataMenu">
+
+                                <a class="nav-link" data-name="btntab" data-tab-name="btnLineofBusiness" role="tab" aria-controls="v-pills-Line-of-Business" aria-selected="false">
+                                    <i class="ri-shield-check-line" title="Line of Business"></i> <span>Line of Business</span>
+                                </a>
+                                <a class="nav-link" data-name="btntab" data-tab-name="btnLineItems" role="tab" aria-controls="v-pills-Line-of-Business" aria-selected="false">
+                                    <i class="ri-list-check-2" title="Line Items"></i> <span>Line Items</span>
+                                </a>
+                                <a class="nav-link" data-name="btntab" data-tab-name="btnUsers" role="tab" aria-controls="v-pills-Users" aria-selected="false">
+                                    <i class="ri-group-line" title="List Of Users"></i> <span>Users</span>
+                                </a>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="c-body-height card-body ps-0">
+            <div class="row" id="tabChartofAccounts">
+                <nav aria-label="breadcrumb">
+                    <div class="d-flex flex-grow-1 justify-content-between justify-content-lg-end align-items-center">
+                        <button class="btn btn-light btn-sm d-lg-none me-2 toggle-menu-btn-lob" type="button"><i class="ri-more-2-fill" style="font-size: 18px;"></i></button>
+
+                    </div>
+                </nav>
+                <div class="w-100 pb-2">
+                    <div class="tab-content" id="v-pills-tabContent">
+                        <div data-name="ConfigurationTabContainer"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>
+<script>
+    $(function () {
+        // var $firstTab = $('[data-name="btntab"]').first();
+        // if($firstTab.length > 0){
+        //     $firstTab.trigger('click');
+        // }
+        // else{
+        //     var sample = '<p class="text-center">You don’t have access to manage any configurations at this time.Please contact admin.</p>';
+        // var visibleNavPills = $('.nav-pills:visible');
+        // if (visibleNavPills.length === 0) {
+        //     $('[data-name="ConfigurationTabContainer"]').html(sample);
+        // } else {
+        //     $('[data-name="ConfigurationTabContainer"]').empty();
+        // }
+        // }
+        // if ($('[data-name="divChartOfAccountsMenu"]').is(':visible')){
+        //     if ($('[data-tab-name="btnGetChartofAccounts"]').is(':visible')) {
+        //         $('[data-tab-name="btnGetChartofAccounts"]').trigger('click');
+        //     }
+        //     else {
+        //         $('[data-tab-name="btnAddOperatingBank"]').trigger('click');
+        //     }
+        // }
+        // else
+        // {
+        //     if ($('[data-name="divMasterDataMenu"]').is(':visible')){
+        //         $('[data-tab-name="btnLineofBusiness"]').trigger('click');
+        //     }
+        // }
+    //var $firstTab = $('[data-name="btntab"]').first();
+    var $configContainer = $('[data-name="ConfigurationTabContainer"]');
+    var noAccessHtml = '<p class="text-center">You don’t have access to manage any configurations at this time. Please contact admin.</p>';
+
+
+     function selectFirstTab() {
+     var $firstTab = $('[data-name="btntab"]:visible').first();
+    if ($firstTab.length > 0) {
+      // Found a tab — simulate click to activate it
+      $firstTab.trigger('click');
+       //$clientTabs.first().trigger('click');
+    } else {
+      // No tab found — show/hide message depending on nav-pills present
+      var visibleNavPills = $('.nav-pills:visible');
+      if (visibleNavPills.length === 0) {
+        // No nav-pills visible → show message
+        $configContainer.html(noAccessHtml);
+      } else {
+        // Nav-pills present but no tab → clear container
+        $configContainer.empty();
+      }
+    }
+    }
+    selectFirstTab();
+
+    });
+</script>

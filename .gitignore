@@ -1,0 +1,41 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+*.dll.config
+publish/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# Publish profiles (deployment hostnames; not needed to build)
+*.pubxml
+*.pubxml.user
+*.publishproj
+PublishScripts/
+
+# NuGet
+*.nupkg
+.nuget/
+packages/
+
+# Runtime data written by the apps (logs, uploads)
+**/App_Data/Logs/
+**/App_Data/*.log
+
+# OS / editor
+Thumbs.db
+.DS_Store
+*.swp
+
+# Local secrets / overrides
+appsettings.*.local.json
+secrets.json

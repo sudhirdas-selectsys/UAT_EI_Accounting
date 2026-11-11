@@ -1,0 +1,196 @@
+﻿@model List<BillProcessQueueWeb>
+@{
+	var PageSize = ViewBag.PageSize;
+	var PageIndex = ViewBag.PageIndex;
+	var TotalRecords = ViewBag.TotalRecords;
+}
+
+<div class="position-relative" style="margin-bottom:30px;">
+	<div class="border">
+		<div class="table-responsive table-scroll mb-2" style="max-height:340px; overflow-y:auto;">
+			<table class="table ei-table mb-0 ei-ac-db-table  text-nowrap trns-table billprocess-valign no-wrap">
+				<thead>
+					<tr>
+						<th style="text-align:center;">Bill Batch Id</th>
+						<th style="text-align:center;">Transaction Date</th>
+						<th>Batch Status</th>
+						<th>Current WorkFlow Step </th>
+						<th style="text-align:center;">Actions</th>
+					</tr>
+				</thead>
+				<tbody id="line-items-body">
+					@if (Model?.Count > 0)
+					{
+						foreach (var item in Model)
+						{
+							<tr>
+								<td style="text-align:center;">@item.BillProcess_Id</td>
+								<td style="text-align:center;">@item.TransactionDate.ToShortDateString()</td>
+								<td>
+									@if (item.BillProcessStatus.ToUpper() == "PENDING")
+									{
+										@item.BillProcessStatus
+										<span class="text-warning"><i class="fas fa-clock ms-1"></i></span>
+									}
+									else if (item.BillProcessStatus.ToUpper() == "RUNNING")
+									{
+										@item.BillProcessStatus
+										<span class="text-primary"><i class="fas fa-spinner fa-spin ms-1"></i></span>
+									}
+									else if (item.BillProcessStatus.ToUpper() == "COMPLETED")
+									{
+										@item.BillProcessStatus
+										<span class="text-success"> <i class="fas fa-circle-check ms-1"></i></span>
+									}
+									else if (item.BillProcessStatus.ToUpper() == "FAILED")
+									{
+										@item.BillProcessStatus
+										<span class="text-danger"> <i class="fas fa-circle-xmark ms-1"></i></span>
+									}
+									else if (item.BillProcessStatus.ToUpper() == "RETRY")
+									{
+										@item.BillProcessStatus
+										<span class="text-info" style="margin-left:5px"><i class="fas fa-arrows-rotate fa-spin me-1"></i></span>
+									}
+									else if (item.BillProcessStatus.ToUpper() == "CANCELLED")
+									{
+										@item.BillProcessStatus
+										<span class="text-muted" style="margin-left:5px"><i class="fas fa-ban me-1"></i></span>
+									}
+									else if (item.BillProcessStatus.ToUpper() == "DELETED")
+									{
+										@item.BillProcessStatus
+										<span class="text-muted" style="margin-left:5px"><i class="fas fa-trash-alt me-1"></i></span>
+									}
+									else
+									{
+										@item.BillProcessStatus
+										<span class="text-warning"><i class="fas fa-triangle-exclamation ms-1"></i></span>
+									}
+								</td>
+								<td>@item.CurrentWorkFlowEvent</td>
+								@* <td style="text-align:center;">
+									<a href="javascript:void(0)" data-id="@item.BillProcess_Id" data-date="@item.TransactionDate" data-name="btnBatchBillView"  title="View Details"><i class="ri-eye-line save-btn"></i></a>
+								</td> *@
+								<td style="text-align:center;">
+									<span data-bs-toggle="dropdown"><i class="ri-more-2-line v-ellipsis"></i></span>
+									<div class="dropdown-menu">
+										<div class="d-flex flex-column gap-2 ">
+											@{
+												var BillProcessStatus = item.BillProcessStatus.ToUpper();
+											}
+											<a href="javascript:void(0)" data-id="@item.BillProcess_Id" data-date="@item.TransactionDate" data-name="btnBatchBillView" title="View BillBatch Details" class="dropdown-item"><i class="ri-eye-line save-btn actionsicon"></i> View</a>
+											@* @if (BillProcessStatus == "FAILED")
+											{
+												<a href="javascript:void(0)" data-id="@item.BillProcess_Id" data-date="@item.TransactionDate" data-name="btnBatchBillRetry" title="Retry BillBatch Details" class="dropdown-item"><i class="ri-refresh-line save-btn actionsicon"></i> Retry</a>
+											} *@
+										</div>
+									</div>
+								</td>
+							</tr>
+						}
+					}
+					else
+					{
+						<tr><td colspan="12">No records found!</td></tr>
+					}
+				</tbody>
+
+
+			</table>
+		</div>
+	</div>
+
+</div>
+
+<div class="modal fade" id="BillBatchViewModel" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+	<div class="modal-dialog modal-dialog-centered" style="max-width: 90%; width: 1250px;">
+		<div class="modal-content shadow-lg">
+			<div class="modal-header">
+				<h5 class="modal-title">Bill Batch Processing Details</h5>
+				<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+			</div>
+			<div class="modal-body">
+			</div>
+		</div>
+	</div>
+</div>
+
+
+<style>
+
+	.th-content {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.billprocess-valign tr th {
+		vertical-align: middle;
+		max-width: unset;
+		white-space: nowrap;
+		padding-bottom: 8px;
+		padding-top: 8px;
+	}
+
+	.table-scroll {
+		height: calc(100vh - 375px) !important;
+	}
+
+
+	.text-bg-primary {
+		background-color: #eaffeb !important;
+		color: #333 !important
+	}
+
+	/* ADD */
+	.v-ellipsis {
+		font-size: 21px;
+		background: #eeeef5;
+		padding: 5px;
+		display: inline-block;
+		width: 30px;
+		height: 30px;
+		text-align: center;
+		border-radius: 100%;
+		line-height: 30px;
+		padding: 0;
+	}
+
+	.dropdown-menu {
+		border: 1px solid #b9b2b2 !important;
+	}
+
+		.dropdown-menu .dropdown-item .actionsicon:hover {
+			color: white !important;
+		}
+
+	td .dropdown-menu a {
+		color: #333
+	}
+
+		td .dropdown-menu a:hover:not([data-name="btnBatchBillView"]),
+		td .dropdown-menu a:hover:not([data-name="btnBatchBillView"]) i {
+			color: #5F2EE5 !important
+		}
+
+		td .dropdown-menu a:hover:not([data-name="btnBatchBillRetry"]),
+		td .dropdown-menu a:hover:not([data-name="btnBatchBillRetry"]) i {
+			color: #5F2EE5 !important
+		}
+
+
+		td .dropdown-menu a i {
+			border: transparent;
+			color: #333 !important;
+			font-size: 16px;
+		}
+
+			td .dropdown-menu a i:hover {
+				color: #fff !important;
+			}
+
+	td .dropdown-menu {
+		box-shadow: 0px 0.125rem 0.25rem rgba(0, 0, 0, 0.08)
+	}
+</style>

@@ -1,0 +1,407 @@
+﻿@model List<Payments>
+@{
+    var PageSize = ViewBag.PageSize;
+    var PageIndex = ViewBag.PageIndex;
+    var TotalRecords = ViewBag.TotalRecords;
+}
+
+<div class="position-relative">
+    <div class="border rounded-1 bg-white overflow-hidden">
+        <div class="table-responsive table-scroll">
+            <table class="table ei-table mb-0 no-wrap ei-ac-db-table trns-db-table payment-valign">
+                <thead>
+                    <tr>
+                        <th style="width:20px;"><input type="checkbox" data-name="chkSelectAllPrintChecks"></th>
+                        <th style="width:100px;">Payment Id</th>
+                        <th style="width:120px;">Entity Type</th>
+                        <th>Entity Name</th>
+                        <th>Payment Date</th>
+                        <th>Amount</th>
+                        <th>Remaining Amount</th>
+                        <th>Payment Type</th>
+                        <th>Reference Number</th>
+                        <th>Payment Status</th>
+                        <th>Bank Account</th>
+                        <th>Payment Direction</th>
+                        @*<th>Print Status</th>*@
+                       @* <th>
+                            <div class="th-content">
+                                Actions
+                                <!--<i class="ri-add-circle-line" ttile="add"></i>-->
+                                <a href="javascript:void(0)" data-name="btnAddPaymentDetails" aria-controls="addPaymentPlan" title="Add Payment"><i class="ri-add-line ms-3" style="font-size: 16px;" ttile="Add Payment"></i></a>
+                            </div>
+                        </th>*@
+                    </tr>
+                </thead>
+                <tbody id="line-items-body">
+                    @if (Model?.Count > 0)
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr class="@(item.PaymentStatus_Id == MasterLookup._PaymentStatus.Failed ? "failed-payment-row" : "")">
+                                <td style="width:40px;">
+                                    <div class="form-check">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               data-name="chkPrintCheck"
+                                               data-payment-id="@item.Payment_Id">
+                                    </div>
+                                </td>
+                                <td>@item.Payment_Id</td>
+                                <td style="width: 100px;">
+                                    <div class="text-truncate" title="@LookupUtility.GetAllEntityTypes().FirstOrDefault(c => c.EntityType_Id == item.EntityType_Id)?.Name">@LookupUtility.GetAllEntityTypes().FirstOrDefault(c => c.EntityType_Id == item.EntityType_Id)?.Name</div>
+                                </td>
+                                <td><div class="text-truncate" title="@item.EntityName">@item.EntityName</div></td>
+                                <td>@item.PaymentDate?.ToShortDateString()</td>
+                                <td>@CommonUtility.ConvertToCurrencyFormat(item.Amount, false, 2)</td>
+                                <td>
+                                    <div class="@(item.RemainingAmount > 0 ? "tdRemainingAmountNotZero" : item.RemainingAmount == 0 ? "tdRemainingAmount" : "tdRemainingAmountLessZero")">@CommonUtility.ConvertToCurrencyFormat(item.RemainingAmount, false, 2)</div>
+                                </td>
+                                <td>@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == item.PaymentType_Id)?.Name</td>
+                                <td><div class="text-truncate" title="@item.ReferenceNumber">@item.ReferenceNumber</div></td>
+                                @*<td>
+                                    @if (item.PaymentDirection_Id == MasterLookup._PaymentDirections.Outgoing && LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == item.PaymentType_Id)?.Name == "Check")
+                                    {
+                                        var printStatus = LookupUtility.GetCheckPaymentPrintStatus().FirstOrDefault(x => x.CheckPaymentPrintStatus_Id == item.CheckPaymentPrintStatus_Id)?.Name;
+
+                                        <div class="text-truncate" title="@printStatus">
+                                            @(string.IsNullOrEmpty(printStatus) ? "Not printed" : printStatus)
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="@(item.PaymentStatus_Id == MasterLookup._PaymentStatus.BouncedReversed ? "label-back" : "")">@LookupUtility.GetAllPaymentStatus().FirstOrDefault(x => x.PaymentStatus_Id == item.PaymentStatus_Id)?.Name</span>
+                                    }
+                                </td>*@
+                                <td>
+                                    @{
+                                        var printStatus = LookupUtility.GetCheckPaymentPrintStatus()
+                                        .FirstOrDefault(x => x.CheckPaymentPrintStatus_Id == item.CheckPaymentPrintStatus_Id)?.Name;
+
+                                        var displayStatus = printStatus?.Equals("Printed", StringComparison.OrdinalIgnoreCase) == true
+                                        ? "Printed"
+                                        : "Not Printed";
+                                    }
+
+                                    <div class="text-truncate" title="@displayStatus">
+                                        @displayStatus
+                                    </div>
+                                </td>
+
+                                <td><div class="text-truncate" title="@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id)?.Name">@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id)?.Name</div></td>
+                                <td>
+                                    @if (item.PaymentDirection_Id == MasterLookup._PaymentDirections.Incoming)
+                                    {
+                                        <i class="ri-arrow-down-line me-1"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="ri-arrow-up-line me-1"></i>
+                                    }
+                                    @LookupUtility.GetAllPaymentDirections().FirstOrDefault(x => x.PaymentDirection_Id == item.PaymentDirection_Id)?.Name
+
+                                </td>
+
+                               @* <td valign="middle">
+                                    <span data-bs-toggle="dropdown"><i class="ri-more-2-line v-ellipsis"></i></span>
+                                    <div class="dropdown-menu">
+                                        <div class="d-flex flex-column gap-2 ">
+                                            @if (!(item.PaymentType_Id == MasterLookup._PaymentTypes.Bill))
+                                            {
+                                                <a href="javascript:void(0)" data-payment-id="@item.Payment_Id" data-name="btnEditPaymentDetails" aria-controls="addPaymentPlan" style="display:inline-block;" class="dropdown-item @(item.PaymentStatus_Id == MasterLookup._PaymentStatus.BouncedReversed ? "d-none" : "")"><i class="ri-pencil-line save-btn edit-btn actionsicon"></i> Edit</a>
+                                            }
+
+                                            <a href="javascript:void(0)" data-payment-id="@item.Payment_Id" data-name="btnViewPaymentDetails" title="View Payment Details" class="dropdown-item"><i class="ri-eye-line save-btn actionsicon"></i> View</a>
+                                            @if (!string.IsNullOrEmpty(item.ExternalJournalEntryIdentifier))
+                                            {
+                                                <a href="javascript:void(0)" data-payment-id="@item.Payment_Id" data-name="btnViewJournalEntryDetails" title="View Journal Entry Details" class="dropdown-item @(item.PaymentStatus_Id == MasterLookup._PaymentStatus.BouncedReversed ? "d-none" : "")"><i class="ri-file-text-line save-btn actionsicon"></i> Journal Entry Details</a>
+                                            }
+
+                                            <a href="javascript:void(0)" data-payment-id="@item.Payment_Id" data-name="btnDeletePaymentDetails" class="dropdown-item"><i class="ri-delete-bin-line delete-btn " title="Delete Payment "></i>Delete Payment</a>
+                                            <a href="javascript:void(0)" data-payment-id="@item.Payment_Id" data-name="btnUnapplyPayment" class="dropdown-item @(item.PaymentStatus_Id == MasterLookup._PaymentStatus.BouncedReversed ? "d-none" : "")"><i class="ri-arrow-go-back-line save-btn up-btn actionsicon" title="Unapply Payment"></i>Unapply Payment</a>
+                                            <a href="javascript:void(0)" data-payment-id="@item.Payment_Id" data-name="btnBouncePayment" class="dropdown-item @(item.PaymentStatus_Id == MasterLookup._PaymentStatus.BouncedReversed ? "d-none" : "")"><i class="ri-repeat-line save-btn rp-btn actionsicon" title="Bounce / Reverse Payment"></i>Bounce / Reverse Payment</a>
+                                            @if (item.PaymentDirection_Id == MasterLookup._PaymentDirections.Outgoing && LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == item.PaymentType_Id)?.Name == "Check")
+                                            {
+                                                var operatingBank = LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id);
+                                                <a href="javascript:void(0)" data-payment-id="@item.Payment_Id"
+                                                   data-account-number="@operatingBank?.AccountNumber"
+                                                   data-routing-number="@operatingBank?.RoutingNumber"
+                                                   data-singer-value="@operatingBank?.SignerValue"
+                                                   data-singer-type="@operatingBank?.SignerType"
+                                                   data-name="btnPrintCheck" class="dropdown-item"><i class="ri-printer-line save-btn rp-btn actionsicon" title="Print Check"></i>Print Check</a>
+                                            }
+                                            @if (item.PaymentStatus_Id == MasterLookup._PaymentStatus.Failed)
+                                            {
+                                                <a href="javascript:void(0)" data-payment-id="@item.Payment_Id" data-transaction-date="@item.PaymentDate" data-name="btnBatchBillRetry" title="Retry" class="dropdown-item"><i class="ri-refresh-line save-btn actionsicon"></i> Retry</a>
+                                            }
+                                        </div>
+
+                                    </div>
+
+                                </td>*@
+
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="12" class="text-center">No records found!</td></tr>
+                    }
+                </tbody>
+
+
+            </table>
+        </div>
+    </div>
+    @* <div class="row align-items-center justify-content-end table-pagination my-2 me-4"> *@
+    <div class="table-pagination">
+        <div class="col-auto"><strong>Page Size</strong></div>
+        <div class="col-auto">
+            @{
+                List<int> pageSizeOptions = new List<int> { 20, 40, 50, 100 };
+            }
+            <select class="form-select" data-name="PageSize" data-table-name="PaymentDetails">
+                @foreach (var size in pageSizeOptions)
+                {
+                    <option value="@size" selected="@(PageSize == size)">@size</option>
+                }
+            </select>
+        </div>
+        <div class="col-auto">
+            <strong>
+                @{
+                    if (Model?.Count > 0)
+                    {
+                        @(PageIndex == 0 ? 1 : (PageIndex * PageSize) + 1)
+                        <text>-</text>
+                        @(PageIndex == 0 ? Model?.Count : (PageIndex * PageSize) + Model?.Count)
+
+                    }
+                    else
+                    {
+                        <text>0-0</text>
+                    }
+                }
+
+            </strong>
+
+            of <strong>@TotalRecords</strong>
+        </div>
+        <div class="col-auto">
+            <div class="btn-group">
+                @if (PageIndex > 0)
+                {
+                    <button type="button" class="btn btn-outline-primary" data-page-index="@PageIndex" data-table-name="PaymentDetails" data-name="btnPrevious"><i class="fa fa-angle-left"></i></button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-outline-primary" disabled><i class="fa fa-angle-left"></i></button>
+                }
+                @if (TotalRecords > (PageSize * (PageIndex + 1)))
+                {
+                    <button type="button" class="btn btn-outline-primary" title="Next" data-page-index="@PageIndex" data-table-name="PaymentDetails" data-name="btnNext"><i class="fa fa-angle-right"></i></button>
+                }
+                else
+                {
+                    <button type="button" class="btn btn-outline-primary" title="Next" disabled><i class="fa fa-angle-right"></i></button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    /*[data-name="DashboardTabsContainer"] {
+            min-height: 590px !important;
+         max-height: 590px !important;
+            }*/
+
+    [data-name="DashboardTabsContainer"] {
+        min-height: 630px !important;
+    }
+
+    .th-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .payment-valign tr th {
+        vertical-align: middle;
+    }
+
+    .table-scroll {
+        min-height: calc(100vh - 350px) !important;
+        max-height: calc(100vh - 350px) !important;
+    }
+
+
+    .text-bg-primary {
+        background-color: #eaffeb !important;
+        color: #333 !important
+    }
+
+    .dropdown-menu {
+        border: 1px solid #b9b2b2 !important;
+    }
+
+        .dropdown-menu .dropdown-item .actionsicon:hover {
+            color: white !important;
+        }
+
+    .delete-btn:hover {
+        color: #fff !important;
+    }
+
+    .v-ellipsis {
+        font-size: 16px;
+        background: #eeeef5;
+        padding: 5px;
+        display: inline-block;
+        width: 25px;
+        height: 25px;
+        text-align: center;
+        border-radius: 100%;
+        line-height: 25px;
+        padding: 0;
+    }
+
+    td .dropdown-menu a {
+        color: #333
+    }
+
+        td .dropdown-menu a:hover:not([data-name="btnDeletePaymentDetails"]),
+        td .dropdown-menu a:hover:not([data-name="btnDeletePaymentDetails"]) i {
+            color: #5F2EE5 !important
+        }
+
+        td .dropdown-menu a:hover:not([data-name="btnDeletePaymentDetails"]),
+        td .dropdown-menu a:hover:not([data-name="btnDeletePaymentDetails"]) {
+            color: # fff !important
+        }
+
+
+    [data-name="btnDeletePaymentDetails"]:hover, [data-name="btnDeletePaymentDetails"]:hover i {
+        color: #dc3545 !important
+    }
+
+    td .dropdown-menu a i {
+        border: transparent;
+        color: #333 !important;
+        font-size: 16px;
+    }
+
+        td .dropdown-menu a i:hover {
+            color: #fff !important;
+        }
+
+    td .dropdown-menu {
+        box-shadow: 0px 0.125rem 0.25rem rgba(0, 0, 0, 0.08)
+    }
+
+    .label-back {
+        background: #ffeeee;
+        padding: 5px 6px;
+        white-space: nowrap;
+        border-radius: 5px;
+        font-size: 10px;
+        font-weight: 600;
+        color: #860e0e;
+    }
+
+    .up-btn, .rp-btn {
+        width: 26px;
+        height: 26px;
+        margin-right: 4px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s ease-in;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        padding: 0px;
+    }
+
+    .failed-payment-row > td {
+        background-color: #f8d7da !important;
+    }
+    /* Grid container */
+.table-scroll {
+    overflow: auto;
+    min-height: calc(100vh - 350px) !important;
+    max-height: calc(100vh - 350px) !important;
+    border-radius: 4px;
+}
+
+/* Grid table */
+.payment-valign {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 0;
+}
+
+/* Header design */
+.payment-valign thead th {
+    background-color: #d8d7ff !important;
+    color: #222;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 12px 10px !important;
+    text-align: left;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #d6d6e5;
+    white-space: nowrap;
+}
+
+/* Grid rows */
+.payment-valign tbody td {
+    background-color: #fff;
+    color: #333;
+    font-size: 12px;
+    padding: 10px !important;
+    vertical-align: middle !important;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* Row hover */
+.payment-valign tbody tr:hover td {
+    background-color: #f6f5ff;
+}
+
+/* Failed payment row */
+.payment-valign tbody tr.failed-payment-row td {
+    background-color: #f8d7da !important;
+}
+
+/* Checkbox alignment */
+.payment-valign th:first-child,
+.payment-valign td:first-child {
+    text-align: center;
+    width: 36px;
+}
+
+/* Truncate long values */
+.payment-valign .text-truncate {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 180px;
+}
+
+/* Grid border and background */
+.position-relative > .border {
+    border: 1px solid #dee2e6 !important;
+    border-radius: 4px;
+    background: #fff;
+}
+
+/* Pagination spacing */
+.table-pagination {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 8px 0;
+
+</style>

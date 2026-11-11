@@ -1,0 +1,197 @@
+﻿@using Accounting.Entities.DB.Lookups;
+@model LU_OperatingBanks;
+
+<style>
+	.qv-dropdown .qv-dropdown-label {
+		padding: 2px 12px;
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		cursor: pointer;
+		background-color: #fff;
+		color: #333;
+		border: 1px solid rgba(0, 0, 0, 0.175) !important;
+		border-radius: 0.25rem;
+		height: 30px;
+		line-height: 30px;
+	}
+
+	.qv-items-height {
+		height: 120px;
+		padding-right: 5px;
+		margin-top: 5px;
+		margin-bottom: 5px;
+		overflow: auto;
+	}
+
+
+
+	.qv-item {
+		cursor: pointer;
+		font-size: 12px
+	}
+
+	.qv-items-height .qv-item {
+		margin: 0px;
+		padding: 5px 10px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 6px;
+	}
+
+		.qv-items-height .qv-item:hover {
+			background-color: #f8f9fa;
+			color: #5F2EE5;
+		}
+
+	.offcanvas-footer .btn {
+	width: 159px !important;
+	}
+</style>
+<div>
+	<form data-name="FormOperatingBank">
+		<div class="row">
+			<div class="mb-3 col-md-12">
+				<div class="">
+					<label class="form-label">Name</label>
+					<input type="hidden" name="Client_Id" value="@Model.Client_Id">
+					<input type="hidden" name="Service_Id" value="@Model.Service_Id" data-service-id="@Model.Service_Id">
+					<input type="hidden" class="form-control" name="OperatingBank_Id" value="@Model?.OperatingBank_Id">
+					<input type="text" class="form-control" placeholder="Name" name="Name" autocomplete="off" data-val="true" value="@Model?.Name">
+
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div>
+					<label class="form-label">Code</label>
+					<input type="text" class="form-control" placeholder="Code" name="Code" autocomplete="off" data-val="true" value="@Model?.Code">
+				</div>
+			</div>
+			@if (Model?.Service_Id == MasterLookup._Services.Intuit || Model?.Service_Id == MasterLookup._Services.Sage)
+			{
+				<div class="mb-3 col-md-12">
+					<label class="form-label">Chart of Account</label>
+					<div class="dropdown qv-dropdown" style="border-color: #5F2EE5">
+						<div type="button" class="qv-dropdown-label show" id="qvDropdownId" data-bs-toggle="dropdown" aria-expanded="true" data-bs-auto-close="false">
+							<span data-name="SelectedCOA" class="text-truncate" title="@LookupUtility.GetAllChartofAccounts()?.FirstOrDefault(c => c.ChartOfAccounts_Id == Model?.OperatingBankCOA_Id)?.Name" style="max-width:250px">@LookupUtility.GetAllChartofAccounts()?.FirstOrDefault(c => c.ChartOfAccounts_Id == Model?.OperatingBankCOA_Id)?.Name</span> <i class="ri-arrow-down-s-line"></i>
+						</div>
+						<div class="dropdown-menu pt-1" data-identifier="OperatingBank" data-name="DropDownContainer" style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(0px, 42.4px, 0px);width: 365px" data-popper-placement="bottom-start">
+							<input type="hidden" name="OperatingBankCOA_Id" data-name="ChartOfAccounts_Id" value="@LookupUtility.GetAllChartofAccounts()?.FirstOrDefault(c => c.ChartOfAccounts_Id == Model?.OperatingBankCOA_Id)?.ChartOfAccounts_Id" />
+							@* <div class="text-end mb-1" id="qv-dropdown-close" type="button">
+							<i class="ri-close-large-line"></i>
+						</div> *@
+							<div class="input-group input-group-sm mb-1 custom-input-group">
+								<input type="text" data-name="COASearchText" class="form-control" placeholder="Search..." autocomplete="off" aria-label="Search..." aria-describedby="basic-addon2">
+								<button class="input-group-text" id="qv-search-btn" type="button" data-name="btnCOASearch">
+									<i class="ri-search-2-line" style="position:inherit;"></i>
+								</button>
+								<button class="input-group-text" id="qv-search-clear-btn" type="button" data-name="btnCOASearchClear" style="display:none;">
+									<i class="ri-close-large-line" style="position:inherit;"></i>
+								</button>
+							</div>
+
+							<div class="qv-items-height" data-name="COAListContainer">
+								@{
+									var ChartofAccountsList = @LookupUtility.GetAllChartofAccounts()?.Where(c => c.Client_Id == Model?.Client_Id && c.Service_Id == Model.Service_Id).ToList();
+									if (ChartofAccountsList?.Count() > 0)
+									{
+										foreach (var Coa in ChartofAccountsList)
+										{
+											<div class="qv-item" data-name="COAItem" data-coa-id="@Coa.ChartOfAccounts_Id">
+												<span>@Coa.Name</span>
+											</div>
+										}
+									}
+								}
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="mb-3 col-md-12">
+					<h6>Check Creation</h6>
+				</div>
+				<div class="mb-3 col-md-12">
+					<label class="form-label">Account Number</label>
+					<input type="text" class="form-control" placeholder="Enter Account Number" name="AccountNumber" data-name="AccountNumber" autocomplete="off" @* data-val="true" minlength="22" maxlength="22" *@ value="@Model?.AccountNumber">
+				</div>
+				<div class="mb-3 col-md-12">
+					<label class="form-label">Routing Number</label>
+					<input type="text" class="form-control" name="RoutingNumber" data-name="RoutingNumber" autocomplete="off" placeholder="Enter Routing Number at least 9 character" @* data-val="true" minlength="9" maxlength="9" *@ value="@Model?.RoutingNumber">
+				</div>
+				<div class="mb-3 col-md-12">
+					<label class="form-label">Company Name</label>
+					<input type="text" class="form-control" name="Check_CompanyName" data-name="CompanyName" autocomplete="off" @* data-val="true" *@ placeholder="Company Name" value="@Model?.Check_CompanyName">
+				</div>
+				<div class="mb-3 col-md-12">
+					<label class="form-label">Bank Name</label>
+					<input type="text" class="form-control" name="Check_BankName" data-name="Check_BankName" autocomplete="off" placeholder="Bank Name" value="@Model?.Check_BankName">
+				</div>
+				<div class="mb-3 col-md-12">
+					<label class="form-label">City Name</label>
+					<input type="text" class="form-control" name="cityName" data-name="cityName" autocomplete="off" placeholder="City Name" value="@Model?.cityName">
+				</div>
+				<div class="mb-3 col-md-12">
+					<label class="form-label">ZIP Code</label>
+					<input type="text" class="form-control" name="zipCode" data-name="zipCode" autocomplete="off" placeholder="ZIP Code" value="@Model?.zipCode">
+				</div>
+				<div class="mb-3 col-md-12">
+					<label class="form-label">Bank Address</label>
+					@* <input type="text" class="form-control" name="BankAddress" data-name="BankAddress" autocomplete="off" data-val="true" placeholder="Bank Address" value="@Model?.Check_BankAddress"> *@
+					<textarea class="form-control" name="Check_BankAddress" data-name="BankAddress" autocomplete="off" placeholder="Bank Address" rows="3" readonly>@Model?.Check_BankAddress</textarea>
+ 				</div>
+				<div class="mb-3 col-md-12">
+					<label class="form-label">Signature Type</label>
+					<select class="form-select" name="SignatureType_Id" data-name="signatureMode">
+						@* <option value="">Select</option>  *@
+						@{
+							var SignatureTypes = LookupUtility.GetAllChecKeeperSignatureTypes();
+							if (SignatureTypes?.Count() > 0)
+							{
+								foreach (var item in SignatureTypes)
+								{
+									<option value="@item?.SignatureType_Id" data-type="@item?.Name?.Trim().ToLowerInvariant()" selected="@(Model?.SignerType?.ToLower() == "text" ?  Model?.SignerType?.ToLower() == item?.Name?.ToLower() : item?.Name?.ToLower() == "image")">@item.Name</option>
+								}
+							}
+						}
+					</select>
+
+				</div>
+
+				<div data-name="textSignature">
+					<label class="form-label">Signer Name</label>
+					<input type="text" class="form-control" data-name="textSignerValue" @* data-val="true" *@ value="@(Model?.SignerType?.ToLower() == "text" ? Model?.SignerValue : "" )" placeholder="Enter Signer Name" />
+				</div>
+
+				<div data-name="imageSignature" style="display:none">
+					<label class="form-label">Upload Signature</label>
+					<input type="file" data-name="signatureImage" accept="image/png,image/jpeg,image/gif" @* data-val="true" *@ />
+				</div>
+
+				<input type="hidden" name="SignerType" data-name="SignerType" />
+				<input type="hidden" name="SignerValue" data-name="SignerValue" />
+			}
+		</div>
+		<div class="offcanvas-footer text-end">
+			<button type="button" class="btn btn-secondary" data-name="btnClose" data-bs-dismiss="offcanvas">Close</button>
+			<button type="button" class="btn btn-primary" data-name="btnSaveOperatingBank">Save changes</button>
+		</div>
+	</form>
+</div>
+<script>
+	@if (Model != null)
+	{
+		<text>
+							 var OperatingBank_Id = @Model.OperatingBank_Id;
+		</text>
+	}
+	else
+	{
+		<text>
+							var OperatingBank_Id = 0;
+		</text>
+
+	}
+</script>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

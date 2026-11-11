@@ -1,0 +1,335 @@
+﻿@model Payments
+@{
+	var data = @Model;
+}
+@{
+	var paymentid = data.Payment_Id;
+	var writeoffAppliedAmount = data.WriteoffPaymentApplicationLineItems?.AppliedAmount ?? 0;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8" />
+	<link rel="preconnect" href="https://fonts.googleapis.com" />
+	<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous" />
+	<link href="https://fonts.googleapis.com/css2?family =Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display =swap" rel="stylesheet" />
+	<style>
+		body {
+			font-family: "Poppins", sans-serif;
+			font-size: 13px;
+			color: #333;
+			font-weight: 400;
+			line-height: normal;
+		}
+
+
+		.header {
+			padding: 20px 15px 20px 15px;
+		}
+
+		.bg-white {
+			background-color: white;
+		}
+
+		@@media print {
+			.bg {
+				-webkit-print-color-adjust: exact;
+				background-color: #EBF4FA;
+			}
+
+			.btn {
+				-webkit-print-color-adjust: exact;
+				background-color: #dafbe5;
+			}
+
+			.bg-white {
+				-webkit-print-color-adjust: exact;
+				background-color: white;
+			}
+		}
+
+		body, td, p {
+			font-size: 12px;
+		}
+
+		.bordertop-1 {
+			border-top: 3px solid #000;
+		}
+
+		.border-bottom-0 {
+			border-bottom: 0 !important;
+		}
+
+		.border-top-0 {
+			border-top: 0 !important;
+		}
+
+		.border-bottom-1 {
+			border-bottom: 1px solid #bfbfbf;
+		}
+
+		.border-right-1 {
+			border-right: 1px solid #000;
+		}
+
+		.border-start-1 {
+			border-left: 1px solid #000;
+		}
+
+		.invoice-table tr td {
+			border-bottom: 1px solid #bfbfbf;
+			color: #000 !important;
+		}
+
+		.invoice-table thead tr th {
+			background-color: #D4D4FB;
+			border-bottom: solid 1px #bfbfbf !important;
+			color: #000 !important;
+			font-weight: 700;
+		}
+
+		.border-start-0 {
+			border-left: 0 !important;
+		}
+
+		.invoice-text {
+			border: 6px solid #000;
+			padding: 20px 40px;
+			font-weight: bold;
+			text-align: center;
+			font-family: "Times New Roman", Times, serif;
+			font-size: 13px;
+			letter-spacing: 2px;
+			margin-left: 60px;
+			margin-right: 60px;
+		}
+
+		.text-center {
+			text-align: center;
+		}
+
+		.footer-text {
+			position: absolute;
+			text-align: center;
+			left: 0;
+			right: 0;
+			bottom: 30px;
+		}
+
+		.lh-15 {
+			line-height: 25px;
+		}
+
+		.fs-16 {
+			font-size: 16px;
+		}
+
+		.fs-13 {
+			font-size: 13px;
+		}
+
+		.fs-14 {
+			font-size: 14px;
+		}
+
+		[data-name="GenericModal"] .modal-body {
+			position: relative;
+			max-width: 100%;
+			margin: 0;
+		}
+
+		[data-name="GenericModal"] .modal-content {
+			border-radius: 0; /* optional: remove rounded corners */
+		}
+
+		.clsExportbtn {
+			background-color: #fff;
+			padding: 20px;
+			position: sticky;
+			width: 100%;
+			bottom: 0;
+		}
+	</style>
+</head>
+
+<body>
+	<div style="padding:20px;" class="pt-0">
+		<table class="invoice-pdf-table" style="width: 100%;">
+			<tbody>
+				<tr>
+					@{
+						var client = Model.Clients;
+						var base64Image = client?.Logo != null
+						? Convert.ToBase64String(client.Logo)
+						: "";
+						var imgSrc = !string.IsNullOrEmpty(base64Image)
+						? $"data:image/jpg;base64,{base64Image}"
+						: "";
+					}
+
+					<td style="vertical-align: top; width: 30%;">
+						@if (!string.IsNullOrEmpty(imgSrc))
+						{
+							<img src="@imgSrc" alt="Client Logo" height="70" />
+						}
+					</td>
+
+					<td style="vertical-align: top; text-align: right; width: 70%; line-height: 23px !important;">
+						@client?.CompanyName <br />
+						@client?.Address <br />
+						@($"{client?.City} {client?.State} {client?.ZipCode}")
+					</td>
+				</tr>
+			</tbody>
+		</table>
+
+	</div>
+
+
+	<table border="0" cellspacing="0" cellpadding="0" style="margin: auto; width: 100%;border-top:8px solid #5F2EE5;">
+		<tr>
+			<td class="bg-white">
+				<table style="width: 100%;" border="0" cellspacing="0" cellpadding="0">
+					<tr>
+						<td height="30px"></td>
+					</tr>
+					<tr>
+						<td style="background-color: white;">
+							<div class="header">
+								<table border="0" cellspacing="0" cellpadding="0" style="width: 100%;">
+									<tr>
+										<td align="center" style="font-size: 24px;font-weight: 600;line-height: 26px;margin-bottom: 0;">
+											Payment Receipt
+										</td>
+									</tr>
+								</table>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td height="20px">
+					</tr>
+					<tr>
+						<td>
+							<div style="padding: 0 15px 0 15px;background-color:#fff;">
+								<div class="lh-25">
+									<table border="0" cellspacing="0" cellpadding="8" style="width: 100%; border-color: #000;line-height:25px;">
+										<tr>
+											<td class="border-bottom-1" valign="top" style="width:35%;">
+												<strong>Payment Number:</strong> @Model?.Payment_Id <br />
+												<strong>Date Issued:</strong> @Model?.CreatedOn.ToString("MM/dd/yyyy")
+											</td>
+											<td class="border-bottom-1" valign="top" style="width:35%;">
+												<strong>Payer Name:</strong> @Model?.EntityName <br />
+												<strong>Payment Method:</strong> @LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == Model?.PaymentType_Id)?.Name <br />
+											</td>
+											<td class="border-bottom-1" valign="top" style="width:35%;">
+												<strong>Payment Reference:</strong> @Model?.ReferenceNumber <br />
+												<strong>Total Payment Amount:</strong> @CommonUtility.ConvertToCurrencyFormat(@Model?.Amount, false, 2) <br />
+												<strong>Date Received:</strong> @Convert.ToDateTime(Model?.PaymentDate).ToString("MM/dd/yyyy")
+											</td>
+										</tr>
+									</table>
+								</div>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td height="20px"></td>
+					</tr>
+					<tr>
+						<td>
+							<div style="padding: 0 15px 0 15px; background-color:#fff;" align="center">
+								<div>
+									<table border="0" cellspacing="0" cellpadding="8" style="width: 100%;" class="invoice-table">
+										<thead>
+											<tr>
+												<th class="border-bottom-0" align="left" style="width:53px;">S.No</th>
+												<th class="border-bottom-0" style="width:10%;" align="left" align="left">Invoice No</th>
+												<th class="border-bottom-0 border-start-0" style="width:13%;" align="left">Policy No</th>
+												<th class="border-bottom-0 border-start-0" style="width:17%;" align="left">Insured Name</th>
+												<th class="border-bottom-0 border-start-0">Effective - Expiry Date</th>
+												<th class="border-bottom-0 border-start-0">Invoice Date</th>
+												<th class="border-bottom-0 border-start-0" align="right">Original Invoice Amount</th>
+												<th class="border-bottom-0 border-start-0" align="right">Applied Amount</th>
+												<th class="border-bottom-0 border-start-0" align="right">Remaining Balance</th>
+											</tr>
+										</thead>
+										<tbody>
+											@{
+												int i = 1;
+												if (Model?.PaymentApplicationLineItemsList?.Count() > 0)
+												{
+													foreach (var item in Model.PaymentApplicationLineItemsList)
+													{
+														<tr>
+															<td align="left">@i</td>
+															<td align="left">@item.InvoiceNo</td>
+															<td align="left">@item.PolicyNumber</td>
+															<td align="left">@item.InsuredsName</td>
+															<td>@Convert.ToDateTime(item.PolicyEffectiveDate).ToString("MM/dd/yyyy") - @Convert.ToDateTime(item.PolicyExpirationDate).ToString("MM/dd/yyyy")</td>
+															<td>@item.CreatedOn.ToString("MM/dd/yyyy")</td>
+															<td align="right">@CommonUtility.ConvertToCurrencyFormat(item.OriginalInvoiceAmount, false, 2)</td>
+															<td align="right">@CommonUtility.ConvertToCurrencyFormat(item.AppliedAmount, false, 2)</td>
+															<td align="right">@CommonUtility.ConvertToCurrencyFormat(item.RemainingBalance, false, 2)</td>
+														</tr>
+														i++;
+													}
+
+													<tr style="font-weight:bold; background:#f9f9f9;">
+														<td colspan="7" align="right" class="fs-13">Total Applied Amount :</td>
+														<td align="right" class="fs-14">@CommonUtility.ConvertToCurrencyFormat(Model?.PaymentApplicationLineItemsList.Sum(x => x.AppliedAmount), false, 2)</td>
+														<td align="right"></td>
+													</tr>
+												}
+												else
+												{
+													<tr><td colspan="7">No records</td></tr>
+												}
+											}
+										</tbody>
+									</table>
+								</div>
+							</div>
+						</td>
+					</tr>
+					<tr>
+						<td height="20px"></td>
+					</tr>
+					<tr>
+						<td>
+							<div style="padding: 0 15px 15px 15px; background-color:#fff;" align="center">
+								<table border="0" cellspacing="0" cellpadding="8" style="width:100%; border-collapse: collapse; margin-top:10px; font-family: Arial, sans-serif;">
+									<tbody>
+										<tr style="font-weight:bold; background-color:#ffefc6;">
+											<td align="right" style="width:90%;" class="fs-16">Remaining Unapplied Amount:</td>
+											<td class="fs-16">@CommonUtility.ConvertToCurrencyFormat((Model?.Amount - Math.Abs(Convert.ToDouble(Model?.PaymentApplicationLineItemsList.Sum(x => x.AppliedAmount)))) - writeoffAppliedAmount, false, 2)</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</td>
+		</tr>
+	</table>
+	@if (!(ViewData["IsPDF"] as bool? ?? false))
+	{
+		@* <div class="" style="position: absolute;right: 30px;top: 50px;">
+			<button type="button" data-name="btnExportPaymentReceipt" class="btn btn-outline-primary btn-sm me-2" data-payment-id="@(paymentid)" data-file-type-id="@(MasterLookup._LUFileTypes.PDF)">
+				<i class="ri-file-pdf-2-line me-1"></i> Export
+			</button>
+		</div> *@
+		<div class="clsExportbtn">
+			<div class="text-end">
+				<button type="button" data-name="btnExportPaymentReceipt" class="btn btn-outline-primary btn-sm " data-payment-id="@(paymentid)" data-file-type-id="@(MasterLookup._LUFileTypes.PDF)">
+					<i class="ri-file-pdf-2-line me-1"></i> Export
+				</button>
+			</div>
+		</div>
+	}
+</body>
+</html>

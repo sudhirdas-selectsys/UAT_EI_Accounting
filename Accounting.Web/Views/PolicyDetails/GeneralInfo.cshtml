@@ -1,0 +1,113 @@
+﻿@model PolicyDetails
+
+<div class="row">
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Corporation" name="Corporation" value="@Model.Corporation">
+			<label>Corporation</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Policy Installment Code" name="PolicyInstallmentCode" value="@Model.PolicyInstallmentCode">
+			<label>Policy Installment Code</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Location" name="Location" value="@Model?.Location">
+			<label for="location">Location</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Risk" name="RiskState" value="@Model?.RiskState">
+			<label for="risk">Risk</label>
+		</div>
+	</div>
+	<div class="col-md-6 col-xl-4 mb-3">
+		<div class="form-floating">
+			@{
+				var PaymentPlansList = LookupUtility.GetAllPaymentPlans();
+			}
+			<select class="form-select" name="PaymentPlan">
+				<option value="" selected="selected">Select</option>
+				@foreach (var item in PaymentPlansList)
+				{
+					<option value="@item.Code" selected="@(Model!=null && Model.PaymentPlan?.ToLower()== item.Code.ToLower())">@item.Name</option>
+				}
+
+			</select>
+			<label for="paymentPlan">Payment Plan</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<select class="form-select" id="billingType" name="billingType">
+				<option value="" selected="selected">Select</option>
+				@{
+					var BillingTypeList = LookupUtility.GetAllBillingTypes();
+					foreach (var billingtype in BillingTypeList)
+					{
+						<option value="@billingtype.Code" selected="@(Model != null && Model.BillType?.ToLower() == billingtype.Code.ToLower())">@billingtype.Name</option>
+					}
+				}
+			</select>
+			<label for="billingType">Billing Type</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input class="form-control flatpickr flatpickr-input" type="text" placeholder="MM/DD/YYYY" name="EffectiveDate" value="@Model?.EffectiveDate.ToShortDateString()">
+			<label for="effectiveDate">Effective Date</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input class="form-control flatpickr flatpickr-input" type="text" placeholder="MM/DD/YYYY" name="ExpirationDate" value="@Model?.ExpirationDate.ToShortDateString()">
+			<label for="expirationDate">Expiration Date</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input class="form-control flatpickr flatpickr-input" type="text" placeholder="MM/DD/YYYY" name="CancelDate" value="@Model?.CancelDate.ToShortDateString()">
+			<label for="cancelDate">Cancel Date</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Policy Action" name="PolicyAction" value="@Model?.PolicyAction" readonly>
+			<label for="policyAction">Policy Action</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="LOB Override" name="LOBOverride" value="@Model?.LOBOverride" readonly>
+			<label for="lobOverride">LOB Override</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Policy Type" name="PolicyType" value="@Model?.PolicyType">
+			<label for="policyType">Policy Type</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Transaction Type" name="TransactionType" value="@Model?.TransactionType">
+			<label for="TransactionType">Transaction Type</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Policy Description" name="PolicyDescription" value="@Model?.PolicyDescription">
+			<label for="PolicyDescription">Policy Description</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Invoice Note" name="InvoiceNote" value="@Model?.InvoiceNote">
+			<label for="InvoiceNote">Invoice Note</label>
+		</div>
+	</div>
+</div>

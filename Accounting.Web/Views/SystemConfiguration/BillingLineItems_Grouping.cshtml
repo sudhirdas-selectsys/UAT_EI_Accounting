@@ -1,0 +1,100 @@
+﻿@model List<LOBCarrierGrouping>
+@{
+	var TabName = ViewBag.TabName != null ? ViewBag.TabName : "";
+}
+<style>
+	.data-line-items .carrier-label {
+		color: #333;
+		font-size: 12px;
+	}
+
+	.data-line-items span {
+		font-size: 12px;
+	}
+
+	.data-line-items span {
+		font-weight: 600;
+	}
+
+	.ar-accordion.states .accordion-button::before {
+		content: none;
+	}
+
+	.ar-accordion.states .accordion-button:not(.collapsed)::after, .ar-accordion.states .accordion-button::after {
+		display: block;
+	}
+
+	.invoice-data-view-item label {
+		color: #707070;
+		display: block;
+		font-size: 12px;
+		position: relative;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		text-wrap: nowrap;
+	}
+
+	.invoice-data-view-item span {
+		display: block;
+		position: relative;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		text-wrap: nowrap;
+	}
+
+	.invoice-data-view-item span {
+		font-weight: 700;
+	}
+
+		.invoice-data-view-item span.premium {
+			color: #6f4ef6;
+		}
+</style>
+<div>
+	<div class="position-relative">
+
+		<div class="accordion ar-accordion states" id="LOBCarrierGrouping">
+			@{
+				if (Model?.Count() > 0)
+				{
+					foreach (var item in Model)
+					{
+						<div class="accordion-item">
+							<div class="accordion-header">
+								<div class="position-relative" style="flex-grow:1;">
+									<button class="accordion-button w-100 collapsed" type="button" data-bs-toggle="collapse" data-name="accLOBCarrier" data-lob-carrier-id="@item.LOB_Carrier_Grouping_Id" data-bs-target="#collapse_@item.LOB_Carrier_Grouping_Id" data-tab-type="@TabName" >
+										<div class="d-flex flex-row w-100 gap-3 data-line-items state-actions">
+											<div class="invoice-data-view-item text-start me-3">
+												<label class="fw-medium">LOBs: </label>
+												<span class="custom-text-truncate" style="width:120px;" title="@(string.IsNullOrEmpty(item.LOBs) ? "All LOBs" : item.LOBs)">@(string.IsNullOrEmpty(item.LOBs) ? "All LOBs" : item.LOBs)</span>
+											</div>
+											<div class="invoice-data-view-item text-start me-3">
+												<label class="fw-medium">Carriers: </label>
+												<span class="custom-text-truncate" style="width:250px;" title="@(string.IsNullOrEmpty(item.Carriers) ? "All Carriers" : item.Carriers)">@(string.IsNullOrEmpty(item.Carriers) ? "All Carriers" : item.Carriers)</span>
+											</div>
+											<div class="invoice-data-view-item text-start me-3">
+												<label class="fw-medium">Description: </label>
+												<span class="custom-text-truncate" style="width:300px;" title="@item.Description">@item.Description</span>
+											</div>
+
+										</div>
+									</button>
+								</div>
+							</div>
+
+							<div id="collapse_@item.LOB_Carrier_Grouping_Id" class="accordion-collapse collapse" data-bs-parent="#LOBCarrierGrouping" style="">
+								<div class="accordion-body">
+									<div class="position-relative border" style="min-height: 220px; max-height: 220px;overflow-y: auto;">
+										<div class="table-responsive " data-name="divLineItemstableContainer_@item.LOB_Carrier_Grouping_Id">
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					}
+				}
+			}
+
+		</div>
+	</div>
+</div>

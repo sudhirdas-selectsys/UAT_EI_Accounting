@@ -1,0 +1,58 @@
+﻿@model List<LU_LineItems_Clients>;
+<style>
+	.cta-buttons {
+		top: -25px;
+		width: 98%;
+	}
+</style>
+<div class="position-relative">
+	@* <div class="row align-items-center g-2 mb-3">
+		<div class="col-md-3">
+			<div class="row mx-0 my-1">
+				<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end">Directions</label>
+				<div class="col-12 col-xl-8">
+					<select class="form-select" name="Direction_Id" data-name="Direction_Id">
+						<option value="">Select</option>
+						@{
+							var Directions = LookupUtility.GetAllDirections().Where(x => x.Direction_Id == MasterLookup._Directions.AR || x.Direction_Id == MasterLookup._Directions.AP);
+							if (Directions?.Count() > 0)
+							{
+								foreach (var directions in Directions)
+								{
+									<option value="@directions.Direction_Id">@directions.Name</option>
+								}
+							}
+						}
+					</select>
+
+				</div>
+			</div>
+		</div>
+		<div class="col-md-3">
+			<div class="row mx-0 my-1">
+				<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end">Bill Types</label>
+				<div class="col-12 col-xl-8">
+					<select class="form-select" name="BillingType_Id" data-name="BillingType_Id">
+						<option value="">Select</option>
+						@{
+							var BillTypes = LookupUtility.GetAllBillingTypes();
+							if (BillTypes?.Count() > 0)
+							{
+								foreach (var billType in BillTypes)
+								{
+									<option value="@billType.BillingType_Id">@billType.Name</option>
+								}
+							}
+						}
+					</select>
+
+				</div>
+			</div>
+		</div>
+		<div class="col-md-2">
+			<button class="btn btn-primary btn-sm" data-name="btnSearchLineItemMapping" href="javascript:void(0)"><i class="ri-search-2-line me-1"></i>Search</button>
+			<button class="btn btn-primary btn-sm  me-1" data-name="btnAddLineItemMapping" href="javascript:void(0)"><i class="ri-add-circle-line me-1"></i>Add</button>
+		</div>
+	</div> *@
+	<div data-name="divLineItemMappingList"></div>
+</div>

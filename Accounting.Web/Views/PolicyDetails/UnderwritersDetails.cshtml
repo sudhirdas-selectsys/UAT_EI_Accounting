@@ -1,0 +1,83 @@
+﻿@model PolicyDetails
+@{
+	var UnderWriterDetails = Model?.UnderWriterDetails;
+}
+
+<div class="row">
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Name" name="UnderWriterDetails.Name" value="@UnderWriterDetails?.Name">
+			<label for="UnderWriterDetails.Name">Name</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Assigned" name="UnderWriterDetails.AssignUserName" value="@UnderWriterDetails?.AssignUserName">
+			<label for="UnderWriterDetails.AssignUserName">Assigned</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Address1" name="UnderWriterDetails.Address1" value="@UnderWriterDetails?.Address1">
+			<label for="UnderWriterDetails.Address1">Address1</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Address2" name="UnderWriterDetails.Address2" value="@UnderWriterDetails?.Address1">
+			<label for="UnderWriterDetails.Address2">Address2</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="City" name="UnderWriterDetails.City" value="@UnderWriterDetails?.City">
+			<label for="UnderWriterDetails.City">City</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Country" name="UnderWriterDetails.Country" value="@UnderWriterDetails?.Country">
+			<label for="UnderWriterDetails.Country">Country</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="County" name="UnderWriterDetails.County" value="@UnderWriterDetails?.County">
+			<label for="UnderWriterDetails.County">County</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<select class="form-select" name="UnderWriterDetails.State">
+				<option value="" selected="">Select</option>
+				@{
+					var StateList = LookupUtility.GetAllStates();
+					foreach (var state in StateList)
+					{
+						<option value="@state.StateCode" selected="@(UnderWriterDetails != null && UnderWriterDetails.State == state.StateCode)">@state.StateCode</option>
+					}
+				}
+			</select>
+			<label for="UnderWriterDetails.State">State</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Zipcode" name="UWZipCode" value="@UnderWriterDetails?.ZipCode">
+			<label for="UWZipCode">Zipcode</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Consolidated Guid" name="UnderWriterDetails.ConsolidatedGuid" value="@UnderWriterDetails?.ConsolidatedGuid">
+			<label for="UnderWriterDetails.ConsolidatedGuid">Consolidated Guid</label>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,135 @@
+﻿@model List<MakePayments>
+
+@{
+
+    var Report_Id = ViewBag.Report_Id;
+
+    var FileType_Id = ViewBag.FileType_Id;
+
+    var alldata = Model;
+    var ClientId = ViewBag.ClientID;
+}
+<div class="innerpages paymentModal" data-name="CreateBillContainer" id="CreateBillContainer">
+    <div class="card border-0 mb-3">
+        <div class="card-body">
+            <div class="card-title">Payee Information</div>
+            <p class="mb-0 pt-2" data-name="payeeInformation">
+                <div class="d-flex gap-3 mb-2 mt-2">
+                    <label class="flex-grow-1">Name to Print on Checks:</label>
+                    <input type="text" class="form-control" style="width: 228px;" id="showPayeeName" data-name="ShowPayeeName" value="" readonly />
+                    <a href="javascript:void(0)" data-name="editPayeeNameOnCheck"
+                       title="Edit">
+                        <i class="ri-edit-line" style="font-size:16px; color: #5F2EE5; cursor:pointer; width:4%"></i>
+                    </a>
+                    <a href="javascript:void(0)" data-name="savePayeeNameOnCheck"
+                       title="Save" style="display:none;">
+                        <i class="ri-save-line" style="font-size:16px; color:#5F2EE5; cursor:pointer;"></i>
+                    </a>
+                </div>
+        </div>
+    </div>
+    <div class="card border-0 mb-3">
+        <div class="card-body">
+            <div class="card-title">Payment Summary</div>
+            <div class="d-flex gap-3 mb-2 pt-2"><label class="flex-grow-1">Total Selected Amount:</label><strong id="totalSelectedAmount" data-name="totalSelectedAmount">$0.00</strong></div>
+            <div class="d-flex gap-3 mb-2"><label class="flex-grow-1">Number of Invoice line items:</label><strong id="selectedLineItemCount" data-name="selectedLineItemCount">0</strong></div>
+            <div class="d-flex gap-3 mb-2">
+                <label class="flex-grow-1">Payment Type:</label>
+                <select class="form-select" data-name="PaymentType" name="PaymentType" style="width:100px;">
+                    <option value="">select</option>
+                    @{
+                        var PaymentTypes = LookupUtility.GetAllPaymentTypes().Where(x => x.PaymentType_Id == MasterLookup._PaymentTypes.Check || x.PaymentType_Id == MasterLookup._PaymentTypes.Bill);
+                        foreach (var type in PaymentTypes)
+                        {
+                            <option value="@type.PaymentType_Id">@type.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="d-flex gap-3 mb-2 d-none" data-name="OperatingBankContainer">
+                <label class="flex-grow-1">Bank Account:</label>
+                <select class="form-select" data-name="OperatingBank" name="OperatingBank" style="width:330px;">
+                    <option value="">select</option>
+                    @{
+                        var BankAccounts = LookupUtility.GetAllOperatingBanks().Where(x => x.Client_Id == ClientId);
+                        foreach (var type in BankAccounts)
+                        {
+                            <option value="@type.OperatingBank_Id">@type.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="d-flex gap-3 mb-2">
+                <label class="flex-grow-1">Payment Date:</label><input type="text" id="paymentDate" data-name="PaymentToDate" class="form-control text-end" style="width:113px;" />
+                <div class="d-flex gap-3 mb-2"><label class="flex-grow-1">Memo:</label><input type="text" id="memo" data-name="TextMemo" class="form-control text-end" style="width:113px;" /></div>
+            </div>
+
+        </div>
+    </div>
+
+    <div class="alert alert-warning mb-3">
+        <div class="fw-bold">Note:</div>
+        <p class="mb-0">This payment will be applied to the selected invoices shown on the previous screen.</p>
+    </div>
+
+    <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" value="" id="checkDefault" data-name="SentComissionStatement" checked>
+        <label class="form-check-label fw-bold" for="checkDefault">
+
+            Post <span style="color: #6c57d9;">Commission Statement</span> to Agent portal
+        </label>
+    </div>
+    <div class="mb-3">
+        <small class="trailing-text d-none" data-name="qboMessage">
+            Create a bill to be paid in QuickBooks Online
+        </small>
+        <small class="trailing-text d-none" data-name="checkMessage">
+            Create check to be paid out of EI Accounting
+        </small>
+        <button class="btn btn-primary pay-btn-large" type="button" data-name="btnConfirmBillCreation" data-reportid="@(Report_Id)" data-file-type-id="@(FileType_Id)">Confirm Payment Creation</button>
+    </div>
+    <div class="pb-4">
+        <button class="btn btn-outline-primary" data-bs-dismiss="modal" type="button">Cancel</button>
+    </div>
+</div>
+<script src="~/js/createbill.js" asp-append-version="true"></script>
+<style>
+
+    .modal-dialog-scrollable {
+        height: auto !important;
+    }
+
+        .modal-dialog-scrollable .modal-body {
+            overflow: visible !important;
+            padding-bottom: 1rem !important
+        }
+
+    .form-select {
+        padding: 2px 8px;
+        height: auto;
+    }
+</style>
+<script>
+    flatpickr("#paymentDate", {
+        dateFormat: "m/d/Y",
+        defaultDate: "today",
+        // minDate: "today"
+        minDate: new Date().setHours(0,0,0,0),
+        static: true
+    });
+        $(document).on('change', '[data-name="PaymentType"]', function () {
+        var paymentType = $(this).val();
+        var checkPaymentTypeId = '@MasterLookup._PaymentTypes.Check';
+
+        var $bankContainer = $('[data-name="OperatingBankContainer"]');
+        var $operatingBank = $('[data-name="OperatingBank"]');
+
+        if (paymentType == checkPaymentTypeId) {
+            $bankContainer.removeClass('d-none');
+        } else {
+            $bankContainer.addClass('d-none');
+            $operatingBank.val('');
+            $operatingBank.removeClass('is-invalid');
+        }
+    });
+</script>

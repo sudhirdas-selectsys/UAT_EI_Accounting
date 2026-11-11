@@ -1,0 +1,51 @@
+﻿@model LU_LineItems;
+
+<div>
+	<form data-name="frmLineItem">
+		<div class="row">
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>Name</label>
+					<input type="hidden" class="form-control" name="LineItem_Id" value="@Model?.LineItem_Id">
+					<input type="text" class="form-control" placeholder="Name" name="Name" autocomplete="off" data-val="true" value="@Model?.Name">
+
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>Code</label>
+					<input type="text" class="form-control" placeholder="Code" name="Code" autocomplete="off" data-val="true" value="@Model?.Code">
+
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>Description</label>
+					<textarea type="text" class="form-control" placeholder="Description" name="Description" autocomplete="off" data-val="true">@Model?.Description</textarea>
+
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>Line Item Type</label>
+					<select class="form-select" name="LineItemType_Id" data-name="LineItemType_Id">
+						<option value="">Select</option>
+						@{
+							var LineTypesList = LookupUtility.GetAllLineItemTypes().Where(x => x.LineItemType_Id == MasterLookup._LineItemTypes.Fee || x.LineItemType_Id == MasterLookup._LineItemTypes.Tax || x.LineItemType_Id == MasterLookup._LineItemTypes.CarrierFee);
+							foreach (var item in LineTypesList)
+							{
+								<option value="@item.LineItemType_Id" selected="@(Model != null && Model.LineItemType_Id == item.LineItemType_Id)">@item.Name</option>
+							}
+						}
+					</select>
+
+				</div>
+			</div>
+		</div>
+		<div class="offcanvas-footer text-end">
+			<button type="button" class="btn btn-secondary" data-name="btnClose" data-bs-dismiss="offcanvas">Close</button>
+			<button type="button" class="btn btn-primary" data-name="btnSaveLineItem">Save changes</button>
+		</div>
+	</form>
+</div>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

@@ -1,0 +1,834 @@
+﻿@using Newtonsoft.Json
+@model PolicyDetails
+@{
+	var Clients = Model.Clients;
+	var AgentDetails = Model.AgentDetails;
+	var CarrierDetails = Model.CarrierDetails;
+	var InsuredDetails = Model.InsuredDetails;
+	var WholesalerDetails = Model.WholesalerDetails;
+	var BillingType_Id = LookupUtility.GetAllBillingTypes().FirstOrDefault(x => x.Code == Model.BillType)?.BillingType_Id;
+	var PolicyDetails_Id = Model.Id;
+	var InstallmentNo = Model.InstallmentNo;
+	var minPremium = Model.PolicyDetailsLineItemsList
+					.Where(x => x.LineType != null && x.LineType.Equals("Premium", StringComparison.OrdinalIgnoreCase))
+					.Select(x => (double?)x.MinPremium)
+					.FirstOrDefault();
+	var PaymentDueOn = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymentDueOn);
+	var Underwriter = Model.UnderWriterDetails;
+	var showInsuredEMailandPhoneNumber =LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.ShowInsuredBillEmailAndPhone);
+	var showAgencyEMailandPhoneNumber = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.ShowAgencyBillEmailAndPhone);
+	var installmentData = Model?.Installments;
+	var invoiceShowRemainingInstallments = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceShowRemainingInstallments);
+}
+@{
+	var DefaultTemplate = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceHasDefaultTemplate);
+	var hasDefaultTemplate = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.RTWHasDefaultTemplate);
+	var downPayment = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.RTWHasDownPayments);
+	if (!string.IsNullOrEmpty(DefaultTemplate) || !string.IsNullOrEmpty(hasDefaultTemplate))
+	{
+		if(InstallmentNo == 0 && !string.IsNullOrEmpty(downPayment) && BillingType_Id == MasterLookup._BillingTypes.Insured && (Model?.TransactionType == MasterLookup._EITransactionTypes.NEW || Model?.TransactionType == MasterLookup._EITransactionTypes.REN))
+		{
+			@Html.Partial($"GenerateInvoice_DP_{Clients.CompanyCode}", Model);
+		}
+		else
+		{
+			@Html.Partial($"GenerateInvoice_{Clients.CompanyCode}", Model);
+		}
+	}
+	else
+	{
+				<style>
+					.invoice-logo-wrapper {
+						height: 100px; /* increase visible logo area */
+						display: flex;
+						align-items: center; /* vertical center */
+					}
+
+					.invoice-logo-img {
+						max-height: 110px;
+						width: auto;
+						max-width: 220px; /* prevents very wide logos */
+						object-fit: contain; /* no distortion */
+					}
+				</style>
+				<link href="~/css/generateinvoices.css" rel="stylesheet" asp-append-version="true" />
+				<div class="invoice-page">
+				<table width="100%" cellpadding="0" cellspacing="0" border="0">
+					<tbody>
+						<tr>
+							<td style="padding: 0px 0;font-family: 'Arial', sans-serif; color: #333; font-size: 12px; line-height:23px;">
+								<table border="0" cellspacing="0" cellpadding="0" width="100%" align="center" style="border-color:rgba(0,0,0,.09);">
+									<tbody>
+										<tr>
+											<td>
+												<div style="padding:20px;" class="pt-0">
+													<table class="invoice-pdf-table">
+														<tbody>
+															<tr>
+														@{
+															string base64Image = Clients != null ? Convert.ToBase64String(Clients.Logo) : "";
+															string imgSrc = !string.IsNullOrEmpty(base64Image) ? $"data:image/jpg;base64,{base64Image}" : "";
+														}
+																<td>
+
+															@{
+																var SettingsLogo = CommonUtility.GetEntitySettingValue<byte[]>((Clients?.Client_Id ?? 0), MasterLookup._EntityTypes.Carrier, CarrierDetails.CarrierDetail_Id, MasterLookup._Settings.InvoiceCarrierLogo);
+																if (SettingsLogo?.Count() > 0)
+																{
+																	string base64CImage = Clients != null ? Convert.ToBase64String(SettingsLogo) : "";
+																	string imgCSrc = !string.IsNullOrEmpty(base64CImage) ? $"data:image/jpg;base64,{base64CImage}" : "";
+																					<div class="invoice-logo-wrapper">
+																						<img src="@imgCSrc" alt="Client Logo" class="invoice-logo-img" />
+																					</div>
+																	// <img src="@imgCSrc" alt="Client Logo" height="88" />
+																}
+																else
+																{
+																					<div class="invoice-logo-wrapper">
+																						<img src="@imgSrc" alt="Client Logo" class="invoice-logo-img" />
+																					</div>
+																	//<img src="@imgSrc" alt="Client Logo" height="88" />
+																}
+															}
+																</td>
+																<td align="right" style="line-height:23px !important;">
+															@{
+																var SettingsheaderText = CommonUtility.GetEntitySettingValue<bool>((Clients?.Client_Id ?? 0), MasterLookup._EntityTypes.Carrier, CarrierDetails.CarrierDetail_Id, MasterLookup._Settings.InvoiceShowCarrierHeader);
+																var CarrierSettingsAddress = CommonUtility.GetEntitySettingValue<string>((Clients?.Client_Id ?? 0), MasterLookup._EntityTypes.Carrier, CarrierDetails.CarrierDetail_Id, MasterLookup._Settings.CarrierSpecificAddress);
+																var ShowEmail = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceShowEmail);
+																if (SettingsheaderText && CarrierSettingsAddress != null)
+																{
+																	@CarrierDetails.Name <br />
+																	@Html.Raw(CarrierSettingsAddress)
+																}
+																else
+																{
+																	@Clients?.CompanyName <br />
+																	@Clients?.Address <br />
+																	@($"{Clients?.City}  {Clients?.State} {Clients?.ZipCode}")<br />
+																	if (!string.IsNullOrEmpty(ShowEmail))
+																	{
+																	    <b>@Clients?.Email</b>
+																	}
+																}
+															}
+
+																</td>
+															</tr>
+														</tbody>
+													</table>
+												</div>
+												<table class="invoice-pdf-table">
+													<tbody>
+														<tr>
+															<td>
+																<div class="invoice-info pt-50" style="padding-left:30px;padding-right:20px;">
+																<table class="invoice-details">
+																		<tbody>
+																			<tr>
+																				<td style="padding-left:0;" width="65%" valign="top">
+																					<p style="line-height:24px">
+																		<strong>Bill to</strong><br />
+																			@{
+																				var FormatAddress = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceFormatAddress);
+																				var ShowInsuredDetails = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceShowInsuredDetails);                                                                                
+																				if (BillingType_Id == MasterLookup._BillingTypes.Insured)
+																				{
+																					<span>@InsuredDetails.Name</span><br />
+																					if (!string.IsNullOrEmpty(FormatAddress))
+																					{
+																						<span>@InsuredDetails.Address1,</span><br />
+																						<span>@InsuredDetails.City,</span>
+																						<span>@InsuredDetails.State,</span>
+																						<span>@InsuredDetails.ZipCode</span>
+																					    if(!string.IsNullOrEmpty(@InsuredDetails?.Email))
+																						  {
+																						     <span>@InsuredDetails.Email</span>
+																						  }		
+																						  if(!string.IsNullOrEmpty(@InsuredDetails?.Phone))
+																						  {
+																						  	<br/><span>@InsuredDetails.Phone</span>
+																						  }	
+																					}
+																					else
+																					{
+																						<span>@($"{InsuredDetails.Address1}, {InsuredDetails.City}, {InsuredDetails.State}, {InsuredDetails.ZipCode}")</span> <br />
+																						if(!string.IsNullOrEmpty(showInsuredEMailandPhoneNumber))
+																						{
+																						  if(!string.IsNullOrEmpty(@InsuredDetails?.Email))
+																						  {
+																						     <span>@InsuredDetails.Email</span>
+																						  }		
+																						  if(!string.IsNullOrEmpty(@InsuredDetails?.Phone))
+																						  {
+																						  	<br/><span>@InsuredDetails.Phone</span>
+																						  }	
+																						}
+																					}
+																				}
+																				else if (BillingType_Id == MasterLookup._BillingTypes.Agency || BillingType_Id == MasterLookup._BillingTypes.AgencyDetailed)
+																				{
+																					var displayAccountingId = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.DisplayAccountingId);
+																					if (!string.IsNullOrEmpty(displayAccountingId))
+																					{
+																						if (!string.IsNullOrEmpty(AgentDetails?.EI_Accounting_Id))
+																						{
+																							<span>Accounting ID: @AgentDetails.EI_Accounting_Id</span>
+																							<br />
+																						}
+																					}
+																							<span>@AgentDetails.Name</span>
+																							<br />
+																					if (!string.IsNullOrEmpty(FormatAddress))
+																					{
+																						<span>@AgentDetails.Address1,</span><br />
+																						<span>@AgentDetails.City,</span>
+																						<span>@AgentDetails.State,</span>
+																						<span>@AgentDetails.ZipCode</span>
+																						if(!string.IsNullOrEmpty(showAgencyEMailandPhoneNumber))
+																						{
+																							if(!string.IsNullOrEmpty(@AgentDetails?.Email))
+																							{
+																								<span>@AgentDetails.Email</span>
+																							}		
+																							if(!string.IsNullOrEmpty(@AgentDetails?.Phone))
+																							{
+																								<br/><span>@AgentDetails.Phone</span>
+																							}		
+																						}
+																					}
+																					else
+																					{
+																						<span>@($"{AgentDetails.Address1}, {AgentDetails.City}, {AgentDetails.State}, {AgentDetails.ZipCode}")</span> <br />
+																						if(!string.IsNullOrEmpty(showAgencyEMailandPhoneNumber))
+																						{
+																							if(!string.IsNullOrEmpty(@AgentDetails?.Email))
+																							{
+																								<span>@AgentDetails.Email</span>
+																							}		
+																							if(!string.IsNullOrEmpty(@AgentDetails?.Phone))
+																							{
+																								<br/><span>@AgentDetails.Phone</span>
+																							}		
+																						}
+																					}
+																				}
+																				else if (BillingType_Id == MasterLookup._BillingTypes.Direct)
+																				{
+																					if (WholesalerDetails != null)
+																					{
+																						<span>@WholesalerDetails.DisplayName</span> <br />
+																					}
+																					else
+																					{
+																						<span>@CarrierDetails.Name</span>
+																						<br />
+																						if (!string.IsNullOrEmpty(FormatAddress))
+																						{
+																							<span>@CarrierDetails.Address1,</span>
+																							<br />
+																							<span>@CarrierDetails.City,</span>
+																							<span>@CarrierDetails.State,</span>
+																							<span>@CarrierDetails.ZipCode</span>
+																						}
+																						else
+																						{
+																							<span>@($"{CarrierDetails.Address1}, {CarrierDetails.City}, {CarrierDetails.State}, {CarrierDetails.ZipCode}")</span> <br />
+																						}
+																					}
+																				}
+																			 }
+																	</p>
+																				</td>
+																				<td valign="top" width="35%">
+																							
+																@{
+																	if(!(BillingType_Id == MasterLookup._BillingTypes.Insured) && !string.IsNullOrEmpty(ShowInsuredDetails))
+																	{
+																		<p style="line-height:24px">
+																			<strong>Named Insured:</strong><br />
+																			<span>@InsuredDetails?.Name</span><br />
+																			<span>@InsuredDetails?.Address1</span><br />
+																			<span>@($"{InsuredDetails?.City}, {InsuredDetails?.State}, {InsuredDetails?.ZipCode}")</span> <br />
+																			<strong>Underwriter</strong><br />
+																			<span>@Underwriter?.Name</span>
+																		</p>
+																	}
+																}
+																				</td>
+																			</tr>
+																		</tbody>
+																	</table>
+																
+																	<p style="color:#ddd;margin-top:20px;margin-bottom:20px;">-----------------------------------------------------------------------------------------------------------------------------------------------------------------------</p>
+																	<table class="invoice-details">
+																		<tbody>
+																			<tr>
+																				<td colspan="3" style="padding-left:0;"><strong> Invoice Details</strong></td>
+																			</tr>
+																			<tr>
+																				<td style="padding-left:0;" width="65%" valign="top">
+																					<div>
+																						<span>Invoice Date:</span> @Model?.Invoices?.BillDate.ToString(MasterLookup._ServerDateFormat) <br />
+																				@{
+																					var TransactionEffectiveDate = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceShowTransactionEffectiveDate);
+																					if (!string.IsNullOrEmpty(TransactionEffectiveDate))
+																					{
+																						<span>Transaction Effective Date:</span>
+																						@(((Model?.TransactionType == MasterLookup._EITransactionTypes.NEW || Model?.TransactionType == MasterLookup._EITransactionTypes.REN)
+																						? Model?.EffectiveDate
+																																									: Model?.EndorsementEffectiveDate)?.ToString(MasterLookup._ServerDateFormat))<br />
+																					}
+																					if(string.IsNullOrEmpty(ShowInsuredDetails))
+																					{
+																						<span>Insured:</span> @InsuredDetails?.Name <br />
+																					}
+																					<span>Invoice Number:</span> @Model?.Invoices?.InvoiceNo <br />
+																				}
+																					
+																				@* <span>Payment Due On:</span> @Model?.Invoices?.DueDate.ToShortDateString() <br /> *@
+																				@{
+
+																					<span> @(string.IsNullOrEmpty(PaymentDueOn) ? $"Payment Due On: {Model?.Invoices?.DueDate.ToString(MasterLookup._ServerDateFormat)}" : PaymentDueOn)</span><br />
+																				}
+																						<span>Carrier:</span> @CarrierDetails?.Name <br />
+																				@{																						
+																					var ShowCoverageType = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceShowCoverageType);
+																					if(!string.IsNullOrEmpty(ShowCoverageType))
+																					{
+																						 string lineOfBusiness = "";
+																						 if (Model?.PolicyDetailsLineItemsList?.Any() == true)
+																						 {
+																							 var coverages = Model.PolicyDetailsLineItemsList
+																							 .Where(x => !string.IsNullOrWhiteSpace(x.Coverage))
+																							 .Select(x => x.Coverage.Trim())
+																							 .Distinct(StringComparer.OrdinalIgnoreCase)
+																							 .ToList();
+
+																							 if (coverages.Any(x => x.Equals("Common", StringComparison.OrdinalIgnoreCase)))
+																							 {
+																							     lineOfBusiness = "Common";
+																							 }
+																							 else
+																							 {
+																							     lineOfBusiness = string.Join(", ", coverages);
+																							 }
+																						 }			
+																							<span>Coverage:</span> @lineOfBusiness<br />
+																					}
+																				}
+																				@{																						
+																					if(!string.IsNullOrEmpty(ShowInsuredDetails) )
+																					{
+																						var PaymentPlan = Model?.PaymentPlan == null ? "" : Model.PaymentPlan;																						
+																						@PaymentPlan <br />																					
+																					}
+																				}
+																			</div>
+																				</td>
+																				<td valign="top" width="35%">
+																					<div>
+																						<span>Submission No:</span> @Model?.Submission_Id <br />
+																						Transaction Type:  @(Model?.TransactionType == MasterLookup._EITransactionTypes.END
+																											&& !string.IsNullOrEmpty(Model?.EndorsementNumber?.ToString())
+																											? $"{Model?.TransactionType} #{Model?.EndorsementNumber}"
+																											: Model?.TransactionType)<br />
+																						Policy Number:<br /> @Model?.PolicyNumber<br />
+																						Effective: @Model?.EffectiveDate.ToString(MasterLookup._ServerDateFormat)<br />
+																						Expires: @Model?.ExpirationDate.ToString(MasterLookup._ServerDateFormat)<br />
+																					</div>
+																				</td>
+																			</tr>
+																		</tbody>
+																	</table>
+																</div>
+																<div class="px-20 py-20">
+																	<table class="product-table" style="margin-bottom:20px;">
+																@if (BillingType_Id == MasterLookup._BillingTypes.Insured || BillingType_Id == MasterLookup._BillingTypes.Agency || BillingType_Id == MasterLookup._BillingTypes.AgencyDetailed)
+																{
+																	var HideAgencyColumns = BillingType_Id == MasterLookup._BillingTypes.Insured;
+																	@* && !string.IsNullOrEmpty(LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceHideAgencyCommissionInfo)); *@
+																	int colspanNo = HideAgencyColumns ? 2 : 3;
+																	var asteriskShows = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.AsteriskVisability);
+																	bool premiumContains = false;
+																				<thead>
+																					<tr style="background-color:#f9f9f9">
+																						<th align="left" valign="top">#</th>
+																						<th align="left" valign="top">Txn Type</th>
+																						<th align="left" valign="top" width="25%">Description</th>
+																						<th class="text-right" width="11%" valign="top">Amt </th>
+																						<th class="text-right @(HideAgencyColumns ? "hide-col" : "")" valign="top" width="11%">Agt Comm (%)</th>
+																						<th class="text-right @(HideAgencyColumns ? "hide-col" : "")" valign="top" width="11%">Agt Comm</th>
+																						<th class="text-right" valign="top" width="11%">Net Due</th>
+																					</tr>
+																				</thead>
+																				<tbody>
+																		@{
+																			List<InvoiceDetails> ARListItems = new List<InvoiceDetails>();
+																			if (Model?.Invoices?.InvoicesDetailsList?.Count > 0)
+																			{
+																				int i = 1;
+																				foreach (var item in Model.Invoices.InvoicesDetailsList)
+																				{
+																					LU_BillingType_LineItems_Directions BillingLineItemsDirections = LookupUtility.GetAllLU_BillingType_LineItems_Directions().FirstOrDefault(x => x.BillingType_LineItems_Directions_Id == item.BillingType_LineItems_Directions_Id);
+																					LU_LineItems_Directions LineItemsDirections = LookupUtility.GetAllLineItems_Directions().FirstOrDefault(x => x.LineItems_Directions_Id == BillingLineItemsDirections?.LineItems_Directions_Id);
+																					LU_LineItems_Clients lineItems_Clients = LookupUtility.GetAllLineItems_Clients().FirstOrDefault(x => x.LineItems_Clients_Id == LineItemsDirections?.LineItems_Clients_Id);
+																					LU_LineItems LineItems = LookupUtility.GetAllLineItems().FirstOrDefault(c => c.LineItem_Id == lineItems_Clients?.LineItem_Id);
+																					LU_LineItemTypes LineType = LookupUtility.GetAllLineItemTypes().FirstOrDefault(c => c.LineItemType_Id == LineItems?.LineItemType_Id);
+																					if (LineItemsDirections?.Direction_Id == MasterLookup._Directions.AR)
+																					{
+																						if (LineItems.LineItem_Id != MasterLookup._LineItems.HouseCommission && LineItems.LineItem_Id != MasterLookup._LineItems.TotalCommission && LineType.LineItemType_Id != MasterLookup._LineItemTypes.Commission)
+																						{
+																															<tr>
+																																<td valign="top">@i</td>
+																																<td valign="top"><strong>@item.LineTypeName</strong></td>
+																																@if(item.Description.Contains("- Premium") && string.Equals(asteriskShows,"true"))
+																																{
+																																		premiumContains = true;
+																																		<td>@item.Description<span style="color:red"> *</span></td>
+																																}
+																																else
+																																{
+																																	<td>@item.Description</td>
+																																}
+																								@if (item.LineTypeName.Contains("Premium") || lineItems_Clients?.Is_Commissionable == true)
+																								{
+																																		<td class="text-right" valign="top">@CommonUtility.ConvertToCurrencyFormat(item.ActualPremium, false, 2)</td>
+																								}
+																								else
+																								{
+																																		<td class="text-right" valign="top">@CommonUtility.ConvertToCurrencyFormat(item.Amount, false, 2)</td>
+																								}
+
+																																<td class="text-right @(HideAgencyColumns ? "hide-col" : "")" valign="top">@($"{item.AgentCommissionPercent} %")</td>
+																																<td class="text-right @(HideAgencyColumns ? "hide-col" : "")" valign="top">@CommonUtility.ConvertToCurrencyFormat(item.AgentCommission, false, 2)</td>
+																																@*<td class="text-right" valign="top">@CommonUtility.ConvertToCurrencyFormat(item.RemainingBalance, false, 2)</td>*@
+																																<td class="text-right" valign="top">@CommonUtility.ConvertToCurrencyFormat(HideAgencyColumns ? ((item.LineTypeName.Contains("Premium") || lineItems_Clients?.Is_Commissionable == true) ? item.ActualPremium : item.Amount) : item.RemainingBalance,false, 2)</td>
+																															</tr>
+																							i++;
+																						}
+																						ARListItems.Add(item);
+																					}
+
+																				}
+
+																			}
+																		}
+																					<tr>
+																						@if ( premiumContains && string.Equals(asteriskShows,"true"))
+																						{
+																							<td colspan="@colspanNo" class="no-border"><span style="color:red">* Subject to 25% Minimum Earned</span></td>
+																						}
+																						else
+																						{
+																							<td colspan="@colspanNo" class="no-border"></td>
+																						}
+																			@{
+																				int customColSpan = (@BillingType_Id == MasterLookup._BillingTypes.Insured ? 2 : 3);
+																			}
+																			<td colspan="@customColSpan" class="total-row @(HideAgencyColumns ? "text-end" : "")" style="font-weight:600;">Total Invoice Amount</td>
+																						<td class="total-row fs-18 text-right">@(CommonUtility.ConvertToCurrencyFormat(ARListItems.Sum(x => x.Amount), false, 2))</td>
+																					</tr>
+																		@{
+																			var allowMinimumPremium = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.AllowMinimumPremium);
+																			if (!string.IsNullOrEmpty(allowMinimumPremium))
+																			{
+																									<tr>
+																										<td colspan="@colspanNo" class="no-border"></td>
+																										<td colspan="3" class="total-row @(HideAgencyColumns ? "text-end" : "")" style="font-weight:600;">Minimum Premium</td>
+																										<td class="total-row fs-18 text-right">@(CommonUtility.ConvertToCurrencyFormat(@minPremium, false, 2))</td>
+																				</tr>
+																				// var minimumPremiumMessage = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.MinimumPremiumMessage);
+																				// if (!string.IsNullOrEmpty(minimumPremiumMessage))
+																				// {
+																				// 	<tr>
+																				// 		<td colspan="@colspanNo" class="no-border"></td>
+																				// 		<td colspan="3" class="total-row @(HideAgencyColumns ? "text-end" : "")" style="font-size: 10px !   portant;">@minimumPremiumMessage</td>
+																				// 	</tr>
+																				// }
+																			}
+																		}
+																				</tbody>
+																}
+																else
+																{
+																				<thead>
+																					<tr style="background-color:#f9f9f9">
+																						<th align="left" valign="top">#</th>
+																						<th align="left" valign="top">Txn Type</th>
+																						<th align="left" valign="top" width="25%">Description</th>
+																						<th class="text-right" width="11%" valign="top">Amt </th>
+																						<th class="text-right" width="11%" valign="top">Agt Comm</th>
+																						<th class="text-right" width="11%" valign="top">Net Due</th>
+																					</tr>
+																				</thead>
+																				<tbody>
+																		@{
+																			if (Model?.Invoices?.InvoicesDetailsList?.Count > 0)
+																			{
+																				int i = 1;
+																				foreach (var item in Model.Invoices.InvoicesDetailsList)
+																				{
+																					LU_BillingType_LineItems_Directions BillingLineItemsDirections = LookupUtility.GetAllLU_BillingType_LineItems_Directions().FirstOrDefault(x => x.BillingType_LineItems_Directions_Id == item.BillingType_LineItems_Directions_Id);
+																					LU_LineItems_Directions LineItemsDirections = LookupUtility.GetAllLineItems_Directions().FirstOrDefault(x => x.LineItems_Directions_Id == BillingLineItemsDirections.LineItems_Directions_Id);
+																					LU_LineItems_Clients lineItems_Clients = LookupUtility.GetAllLineItems_Clients().FirstOrDefault(x => x.LineItems_Clients_Id == LineItemsDirections?.LineItems_Clients_Id);
+																					LU_LineItems LineItems = LookupUtility.GetAllLineItems().FirstOrDefault(c => c.LineItem_Id == lineItems_Clients?.LineItem_Id)!;
+																					LU_LineItemTypes LineType = LookupUtility.GetAllLineItemTypes().FirstOrDefault(c => c.LineItemType_Id == LineItems.LineItemType_Id)!;
+																					if (LineItemsDirections.Direction_Id == MasterLookup._Directions.AR)
+																					{
+																													<tr>
+																														<td valign="top">@i</td>
+																														<td valign="top"><strong>@item.LineTypeName</strong></td>
+																														<td>@item.Description</td>
+																														<td class="text-right" valign="top">@CommonUtility.ConvertToCurrencyFormat(item.Amount, false, 2)</td>
+																														<td class="text-right" valign="top">@CommonUtility.ConvertToCurrencyFormat(item.AgentCommission, false, 2)</td>
+																														<td class="text-right" valign="top">@CommonUtility.ConvertToCurrencyFormat(item.RemainingBalance, false, 2)</td>
+																													</tr>
+																						i++;
+																					}
+																				}
+																			}
+																		}
+																					<tr>
+																						<td colspan="3" class="no-border"></td>
+																			<td colspan="2" class="total-row" style="font-weight:600;">Total Invoice Amount</td>
+																						<td class="total-row fs-18 text-right">@(CommonUtility.ConvertToCurrencyFormat(Model?.Invoices?.Amount, false, 2))</td>
+																					</tr>
+																		@{
+
+																			var allowMinimumPremium = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.AllowMinimumPremium);
+																			if (!string.IsNullOrEmpty(allowMinimumPremium))
+																			{
+																									<tr>
+																										<td colspan="3" class="no-border"></td>
+																										<td colspan="3" class="total-row" style="font-weight:600;">Minimum Premium</td>
+																										<td class="total-row fs-18 text-right">@(CommonUtility.ConvertToCurrencyFormat(@minPremium, false, 2))</td>
+																									</tr>
+																			}
+
+																		}
+																				</tbody>
+																}
+																	</table>
+
+																</div>
+														@{
+															if (!string.IsNullOrEmpty(AgentDetails?.ProducerType))
+															{
+																var message = string.Empty;
+																if (string.Equals(@AgentDetails?.ProducerType, MasterLookup._ProducerTypes.Retailer, StringComparison.OrdinalIgnoreCase))
+																{
+																	message = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.RetailerMessage);
+																}
+																else if (string.Equals(@AgentDetails?.ProducerType, MasterLookup._ProducerTypes.Wholesaler, StringComparison.OrdinalIgnoreCase))
+																{
+																	message = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.WholesalerMessage);
+																}
+																if (!string.IsNullOrEmpty(message))
+																{	
+
+																						<div style="border-top:1px solid #ddd; padding-top:20px;" class="px-20">
+																						<b><span>Invoice Message :</span><br/></b>
+																							<div class="footer-text" style="font-weight:300;">@message</div>
+																						</div>
+																}
+															}
+														}
+														@{
+															var minimumPremiumMessage = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.MinimumPremiumMessage);
+															if (!string.IsNullOrEmpty(minimumPremiumMessage))
+															{
+																				<div style="padding-top:15px;">
+																						<div class="footer-text px-20" style="font-weight:300;">@minimumPremiumMessage</div>
+																					</div>
+															}
+														}
+														@if (Clients?.PaymentService_Id == MasterLookup._Services.ePay)
+														{
+																		<div class="py-30">
+																			<table width="100%" cellpadding="0" cellspacing="0"
+																				   style="margin-top:20px; background:#ffffff; border:1px solid #dcdcdc; border-radius:6px;">
+																				<tr>
+																					<td style="padding:15px;">
+																						<div style="font-size:16px !important; color:#333; margin-bottom:10px;">
+																							Additional Information
+																						</div>
+
+																						<table width="100%" cellpadding="5" cellspacing="0">
+																							<tr>
+																								<td style="font-size:14px; color:#555; width:180px; font-weight:bold;">Account Number:</td>
+																								<td style="font-size:14px; color:#000; ">
+																						@Model?.ExternalAccountInformation?.AccountNumber
+																								</td>
+																							</tr>
+																						</table>
+																					</td>
+																				</tr>
+																			</table>
+																		</div>
+														}
+														@if (!string.IsNullOrEmpty(Model?.InvoiceNote))
+														{
+																		<div style="padding-bottom: 10px;text-align: center;">
+																			<strong>Invoice Note:</strong>  @Html.Raw(CommonUtility.CleanHtml(Model?.InvoiceNote))
+																		</div>
+														}
+														@{
+															var showDownpaymentdue = LookupUtility.GetClientSettings(Clients.Client_Id,MasterLookup._ClientSettings.ShowDownPaymentDue);
+															var HidePaymentDuedate = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceHidePaymentDue);
+															if (string.IsNullOrEmpty(HidePaymentDuedate))
+															{
+																<div class="px-50 py-30" style="border-top:1px solid #ddd;">
+																	<div class="footer-text" align="center" style="font-weight:600;">
+																	@if (!string.IsNullOrEmpty(showDownpaymentdue))
+																	{
+																		<span> @(string.IsNullOrEmpty(PaymentDueOn) ? $"Down Payment Due: {(CommonUtility.ConvertToCurrencyFormat(@minPremium, false, 2))}" : PaymentDueOn)</span><br/>
+																	}
+																	<span> @(string.IsNullOrEmpty(PaymentDueOn) ? $"Payment Due On: {Model?.Invoices?.DueDate.ToShortDateString()}" : PaymentDueOn)</span>
+																	</div>
+																</div>
+															}
+															var ACHInformationCarrierWiseSetting = CommonUtility.GetEntitySettingValue<string>((Clients?.Client_Id ?? 0), MasterLookup._EntityTypes.Carrier, CarrierDetails.CarrierDetail_Id, MasterLookup._Settings.ACHInfo);
+															if (!string.IsNullOrEmpty(ACHInformationCarrierWiseSetting))
+															{
+																@Html.Raw(ACHInformationCarrierWiseSetting)
+															}
+															var paymentinstructions_MailCheck = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.Paymentinstructions_MailCheck);
+															var paymentinstructions_ExpressMail = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.Paymentinstructions_ExpressMail);
+															if (!string.IsNullOrEmpty(paymentinstructions_MailCheck) && !string.IsNullOrEmpty(paymentinstructions_ExpressMail))
+															{
+																var mailCheckList = JsonConvert.DeserializeObject<List<string>>(paymentinstructions_MailCheck);
+																var expressMailList = JsonConvert.DeserializeObject<List<string>>(paymentinstructions_ExpressMail);
+																if (mailCheckList?.Count() > 0 && expressMailList?.Count > 0)
+																{
+																						<div class="px-50 py-30 mt-0" style="border-top:1px solid #ddd;">
+																							<div class="footer-text" align="center" style="margin-top: -20px">
+																								<span style="font-weight:600;"> Payment Instructions</span>
+																								<table style="width:100%; border-collapse:collapse; border:1px solid #000;">
+																									<tr>
+																										<td style="width:50%; border:1px solid #000; vertical-align:top; padding:10px;">
+																						@for (int i = 0; i < mailCheckList.Count; i++)
+																						{
+																													<div style="font-weight:@(i == 0 ? "600" : "normal")">@mailCheckList[i]</div>
+																						}
+																										</td>
+																										<td style="width:50%; border:1px thin #000; vertical-align:top; padding:10px;">
+																						@for (int i = 0; i < expressMailList.Count; i++)
+																						{
+																													<div style="font-weight:@(i == 0 ? "600" : "normal")">@expressMailList[i]</div>
+																						}
+																										</td>
+																									</tr>
+																								</table>
+
+																							</div>
+																						</div>
+																}
+															}
+														}
+														@{
+															var PaymentFooterValue = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymentFooter);
+															if (!string.IsNullOrEmpty(PaymentFooterValue))
+															{
+																<div class="px-50 py-30" style="border-top:1px solid #ddd;">
+															 		@{
+															 			
+															 			var accountNumber = AgentDetails?.EI_Accounting_Id ?? @Model?.ExternalAccountInformation?.AccountNumber ?? string.Empty;
+															 			var postalCode = AgentDetails?.ZipCode ?? AgentDetails?.ZipCode ?? string.Empty;
+															 			string dynamicURL = string.Format(PaymentFooterValue, accountNumber, postalCode);
+															 		}
+															 		<div class="footer-text" align="center" style="font-weight:600;"> @Html.Raw(dynamicURL)</div>
+															 	</div>
+															}
+															var InvoicePaymentGuidelines = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymenGuidelines);
+															if (!string.IsNullOrEmpty(InvoicePaymentGuidelines))
+															{
+																				<div class="px-50 py-30" style="border-top:1px solid #ddd;">
+																					<div class="footer-text" align="center" style="font-weight:600;"> @Html.Raw(InvoicePaymentGuidelines)</div>
+																				</div>
+															}
+															if (Clients?.PaymentService_Id == MasterLookup._Services.ePay)
+															{
+																var PaymentURLTemplate = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymentURLTemplate);
+																if (!string.IsNullOrWhiteSpace(PaymentURLTemplate))
+																{
+																						<div class="px-50 py-30" style="border-top:1px solid #ddd;">
+																		<div class="footer-text" align="center" style="font-weight:600;">
+																			Payments can be made via &nbsp; &nbsp; &nbsp;
+																			<div style="font-size:8.63pt !important">NOTE: Credit cards payments are subject to a 3.5% processing fee </div>
+																			<a href="@Model?.ExternalAccountInformation?.PaymentURL" class="epay-payment" target="_blank">
+																				@Model?.ExternalAccountInformation?.PaymentURL
+																			</a>
+																		</div>
+
+																	</div>
+																}
+															}
+															if (Clients?.PaymentService_Id == MasterLookup._Services.CorePay)
+															{
+																var enableCoverPayPaymentLink = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.EnableCoverPayPaymentLink);
+																if (!string.IsNullOrEmpty(enableCoverPayPaymentLink))
+																{
+																	var paymentURL = Model?.ExternalPaymentLink ?? string.Empty;
+																	if (!string.IsNullOrWhiteSpace(paymentURL))
+																	{
+																		var coverPayimagePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "CoverPay", "coverpay-payment-logo.png");
+																		var coverPayimageBytes = System.IO.File.ReadAllBytes(coverPayimagePath);
+																		var coverPayimageBase64 = Convert.ToBase64String(coverPayimageBytes);
+																		var coverPayimageSrc = "data:image/png;base64," + coverPayimageBase64;
+																		<div style="border-top:1px solid #ddd;padding-top:20px;">
+																			<div class="footer-text" align="center" style="font-weight:600;">
+																					<a href="@paymentURL" target="_blank"><img src="@coverPayimageSrc" style="display:block;max-height:35px;margin-top:4px;" /></a>
+																			</div>
+																		</div>
+																	}
+																}
+															}
+															var InvoiceAccountInfo = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymentAccountInfo);
+															if (!string.IsNullOrWhiteSpace(InvoiceAccountInfo))
+															{
+																				<div class="px-50 py-30" style="border-top:1px solid #ddd;">
+																					<div class="footer-text" style="text-align:center; font-style:italic; font-weight:400;">
+																		@Html.Raw(InvoiceAccountInfo)
+																					</div>
+																				</div>
+
+															}
+
+															var InvoiceDetachAndRemitInfo = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoiceDetachAndRemitInfo);
+															if (!string.IsNullOrWhiteSpace(InvoiceDetachAndRemitInfo))
+															{
+																InvoiceDetachAndRemitInfo = InvoiceDetachAndRemitInfo.Replace("{{CorporationName}}", Clients.CompanyName)
+																.Replace("{{CorporationAddress}}", Clients.Address)
+																.Replace("{{CorporationCity}}", Clients.City)
+																.Replace("{{CorporationState}}", Clients.State)
+																.Replace("{{CorporationZipCode}}", Clients.ZipCode);
+																@Html.Raw(InvoiceDetachAndRemitInfo)
+																;
+															}
+														}
+															</td>
+														</tr>
+													</tbody>
+												</table>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				</div>
+				@if(!string.IsNullOrEmpty(invoiceShowRemainingInstallments))
+				{
+					@if(installmentData != null)
+					{
+						@if(InstallmentNo >= 0)
+						{
+							<div class="installment-page">
+								<h4 style="margin-bottom:15px; text-align: center">
+									<strong>Installments as @Model?.Invoices?.BillDate.ToString("MM/dd")</strong>
+								</h4>
+								<h5><strong>Policy Number: @Model.PolicyNumber</strong></h5>
+								<table class="table table-bordered" style="width:100%;">
+									<thead>
+										<tr>
+											<th>Due Date</th>
+											<th>Transaction Type</th>
+											<th>Invoice IDs</th>
+											<th></th>
+											<th class="text-right">Premium</th>
+										</tr>
+									</thead>
+									<tbody>
+											@foreach (var installment in installmentData)
+											{
+												foreach (var transaction in installment.Transactions)
+												{
+													<tr>
+														<td></td>
+														<td>
+															@(transaction.TransactionType == MasterLookup._EITransactionTypes.END
+																&& !string.IsNullOrEmpty(transaction.EndorsementNumber)
+																? $"{transaction.TransactionType} #{transaction.EndorsementNumber}"
+																: transaction.TransactionType)
+														</td>
+														<td>
+															@transaction.InvoiceNo
+														</td>
+														<td></td>
+														<td class="text-right">
+															$@transaction.Premium.ToString()
+														</td>
+													</tr>
+												}
+
+												<tr style="border-bottom: 2px solid #000;">
+													<td>
+														<strong>@installment.DueDate.ToShortDateString()</strong>
+													</td>
+													<td></td>
+													<td></td>
+													<td class="text-right">
+														<strong>Total</strong>
+													</td>
+													<td class="text-right">
+														<strong>
+															$@installment.TotalPremium.ToString()
+														</strong>
+													</td>
+												</tr>
+											}
+									</tbody>            
+								</table>
+
+							</div>
+						}
+			
+					}		
+				}
+				
+				<div class="modal-footer" style="position: sticky; bottom: 0; background-color: #fff;">
+					<button type="button" class="btn btn-primary" data-policydetails_id=@PolicyDetails_Id data-installmentno=@InstallmentNo data-name="downloadPdf">Get PDF</button>
+				</div>
+				<style>
+					.payment-instructions-table {
+						background-color: #f9f9f9;
+						padding: 15px 15px 15px 15px;
+						margin-bottom: 30px;
+						color: #333;
+					}
+					 .invoice-page {
+                          width: 100%;
+                      }
+
+					.installment-page {
+						page-break-before: always;
+						break-before: page;
+
+						/* For browser/modal preview */
+						margin-top: 50px;
+						padding-top: 30px;
+						border-top: 2px solid #ddd;
+					}
+
+					@@media screen {
+						.installment-page {
+							min-height: 500px;
+							margin-top: 50px;
+							padding: 40px;
+							border-top: 2px solid #eee;
+							background-color: #fff;
+						}
+					}
+
+					@@media print {
+						.installment-page {
+							page-break-before: always;
+							break-before: page;
+						}
+					}
+				</style>
+	}
+}

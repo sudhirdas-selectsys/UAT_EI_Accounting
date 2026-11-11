@@ -1,0 +1,242 @@
+﻿@model List<MakePayments>
+
+@{
+	var Invoicedetails = ViewBag.InvoiceDetails;
+	var alldata = Model;
+	var directionId = ViewBag.Direction_Id;
+
+}
+<div class="table-responsive pd-table-scroll">
+	<table class="table table-bordered payment-table nowrap-table mb-0 mt-2" data-sort-config="invoice">
+		<thead>
+			<tr>
+				<th></th>
+				<th>Invoice</th>
+				<th>Insured Name</th>
+				<th>Policy Number</th>
+				<th>Bill Type</th>
+				<th>Line Item</th>
+				<th>Effective Date</th>
+				<th>Transaction Effective Date</th>
+				<th>Transaction Type</th>
+				@if (directionId == MasterLookup._Directions.AP)
+				{
+					<th>AP Amount</th>
+				}
+				@if (directionId == MasterLookup._Directions.AR)
+				{
+					<th>Refund Due</th>
+				}
+				@if(directionId == MasterLookup._Directions.AR)
+				{
+					<th>Refund Paid</th>
+				}
+				else
+				{
+					<th>Amount Collected</th>
+				}
+				@if (directionId == MasterLookup._Directions.AP)
+				{
+					<th>Amount Paid</th>
+				}
+				else
+				{
+					<th hidden>Amount Paid</th>
+				}
+				@if (directionId == MasterLookup._Directions.AP)
+				{
+					<th>Net Due</th>
+				}
+				else if (directionId == MasterLookup._Directions.AR)
+				{
+					<th>Net Outgoing Payment Due</th>
+				}
+				<th></th>
+			</tr>
+		</thead>
+		<tbody class="invoice-table">
+			@if (Model != null && Model.Any())
+			{
+				foreach (var item in Model ?? new List<MakePayments>())
+				{
+					var disabledCss = "";
+					@if (item.RemainingBalance == 0)
+					{
+						disabledCss = "disabled-row";
+					}
+					<tr class="Entity_@item.Entity_Id @disabledCss">
+						<td name="invoice-check">
+							
+								@if (item.RemainingBalance == 0)
+								{
+									<input class="form-check-input invoice-check" type="checkbox"
+										   value=""
+										   data-billtype="@item.BillType"
+										   data-lineitemname="@item.LineTypeName"
+										   data-entity-id="@ViewBag.EntityID"
+										   data-name="payment-checkBox"
+										   data-lineitem-id="@item.LineItemId"
+										   data-invoice-id="@item.Invoice_Id"
+										   data-invoice-lineitem-id="@item.InvoiceLineItem_Id" disabled />
+								}
+								else
+								{
+									<input class="form-check-input invoice-check" type="checkbox"
+										   value=""
+										   data-billtype="@item.BillType"
+										   data-lineitemname="@item.LineTypeName"
+										   data-entity-id="@ViewBag.EntityID"
+										   data-name="payment-checkBox"
+										   data-lineitem-id="@item.LineItemId"
+										   data-invoice-id="@item.Invoice_Id"
+										   data-invoice-lineitem-id="@item.InvoiceLineItem_Id" />
+								}
+
+							
+						</td>
+						<td name="invoice-No">@item.InvoiceNo</td>
+						<td name="invoice-InsuredName"><div class="truncate-120" title="@item.InsuredName">@item.InsuredName</div></td>
+						<td name="invoice-PolicyNumber">@item.PolicyNumber</td>
+						<td name="invoice-BillType">@item.BillType</td>
+						<td name="invoice-LineTypeName">@item.LineTypeName</td>
+						<td name="invoice-EffectiveDate">@item.EffectiveDate.ToString(MasterLookup._ServerDateFormat)</td>
+						<td name="invoice-TransactionEffectiveDate">@((item.TransactionEffectiveDate != DateTime.MinValue) ? item.TransactionEffectiveDate.ToString(MasterLookup._ServerDateFormat) : item.EffectiveDate.ToString(MasterLookup._ServerDateFormat)) </td>
+						<td name="invoice-TransactionType" class="text-center">@item.TransactionType</td>
+						@if (directionId == MasterLookup._Directions.AP)
+						{
+							@if (@item.LineItemId == MasterLookup._LineItems.AgencyBrokerCommission)
+							{
+								<td name="invoice-APAmount">
+									@CommonUtility.ConvertToCurrencyFormat((double)item.APAmount, false, 2)
+									<span class="ap-ratio">
+										(@Math.Round(item.AgentCommissionByPremiumAmount, 2)% /
+										@Math.Round(item.AgentCommissionByTotalCommission, 2)%)
+									</span>
+								</td>
+							}
+							else
+							{
+								<td name="invoice-APAmount">
+									@CommonUtility.ConvertToCurrencyFormat((double)item.APAmount, false, 2)
+								</td>
+							}
+						}
+						else
+						{
+							<td name="invoice-ARAmount">
+								@CommonUtility.ConvertToCurrencyFormat((double)item.ARAmount, false, 2)
+							</td>
+						}
+
+						<td name="invoice-AmountCollected">@CommonUtility.ConvertToCurrencyFormat(item.AmountCollected, false, 2)</td>
+						@if (directionId == MasterLookup._Directions.AP)
+						{
+							<td name="invoice-APAmountPaid">
+								@CommonUtility.ConvertToCurrencyFormat(item.AmountPaid, false, 2)
+							</td>
+						}
+						else
+						{
+							<td name="invoice-ARAmountPaid" hidden>
+								@CommonUtility.ConvertToCurrencyFormat(item.AmountPaid, false, 2)
+							</td>
+
+						}
+						@if (directionId == MasterLookup._Directions.AP)
+						{
+							<td name="invoice-NetDue">@CommonUtility.ConvertToCurrencyFormat(item.NetDue, false, 2)</td>
+						}
+						else if (directionId == MasterLookup._Directions.AR)
+						{
+							<td name="invoice-NetOutgoingPaymentDue">
+								@CommonUtility.ConvertToCurrencyFormat((double)item.NetOutgoingPaymentDue, false, 2)
+							</td>
+						}
+						<td name="invoice-amount" width="130" class="invoice-amount">
+							@if (item.RemainingBalance == 0)
+							{
+								<input type="text" class="form-control d-block amount-text" placeholder="amount" data-name="MakePaymentsAmount" data-invoice-id="@item.Invoice_Id" data-lineitem-Id="@item.LineItemId"
+									   data-net-due="@(directionId == MasterLookup._Directions.AP
+																												? item.NetDue
+																												: item.NetOutgoingPaymentDue)"
+									   data-invoice-lineitem-Id="@item.InvoiceLineItem_Id" disabled />
+
+							}
+							else
+							{
+								<input type="text" class="form-control d-block amount-text" placeholder="amount" data-name="MakePaymentsAmount" data-invoice-id="@item.Invoice_Id" data-lineitem-Id="@item.LineItemId"
+									   data-net-due="@(directionId == MasterLookup._Directions.AP
+																												? item.NetDue
+																												: item.NetOutgoingPaymentDue)"
+									   data-invoice-lineitem-Id="@item.InvoiceLineItem_Id">
+
+							}
+						</td>
+					</tr>
+				}
+			}
+			else
+			{
+				<tr>
+					<td colspan="9" class="text-center text-muted">No records found.</td>
+				</tr>
+			}
+
+		</tbody>
+	</table>
+</div>
+<style>
+	.ap-ratio {
+		font-size: 10px;
+		margin-left: 6px;
+		position: relative;
+		top: -1px;
+		color: #666;
+		white-space: nowrap;
+	}
+
+	.pd-table-scroll {
+		max-height: 400px;
+		overflow-y: auto;
+	}
+
+		.pd-table-scroll thead th {
+			position: sticky;
+			top: 0;
+			z-index: 2; /* prevents overlap issues */
+		}
+
+	.nowrap-table th,
+	.nowrap-table td {
+		white-space: nowrap;
+	}
+
+		.nowrap-table td .truncate-120 {
+			max-width: 150px;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+	.invoice-amount {
+		min-width: 95px
+	}
+
+</style>
+<script>
+		$(document).ready(function () {
+		$("table[data-sort-config]").removeData("sort-wired");
+		TableSorter.autoWire({
+			invoice: [
+				"Invoice",
+				"Insured Name",
+				"Policy Number",
+				"Bill Type",
+				"Line Item",
+				"Effective Date",
+				"Transaction Effective Date"
+			]
+		});
+
+	});
+</script>

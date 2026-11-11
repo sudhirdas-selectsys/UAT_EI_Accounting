@@ -1,0 +1,72 @@
+﻿@model PolicyDetails
+@{
+	var InsuredDetails = Model?.InsuredDetails;
+}
+
+<div class="row">
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Name" name="InsuredDetails.Name" value="@InsuredDetails?.Name">
+			<label for="InsuredDetails.Name">Name</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Address1" name="InsuredDetails.Address1" value="@InsuredDetails?.Address1">
+			<label for="InsuredDetails.Address1">Address1</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Address2" name="InsuredDetails.Address2" value="@InsuredDetails?.Address2">
+			<label for="InsuredDetails.Address2">Address2</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="City" name="InsuredDetails.City" value="@InsuredDetails?.City">
+			<label for="InsuredDetails.City">City</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Country" name="InsuredDetails.Country" value="@InsuredDetails?.Country">
+			<label for="InsuredDetails.Country">Country</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="County" name="InsuredDetails.County" value="@InsuredDetails?.County">
+			<label for="InsuredDetails.County">County</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<select class="form-select" name="InsuredDetails.State">
+				<option value="TX" selected="">TX</option>
+				@{
+					var StateList = LookupUtility.GetAllStates();
+					foreach (var state in StateList)
+					{
+						<option value="@state.StateCode" selected="@(InsuredDetails != null && InsuredDetails.State == state.StateCode)">@state.StateCode</option>
+					}
+				}
+			</select>
+			<label for="InsuredDetails.State">State</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Zip Code" name="InsuredDetails.ZipCode" value="@InsuredDetails?.ZipCode">
+			<label for="InsuredDetails.ZipCode">Zip Code</label>
+		</div>
+	</div>
+
+</div>

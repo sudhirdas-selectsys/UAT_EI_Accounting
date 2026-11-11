@@ -1,0 +1,112 @@
+﻿@using Accounting.Entities.DB.Lookups;
+@model List<LU_LineItems>;
+@{
+	var PageSize = ViewBag.PageSize;
+	var PageNumber = ViewBag.PageNumber;
+	var TotalRecords = ViewBag.TotalRecords;
+	int TotalPages = (int)Math.Ceiling((double)TotalRecords / PageSize);
+}
+<style>
+	.cta-buttons {
+		top: -25px;
+		width: 98%;
+	}
+</style>
+
+<div class="card position-relative">
+	<div class="card-body">
+		<div class="cta-buttons">
+			<div class="row align-items-center g-2 mb-3">
+				<div class="col-md-4 col-lg-4 col-xl-6 m-0">
+					<h1 class="section-heading">Line Items</h1>
+				</div>
+				<div class="col-md-8 col-lg-8 col-xl-6 m-0">
+					<div class="d-flex justify-content-end gap-3 flex-md-row flex-lg-row flex-column">
+						<div class="input-group tablet-max-180">
+							<input type="text" class="form-control" autocomplete="off" data-name="txtLineItemSearch">
+							<button class="btn btn-primary" type="button" title="Search" data-name="btnLineItemSearch"> <i class="ri-search-2-line"></i></button>
+						</div>
+						<a class="btn btn-primary addnewbtn" role="button" data-name="btnAddLineItem" href="javascript:void(0)"><i class="ri-add-circle-line"></i> New</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="w-100 pb-2 pt-0">
+			<div class="table-responsive table-scroll payment-table" style="height: calc(100vh - 272px);">
+				<table class="table table-striped ei-table text-nowrap">
+					<thead>
+						<tr>
+							<th>S.No </th>
+							<th>Name </th>
+							<th>Code </th>
+							<th>Line Type </th>
+							<th>Actions </th>
+						</tr>
+					</thead>
+					<tbody>
+						@{
+							if (Model?.Count > 0)
+							{
+								int Index = 1;
+								@foreach (var item in Model.Where(x => x.LineItemType_Id == MasterLookup._LineItemTypes.Fee || x.LineItemType_Id == MasterLookup._LineItemTypes.Tax || x.LineItemType_Id == MasterLookup._LineItemTypes.CarrierFee))
+								{
+									<tr>
+										<td>@Index</td>
+										<td><label class="label">@item?.Name</label></td>
+										<td><label class="label">@item?.Code</label></td>
+										<td><label class="label">@LookupUtility.GetAllLineItemTypes().FirstOrDefault(v => v.LineItemType_Id == item?.LineItemType_Id)?.Name</label></td>
+										<td valign="middle">
+											<div class="action-btns">
+												<a href="javascript:void(0)" data-name="btnEditLineItem" data-lineitem-id="@item?.LineItem_Id">
+													<i class="ri-pencil-line save-btn edit-btn"></i>
+												</a>
+												<a href="javascript:void(0)" data-name="btnDeleteLineItem" data-lineitem-id="@item?.LineItem_Id"> <i class="ri-delete-bin-6-line text-danger delete-btn" title="delete"></i> </a>
+											</div>
+
+										</td>
+									</tr>
+									Index++;
+								}
+							}
+							else
+							{
+								<tr><td colspan="51">No records found!</td></tr>
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="card-footer bg-white border-0 text-center px-3">
+		<div class="d-flex justify-content-between tbl-pagination me-4">
+			<div class="select-per-page">
+				<span>Showing</span>
+				@{
+					List<int> pageSizeOptions = new List<int> { 20, 40, 50, 100 };
+				}
+				<select class="form-select" data-name="PageSize" data-table-name="LineItems">
+					@foreach (var size in pageSizeOptions)
+					{
+						<!option value="@size" @(PageSize == size ? "selected" : "")>@size</!option>
+					}
+				</select>
+			</div>
+
+			<ul class="pagination justify-content-end">
+				<li class="page-item"> <a class="page-link" tabindex="-1" aria-disabled="true" value="@PageSize+''+@PageNumber+''+@TotalPages" data-table-name="LineItems" data-name="btnPrevious"><i class="ri-arrow-left-s-line"></i></a> </li>
+				@for (int i = 1; i <= TotalPages; i++)
+				{
+					<li class="page-item @(PageNumber==i?"active":"")">
+						<a class="page-link" href="#" data-table-name="LineItems" data-name="btnPageNumber" data-page="@i+''+@PageSize">
+							@i
+						</a>
+					</li>
+				}
+				<li class="page-item"> <a class="page-link" data-table-name="LineItems" data-name="btnNext" value="@PageSize+''+@PageNumber+''+@TotalPages"><i class="ri-arrow-right-s-line"></i></a> </li>
+			</ul>
+		</div>
+	</div>
+</div>
+
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

@@ -1,0 +1,119 @@
+﻿@model Accounting.Web.Models.OtpViewModel
+
+@{
+    var otpType = (Model?.OtpType ?? "").ToString();
+    var userEmail = (Model?.UserEmail ?? "your email");
+    var userPhone = (Model?.UserPhone ?? "your phone");
+    var error = Model?.ErrorMessage;
+}
+@if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger">@error</div>
+}
+else
+{
+    <div class="ei-l-outer" data-name="LoginContainer">
+        <div class="box-container">
+            <div class="card-box">
+                <div class="card-body">
+                    <div style="margin-top: 0; margin-bottom: 30px; text-align: center;">
+                        <span class="account-logo"><img src="~/images/ei-accounting-logo.svg" height="45" title="EI-Accounting" /></span>
+                    </div>
+                    
+                    <p class="h5 mb-2 text-center">Two-step verification</p>
+                    @* <h5 class="text-center mb-8 mt-8">Two-step verification</h5> *@
+                    @if (otpType == "Email")
+                    {
+                        <p class="mb-3 text-muted op-7 fw-normal text-center">
+                            Thanks for keeping your account secure.
+                            Check your email : <strong>@CommonUtility.MaskEmailFixed(userEmail)</strong>
+                        </p>
+                    }
+                    @if (otpType == "phone")
+                    {
+                        <p class="color-75 mb-3 mt-0 text-center">
+                            Thanks for keeping your account secure. Check your mobile device:
+                            <strong>@userPhone</strong>
+                        </p>
+                    }
+
+
+                    <div class="v-code-block">
+
+                        <p class="text-center mb-3">
+                            <span id="counterText">
+                                You can request new OTP in: <strong>
+                                    <span data-name="OtpTimer">20</span>Sec
+                                </strong>
+                            </span>
+                            <a href="javascript:void(0)" class="d-none" id="btnResendOtp" data-name="btnresendotp" data-method="@otpType">
+                                Resend
+                                OTP
+                            </a>
+                        </p>
+                        <form data-name="formverifyotp">
+                            @Html.AntiForgeryToken()
+
+
+                            <input type="hidden" name="otp" data-name="Otp" />
+                            <input type="hidden" name="Method" value="@otpType" />
+                            <div class="v-code">
+                                <input type="text" name="d1" class="otp-input form-control text-center" maxlength="1" data-val-type="number">
+                                <input type="text" name="d2" class="otp-input form-control text-center" maxlength="1" data-val-type="number">
+                                <input type="text" name="d3" class="otp-input form-control text-center" maxlength="1" data-val-type="number">
+                                <input type="text" name="d4" class="otp-input form-control text-center" maxlength="1" data-val-type="number">
+                                <input type="text" name="d5" class="otp-input form-control text-center" maxlength="1" data-val-type="number">
+                                <input type="text" name="d6" class="otp-input form-control text-center" maxlength="1" data-val-type="number">
+                            </div>
+
+                            <div class="actions">
+                                <button type="submit" data-name="btnverifyotp" class="btn btn-primary w-100">
+                                    <img src="" alt=""> Sign In
+                                    Securely
+                                </button>
+
+                                <a href="javascript:void(0)" id="btnbacklogin" data-name="btnbacklogin">Cancel</a>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+            
+   
+}
+<style>
+    .card-body {
+        padding:25px;
+    }
+
+    .v-code .form-control {
+        height: 35px;
+        width: 35px;
+        text-align: center;
+        font-size: 14px;
+        font-weight: 600;
+    }
+
+    .custom-check {
+        display: flex;
+        align-items: center;
+        margin-top: 24px;
+    }
+
+    .actions {
+        display: flex;
+        align-items: center;
+        gap: 100px;
+        justify-content: space-between;
+        margin-top: 36px;
+    }
+</style>
+
+<script>
+       
+   
+</script>
+ 

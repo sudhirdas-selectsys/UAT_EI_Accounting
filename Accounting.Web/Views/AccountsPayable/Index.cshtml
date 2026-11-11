@@ -1,0 +1,384 @@
+﻿@{
+    var EntityTypes = LookupUtility.GetAllEntityTypes();
+    var ClientLineItemIds = ViewBag.ClientLineItemIds != null ? (List<long>)ViewBag.ClientLineItemIds : new List<long>();
+    UserSession userSession = Context.Session.GetObjectFromJson<UserSession>("UserSession");
+    long client_Id = userSession.Client_Id;
+}
+<div class="search-filters mb-2 position-relative">
+    <div class="row position-relative">
+        <div class="col-md-6">
+            <form data-name="frmAdditionalFilters">
+                <div class="row g-0">
+                    <div class="col-md-6">
+                        <div class="row align-items-center">
+                            <div class="col-md-12" data-name="FilterSection">
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payee Type</label>
+                                    <div class="col-12 col-xl-7">
+                                        <select class="form-select" name="EntityType_Id" data-name="EntityType_Id">
+                                            <option value="">Select</option>
+                                            @{
+
+                                                foreach (var item in EntityTypes)
+                                                {
+                                                    <option value="@item.EntityType_Id">@item.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payee Name</label>
+                                    <div class="col-12 col-xl-7">
+                                        <input type="text" class="form-control ui-autocomplete-input" data-name="EntityName" placeholder="EntityName" name="EntityName" maxlength="100">
+                                        <input type="hidden" name="Entity_Id" data-name="Entity_Id" value="" />
+                                    </div>
+                                </div>
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Line Items</label>
+                                    <div class="col-12 col-xl-7">
+                                        @* <select class="form-select" name="LineItem_Id" data-name="LineItem_Id">
+											<option value="">Select</option>
+											@{
+												var LineItemList = LookupUtility.GetAllLineItems().Where(x => ClientLineItemIds.Contains(x.LineItem_Id)).ToList();
+												if (LineItemList?.Count() > 0)
+												{
+													foreach (var item in LineItemList)
+													{
+														<option value="@item.LineItem_Id">@item.Name</option>
+													}
+												}
+											}
+										</select> *@
+
+                                        <div class="position-relative custom-multi-selection">
+                                            <button class="form-select text-start d-flex align-items-center flex-wrap gap-2 pd-r-28 show" type="button" data-bs-toggle="dropdown" aria-expanded="true" data-bs-auto-close="outside" title=""> <span class="default-text">Select</span> </button>
+                                            <ul class="dropdown-menu w-100 "
+                                                style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate(0px, 29px);"
+                                                data-popper-placement="bottom-start">
+                                                <input type="hidden" name="LineItemList" value="@Model?.LineItemList" />
+                                                @{
+                                                    var lineItems = LookupUtility.GetAllLineItems().Where(x => ClientLineItemIds.Contains(x.LineItem_Id)).ToList();
+
+                                                    string LineItemList = Convert.ToString(Model?.LineItemList) ?? "";
+
+                                                    var selectedLineItemIds = LineItemList.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
+                                                    if (lineItems?.Count() > 0)
+                                                    {
+                                                        foreach (var item in lineItems)
+                                                        {
+                                                            bool isChecked = selectedLineItemIds.Contains(item.LineItem_Id.ToString());
+
+                                                            <li class="dropdown-item">
+                                                                <input class="form-check-input"
+                                                                       type="checkbox"
+                                                                       data-name="lineitem-options"
+                                                                       data-lineitem-code="@item.Code"
+                                                                       name="LineItemIds"
+                                                                       data-lineitem-id="@item.LineItem_Id"
+                                                                       id="lineItem_@item.LineItem_Id"
+                                                                       value="@item.Name"
+                                                                       @(isChecked ? "checked" : "") />
+
+                                                                <label class="form-check-label ms-2" title="@item.Name"
+                                                                       for="lineItem_@item.LineItem_Id">
+                                                                    @item.Name
+                                                                </label>
+                                                            </li>
+                                                        }
+                                                    }
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Invoice #</label>
+                                    <div class="col-12 col-xl-7">
+                                        <input type="text" class="form-control ui-autocomplete-input" data-name="InvoiceNo" placeholder="Invoice" autocomplete="off" name="InvoiceNo" maxlength="100">
+                                    </div>
+                                </div>
+                                <div class="row mx-0 my-1">
+                                    <div class="col-12 col-xl-12">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="OutstandingBalances" id="OutstandingBalances" value="true" checked="checked" />
+                                            <label for="OutstandingBalances">Outstanding Balances</label>
+
+                                            <div class="dropdown d-inline-block ms-2">
+                                                <button class="btn btn-outline-primary btn-sm fw-medium dropdown-toggle " type="button" id="btnSort" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-sort-alpha-down me-1"></i> Sort</button>
+                                                <ul class="dropdown-menu" aria-labelledby="btnSort">
+                                                    <li>
+                                                        <a class="dropdown-item sort-options"
+                                                           href="javascript:void(0);"
+                                                           data-order="Agency_ASC">
+                                                            <i class="fa fa-check me-2 check-icon d-none"></i>Agency Name: A → Z
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item sort-options"
+                                                           href="javascript:void(0);"
+                                                           data-order="Agency_DESC">
+                                                            <i class="fa fa-check me-2 check-icon d-none"></i>
+                                                            Agency Name: Z → A
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item sort-options"
+                                                           href="javascript:void(0);"
+                                                           data-order="Insured_ASC">
+                                                            <i class="fa fa-check me-2 check-icon d-none"></i>Insured Name: A → Z
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item sort-options"
+                                                           href="javascript:void(0);"
+                                                           data-order="Insured_DESC">
+                                                            <i class="fa fa-check me-2 check-icon d-none"></i>
+                                                            Insured Name: Z → A
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item sort-options"
+                                                           href="javascript:void(0);"
+                                                           data-order="Payee_ASC">
+                                                            <i class="fa fa-check me-2 check-icon d-none"></i>Payee Name:  A → Z
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item sort-options"
+                                                           href="javascript:void(0);"
+                                                           data-order="Payee_DESC">
+                                                            <i class="fa fa-check me-2 check-icon d-none"></i>
+                                                            Payee Name:  Z → A
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item sort-options"
+                                                           href="javascript:void(0);"
+                                                           data-order="PolicyNum_ASC">
+                                                            <i class="fa fa-check me-2 check-icon d-none"></i>Policy Number: A → Z
+                                                        </a>
+                                                    </li>
+                                                    <li>
+                                                        <a class="dropdown-item sort-options"
+                                                           href="javascript:void(0);"
+                                                           data-order="PolicyNum_DESC">
+                                                            <i class="fa fa-check me-2 check-icon d-none"></i>
+                                                            Policy Number: Z → A
+                                                        </a>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-md-6">
+                        <div class="row mx-0 my-1">
+                            <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Policy Number</label>
+                            <div class="col-12 col-xl-7">
+                                <input type="text" class="form-control ui-autocomplete-input" data-name="PolicyNumber" placeholder="Policy Number" autocomplete="off" name="PolicyNumber" maxlength="100">
+                            </div>
+                        </div>
+                        <div class="row mx-0 my-1">
+                            <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Agency Name</label>
+                            <div class="col-12 col-xl-7">
+                                <input type="text" class="form-control ui-autocomplete-input" data-name="AgencyName" placeholder="Agency Name" autocomplete="off" name="AgencyName" maxlength="100">
+                            </div>
+                        </div>
+                        <div class="row mx-0 my-1">
+                            <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Insured Name</label>
+                            <div class="col-12 col-xl-7">
+                                <input type="text" class="form-control ui-autocomplete-input" data-name="InsuredName" placeholder="Insured name" autocomplete="off" name="InsuredName" maxlength="100">
+                            </div>
+                        </div>
+                        <div class="row mx-0 my-1">
+                            <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Billing Type</label>
+                            <div class="col-12 col-xl-7">
+                                <select class="form-select" name="BillingType_Id" data-name="BillingType_Id">
+                                    <option value="">Select</option>
+                                    @{
+                                        var BillingTypesList = LookupUtility.GetAllClientBillingTypes(client_Id);
+                                        foreach (var item in BillingTypesList)
+                                        {
+                                            if (@item.Name != "Do Not Bill")
+                                            {
+                                                <option value="@item.BillingType_Id">@item.Name</option>
+                                            }
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        @* <div class="row mx-0 my-1">
+                            <div class="col-12 text-end">
+                                <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnReset"><i class="ri-loop-left-line me-1"></i>Reset</button>
+                                <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnApplyFilters"><i class="ri-search-2-line me-1"></i>Search</button>
+                            </div>
+                        </div> *@
+                        <div class="row mx-0 my-1">
+                            <div class="col-12 text-end" style="margin-top:10px">
+                                <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnReset"><i class="ri-loop-left-line me-1"></i>Reset</button>
+                                <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnApplyFilters"><i class="ri-search-2-line me-1"></i>Search</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <input type="hidden" name="pageIndex" value="1" />
+                <input type="hidden" name="pageSize" value="20" />
+            </form>
+            <form data-name="selectPayments">
+                <input type="hidden" name="Direction_Id" data-name="Direction_Id" value="@MasterLookup._Directions.AP" />
+            </form>
+        </div>
+
+        <div class="col-md-6 arr-data position-relative" data-name="divSelectedPayments">
+            <span data-name="NoPaymentSelected" style="left:50%;position:absolute;top:50%">
+                <i>No Payment selected</i>
+                <a href="javascript:void(0);" role="button" class="fw-medium ms-2" data-name="btnSelectPayment">(Select Payment)</a>
+            </span>
+
+        </div>
+    </div>
+    <div class="position-absolute" style="right:2px;bottom:0px;">
+        <div class="d-flex align-items-center">
+            @*<button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnReset"><i class="ri-loop-left-line me-1"></i>Reset</button>
+            <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnApplyFilters"><i class="ri-search-2-line me-1"></i>Search</button>*@
+            <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnUploadInvoicePayments" data-direction-id="@MasterLookup._Directions.AP" title="Invoices Payment Upload File"> <i class="ri-file-excel-line me-1"></i>Upload File</button>
+            <button type="button" class="btn btn-primary btn-sm fw-medium me-2 applyAll" data-name="btnApplyPayment" style="display:none;"><i class="ri-refund-2-line me-1"></i> Apply Payment </button>
+            <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnUnApplyFullPayment" style="display:none;"><i class="ri-close-large-line me-1"></i> Un Apply</button>
+            <div class="d-flex align-items-center me-2">
+                <span class="me-2" style="color:#777777;display:none;" data-name="divAmountApplied">Amount Applied: <span data-name="TotalAppliedAmount" class="fw-medium text-black"></span></span>
+            </div>
+            <div class="d-none" data-name="chkAllInvoices">
+                Apply All
+                <input class="form-check-input me-2" type="checkbox" id="chkAllInvoices" style="border-color: #663ced;">
+            </div>
+            <a href="javascript:void(0);" class="fw-medium me-2" role="button" style="display:none;" data-name="CollapseRows" title="Collapse All"><i class="ri-arrow-up-double-line" style="font-size:23px;"></i></a>
+            <a href="javascript:void(0);" class="fw-medium" role="button" style="display:none;" data-name="ExpandRows" title="Expand All"><i class="ri-arrow-down-double-line" style="font-size:23px;"></i></a>
+            <div class="d-flex align-items-center me-3">
+                <a href="javascript:void(0);"
+                   class="me-2"
+                   data-name="sortInsuredName"
+                   data-sort-order="ASC"
+                   title="Sort by InsuredName Ascending">
+                    <i class="ri-sort-asc" style="font-size:20px;"></i>
+                </a>
+                <a href="javascript:void(0);" class="d-none"
+                   data-name="sortInsuredName"
+                   data-sort-order="DESC"
+                   title="Sort by InsuredName Descending">
+                    <i class="ri-sort-desc" style="font-size:20px;"></i>
+                </a>
+            </div>
+            @* <button class="btn btn-primary btn-sm fw-medium me-2" type="button" data-name="CollapseAPRows">Collapse</button>
+		<button class="btn btn-primary btn-sm fw-medium" type="button" data-name="ExpandAPRows">Expand</button> *@
+        </div>
+    </div>
+    @* <div class="text-end position-relative" style="right: 8px;bottom: 8px;">
+		<a href="javascript:void(0);" role="button" class="fw-medium me-2" data-name="btnSelectPayment">Select Payment</a>
+	</div> *@
+</div>
+<div data-name="divAccountsPayableGrid"></div>
+
+<link href="~/css/accountspayable.css" rel="stylesheet" asp-append-version="true" />
+<link href="/css/dashboard.css" rel="stylesheet" type="text/css" asp-append-version="true" />
+<script src="~/js/receivablepayable.js" asp-append-version="true"></script>
+<script>LoadAPWithFilters();</script>
+<style>
+    [data-name="divAccountsPayableGrid"] {
+        min-height: auto !important;
+        height: calc(100vh - 360px) !important;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .dropdown-menu {
+        border: 1px solid #b9b2b2 !important;
+    }
+</style>
+<script>
+    $(document).ready(function () {
+        $('.custom-multi-selection .dropdown-item input').on('change', function () {
+    const $dropdown = $(this).closest('.custom-multi-selection');
+    const $button = $dropdown.find('button.form-select');
+    const $defaultText = $button.find('.default-text');
+    const value = $(this).val();
+    const isChecked = $(this).prop('checked');
+    const $countChip = $button.find('.chip-count');
+
+    // Get checked values
+    const $checkedInputs = $dropdown.find('.dropdown-item input:checked');
+    const checkedValues = $checkedInputs.map(function () { return $(this).val(); }).get();
+
+    // Remove all chips before adding new ones (clean rebuild)
+    $button.find('.chip').remove();
+
+    if (checkedValues.length === 0) {
+    $defaultText.show();
+    $button.attr('title', 'Select');
+    return;
+    }
+
+    $defaultText.hide();
+
+    // Add the first selected chip with name
+    const firstValue = checkedValues[0];
+    $button.append(
+    '<div class="chip text-truncate d-inline-flex align-items-center me-1" ' +
+    'data-value="' + firstValue + '" style="max-width: 100px;" title="' + firstValue + '">' +
+    '<span class="chip-text text-truncate">' + firstValue + '</span>' +
+    '<span class="remove-chip ms-2" style="cursor:pointer;">&times;</span>' +
+    '</div>'
+    );
+
+    // Add count chip if more than one selected
+    if (checkedValues.length > 1) {
+    const count = checkedValues.length;
+    $button.append(
+    '<div class="chip pe-2 d-inline-flex align-items-center" ' +
+    'data-count="' + count + '" title="' + count + ' selected" style="cursor: default;">+' + count + '</div>'
+    );
+    }
+
+
+    //
+    // Update title attribute
+    $button.attr('title', 'Selected (' + checkedValues.length + '): ' + checkedValues.join(', '));
+    });
+
+            // On chip remove
+         $(document).on('click', '.remove-chip', function (e) {
+    e.stopPropagation();
+    const $chip = $(this).closest('.chip');
+    const value = $chip.data('value');
+    const $dropdown = $(this).closest('.custom-multi-selection');
+    const $button = $dropdown.find('button.form-select');
+    const $checkbox = $dropdown.find('.dropdown-item input[value="' + value + '"]');
+
+    $checkbox.prop('checked', false).trigger('change');
+    });
+    });
+
+    //  checkbox .
+        // function updateLineItemList() {
+        //     var selected = [];
+
+        //     // Collect all checked line items
+        //     $('input[data-name="LineItem-options"]:checked').each(function () {
+        //         debugger;
+        //         selected.push($(this).data("lineitem-id"));  // numeric ID
+        //     });
+
+        //     // Store comma-separated IDs in hidden field
+        //     $('#LineItem_Id').val(selected.join(","));
+        // }
+
+        // // Run whenever a checkbox changes
+        // $(document).on('change', 'input[data-name="LineItem-options"]', function () {
+        //     updateLineItemList();
+        // });
+</script>

@@ -1,0 +1,41 @@
+﻿
+<div class="ei-l-outer" data-name="LoginContainer">
+    <div class="box-container">
+        <div class="card-box">
+            <div class="card-body">
+                <div style="margin-top: 0; margin-bottom: 30px; text-align: center;">
+                    <span class="account-logo"><img src="~/images/ei-accounting-logo.svg" height="45" title="EI-Accounting" /></span>
+                </div>
+                <div class="mt-50 fs-18">
+                    @CommonUtility.MaskEmailFixed(TempData["PendingEmail"]?.ToString())</p>
+
+                    <div class="v-code-block">
+
+                        <h1 style="color:#5F2EE5;" class="h4">Stay signed in?</h1>
+
+                        <p class="fs-15 mb-0">Do this to reduce the number of times you are asked to sign in.</p>
+                        @* 
+                        <div class="form-check form-switch custom-check tooltip-custom">
+                            <input class="form-check-input" type="checkbox" id="flexCheckCustom">
+                            <label class="form-check-label fs-18" for="flexCheckCustom">
+                                Don't show this again
+                            </label>
+                        </div>*@
+                        <div class="actions gap-30 justify-content-start">
+                            <button type="submit" data-name="btnTrustedDevice" class="btn btn-primary w-120"> Yes  </button>
+                            <a name="btnTrustedDeviceModelClose" asp-controller="Home"
+                               asp-action="Index" role="button" class="btn btn-outline-primary w-120"> No  </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .actions{
+        gap:20px;
+    }
+</style>
+
+

@@ -1,0 +1,45 @@
+﻿@model InvoiceUpload
+
+<form id="columnMappingForm">
+    <input type="hidden" name="TempFileId" value="@Model.TempFileId" />
+    <input type="hidden" name="Direction_Id" value="@Model.Direction_Id" />
+    <input type="hidden" name="Excel_Id" value="@Model.Excel_Id" />
+    <table class="table table-bordered align-middle">
+        <thead>
+            <tr>
+                <th>Excel Column</th>
+                <th>Map To (System Field)</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var col in Model.Columns)
+            {
+                <tr>
+                    <td>
+                        <strong>@col</strong>
+                        <input type="hidden" name="ExcelColumns[]" value="@col" />
+                    </td>
+                    <td>
+                        <select class="form-select system-field-dd" name="SystemFields[]">
+                            <option value="">-- Select --</option>
+                            @foreach (var field in Model.SystemFields)
+                            {
+                                <option value="@field">@field</option>
+                            }
+                        </select>
+                    </td>
+                </tr>
+            }
+
+            <tr>
+                <td colspan="2" class="text-center">
+                    <button type="button"
+                            class="btn btn-primary"
+                            data-name="submitcolmapping">
+                        Submit Mapping
+                    </button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</form>

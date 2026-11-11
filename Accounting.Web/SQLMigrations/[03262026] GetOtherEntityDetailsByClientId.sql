@@ -1,0 +1,11 @@
+--CREATE PROC USP_Accounting_GetOtherEntityDetailsByClientId        
+--(                             
+-- @Client_Id BIGINT =NULL,  
+-- @Id bigint = null  
+--)                
+--AS                
+--BEGIN                
+--    SET NOCOUNT ON;                
+       
+--   Select top 1 * from Accounting_OtherEntityDetails where Client_Id =@Client_Id and Id = @Id and status = 1;    
+--END

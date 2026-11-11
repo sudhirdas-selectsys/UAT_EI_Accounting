@@ -1,0 +1,537 @@
+﻿@using Accounting.Entities.DB.Lookups;
+@model LU_PaymentPlans;
+@{
+	var ClientCarrierList = ViewBag.ClientCarrierList;
+}
+<style>
+	.cta-buttons {
+		top: -25px;
+		width: 98%;
+	}
+
+	td input.form-control {
+		display: none;
+	}
+
+	td .label {
+		display: block;
+		color: #495057;
+		font-size: 13px;
+	}
+
+	#addInstallmentPlan .data-item label {
+		margin-bottom: 4px;
+	}
+
+	#addInstallmentPlan .data-item {
+		padding-top: 0;
+	}
+
+	#addInstallmentPlan .form-switch .form-check-input {
+		height: 20px;
+		width: 40px;
+	}
+
+	.offcanvas.offcanvas-end {
+		z-index: 9999;
+	}
+
+	.activeSwitch .form-check-input.unchecked:not(:checked) {
+		background-color: #efa22d !important;
+		border-color: #efa22d !important;
+	}
+
+	.form-check-input:checked {
+		background-color: #5F2EE5;
+		border-color: #5F2EE5;
+	}
+
+	.downPaymentPercent {
+		padding-left: 43px;
+		position: relative;
+	}
+
+
+		.downPaymentPercent:before {
+			content: "%";
+			width: 42px;
+			height: 42px;
+			position: absolute;
+			left: 0;
+			background-color: #F8F9FA;
+			line-height: 42px;
+			text-align: center;
+			border-top-left-radius: 0.375rem;
+			border-bottom-left-radius: 0.375rem;
+			border: 1px solid #dee2e6;
+			border-right: none;
+		}
+
+	.form-floating.downPaymentPercent > .form-control ~ label {
+		margin-left: 52px;
+	}
+
+	.downPaymentMin:before {
+		content: "$";
+	}
+
+	.form-floating.downPaymentPercent .form-control {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+
+	.downPaymentPercent .field-validation-error {
+		margin-left: -43px;
+	}
+
+	#infoTitle {
+		flex-grow: 1;
+	}
+
+	.activeSwitch .form-check-input {
+		height: 20px;
+		width: 40px;
+		margin-right: 12px;
+		box-shadow: none;
+	}
+
+	.paymentSwitch {
+		height: 20px;
+		width: 40px !important;
+	}
+
+	.group-heading {
+		font-size: 1rem;
+		background: #f8f6ff;
+		padding: 10px;
+		margin: 0;
+		border-top-right-radius: 0.375rem;
+		border-top-left-radius: 0.375rem;
+		font-weight: 600;
+	}
+
+	.group {
+		border: 1px solid #f3f2f4;
+		padding: 1rem;
+		margin-bottom: 1.5rem;
+		border-bottom-right-radius: 0.375rem;
+		border-bottom-left-radius: 0.375rem;
+	}
+
+	.modal-footer {
+		position: sticky !important;
+		bottom: 0 !important;
+		background: #fff;
+		z-index: 9;
+		left: 0;
+		right: 0;
+	}
+
+	.modal-body {
+		margin-bottom: 0;
+	}
+
+	.form-floating .form-control:focus ~ label,
+	.form-floating .form-control:not(:placeholder-shown) ~ label,
+	.form-floating .form-select ~ label {
+		pointer-events: auto;
+	}
+</style>
+<div>
+	<form data-name="frmInstallmentPlan" method="post">
+		<div class="position-relative">
+			<input type="hidden" class="form-control" name="PaymentPlan_Id" value="@Model?.PaymentPlan_Id">
+			<div class="position-absolute animate-modal p-16"
+				 style="overflow: hidden; inset: 0; z-index: 5; top:0; background: rgb(255, 255, 255);">
+
+				<div class="col-sm-12">
+					<div class="data-item">
+						<div class="input-skeleton loading"></div>
+					</div>
+				</div>
+				<div class="group">
+					<div class="row">
+
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 100px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 110px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 110px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="col-sm-12">
+					<div class="data-item">
+						<div class="input-skeleton loading"></div>
+					</div>
+				</div>
+				<div class="group">
+					<div class="row">
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 100px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 120px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+
+						<div class="col-sm-4">
+							<div class="row">
+								<div class="col-md-7">
+									<div class="data-item">
+										<div class="form-label-skeleton loading" style="width: 80px;"></div>
+										<div class="input-skeleton loading"></div>
+									</div>
+								</div>
+
+								<div class="col-md-5" id="intervalInput">
+									<div class="data-item">
+										<div class="form-label-skeleton loading" style="width: 80px;"></div>
+										<div class="input-skeleton loading"></div>
+									</div>
+								</div>
+
+							</div>
+						</div>
+
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 80px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="col-sm-12">
+					<div class="data-item">
+						<div class="input-skeleton loading"></div>
+					</div>
+				</div>
+				<div class="group">
+					<div class="row">
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 100px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 120px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 80px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+
+						<div class="col-sm-4">
+							<div class="data-item">
+								<div class="form-label-skeleton loading" style="width: 80px;"></div>
+								<div class="input-skeleton loading"></div>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+
+			<div class="group-panel">
+				<h3 class="group-heading mt-0">General Setup</h3>
+				<div class="group">
+					<div class="row">
+
+						<div class="col-md-4">
+							<div class="form-floating">
+								<select name="Carrier_Id" data-val="true" id="carrier_Id" class="form-select">
+									<option value="">Select</option>
+									@{
+										foreach (var entity in ClientCarrierList)
+										{
+											<option value="@entity.CarrierDetail_Id"
+													selected="@(entity.CarrierDetail_Id == Model?.Carrier_Id ? "selected" : null)">
+												@entity.Name
+											</option>
+										}
+									}
+								</select>
+								<label for="floatingSelect">Carrier <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="Choose which carrier this plan Applies to."></i></label>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="form-floating">
+								<input type="text" name="Name" class="form-control" data-val="true" placeholder="Plan Name" value="@Model?.Name">
+								<label for="">Plan Name <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="This is the label users see when assigning the plan (e.g., “Quarterly” or “Monthly – 6 Payments”)."></i> </label>
+							</div>
+						</div>
+						<div class="col-md-3">
+							<div class="form-check activeSwitch form-switch ps-0 d-flex justify-content-between mt-2">
+								<label class="form-check-label" for="IsActive">Active <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="Decide whether the installment plan is active."></i></label>
+
+								<input class="form-check-input unchecked" name="Status" data-val="true" type="checkbox" id="IsActive" value="true"
+								@(Model.Status ? "checked" : "") checked />
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<h3 class="group-heading">Downpayment Rules</h3>
+				<div class="group">
+					<div class="row">
+
+						<div class="col-md-4">
+							<div class="form-floating mb-3 downPaymentPercent">
+								<input type="number" name="DownPaymentPercent" data-val="true" id="downpaymentPer" class="form-control" placeholder="Downpayment Percent" value="@Model?.DownPaymentPercent">
+								<label for="downpaymentpercent">Downpayment % <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="Percentage of the billable total required upfront. Actual downpayment = greater of this percentage or the minimum amount."></i></label>
+							</div>
+						</div>
+
+						<div class="col-md-4">
+							<div class="form-floating mb-3 downPaymentPercent downPaymentMin">
+								<input type="text" name="DownPaymentMinimum" data-val="true" id="downpaymentMin" class="form-control" placeholder="Downpayment Minimum" value="@Model?.DownPaymentMinimum">
+								<label for="downpaymentMin">Downpayment Minimum  <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="Dollar minimum for the upfront payment. Used if the % is too low."></i></label>
+							</div>
+						</div>
+
+						<div class="col-md-4">
+							<div class="form-floating mb-3">
+								<input type="text" name="DownPaymentTermDays" data-val="true" class="form-control" placeholder="Downpayment Term (days)" value="@Model?.DownPaymentTermDays">
+								<label for="">Downpayment Term (days) <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="How many days before/after the anchor date the downpayment is due. Negative = before, 0 = same day, positive = after."></i></label>
+							</div>
+						</div>
+
+						<div class="col-md-4">
+							<div class="form-floating">
+								<select name="PaymentAnchorType_Id" data-val="true" id="paymentAnchorType" class="form-select">
+									<option value="">Select</option>
+									@{
+										var AnchorTypes = LookupUtility.GetAllAnchorTypes().OrderBy(z => z.SequenceNo);
+										foreach (var entity in AnchorTypes)
+										{
+											<option value="@entity.PaymentAnchorType_Id"
+													selected="@(entity.PaymentAnchorType_Id == Model?.PaymentAnchorType_Id ? "selected" : null)">
+												@entity.Name
+											</option>
+										}
+									}
+								</select>
+
+								<label for="floatingSelect">Anchor date <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="The reference point for downpayment due date (Effective Date or Date Billed)."></i></label>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<h3 class="group-heading">Installment Schedule</h3>
+				<div class="group">
+					<div class="row">
+						<div class="col-md-4">
+							<div class="form-floating mb-3">
+								<input type="text" name="NumberOfPayments" data-val="true" data-val-type="number" data-val-min-number="0" class="form-control" placeholder="Number of Payments" value="@Model?.NumberOfPayments">
+								<label for="">Number of Payments <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="How many installments to split the balance into after the downpayment. “0” means paid in full upfront."></i></label>
+							</div>
+						</div>
+						<div class="col-md-4">
+							<div class="form-floating mb-3">
+								<select name="InstallmentBasisType_Id" id="installmentBasisType" class="form-select">
+									<option value="">Select</option>
+									@{
+										var InstallmentBasisTypes = LookupUtility.GetAllInstallmentBasisTypes().OrderBy(z => z.SequenceNo);
+										foreach (var entity in InstallmentBasisTypes)
+										{
+											<option value="@entity.InstallmentBasisType_Id"
+													selected="@(entity.InstallmentBasisType_Id == Model?.InstallmentBasisType_Id ? "selected" : null)">
+												@entity.Name
+											</option>
+										}
+									}
+								</select>
+								<label for="floatingSelect">Installment Basis <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="Determines how installment dates are calculated: from policy effective date, from bill date, or on a fixed day each month."></i></label>
+							</div>
+						</div>
+
+						<div class="col-md-4">
+							<div class="row">
+								<div class="col-md-7">
+									<div class="form-floating mb-3">
+										<select name="IntervalUnitType_Id" id="interval" class="form-select">
+											<option value="">Select</option>
+											@{
+												var IntervalUnitTypes = LookupUtility.GetAllIntervalUnitTypes().OrderBy(z => z.SequenceNo);
+												foreach (var entity in IntervalUnitTypes)
+												{
+													<option value="@entity.IntervalUnitType_Id"
+															selected="@(entity.IntervalUnitType_Id == Model?.IntervalUnitType_Id ? "selected" : null)">
+														@entity.Name
+													</option>
+												}
+											}
+										</select>
+										<label for="floatingSelect">Interval <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="Gap between installments (in days or months). Applies after the first payment"></i></label>
+									</div>
+								</div>
+
+								<div class="col-md-5" id="intervalInput">
+									<div class="form-floating mb-3">
+										<input type="text" name="IntervalValue" class="form-control" placeholder="Interval Value" value="@Model?.IntervalValue">
+										<label for="">Interval Value <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="In days or months."></i></label>
+									</div>
+								</div>
+
+							</div>
+						</div>
+
+
+
+						<div class="col-md-4">
+							<div class="form-floating">
+								<input type="text" name="FirstPaymentOffsetDays" class="form-control" placeholder="First Payment Offset Override" value="@Model?.FirstPaymentOffsetDays">
+								<label for="">First Payment Offset Override <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="Custom gap (in days) between the downpayment and the first installment. Later installments follow the regular interval."></i></label>
+							</div>
+						</div>
+
+						<div class="col-md-4">
+							<div class="form-floating">
+								<input type="text" name="FixedDayOfMonth" class="form-control" placeholder="Fixed Day of Month" value="@Model?.FixedDayOfMonth">
+								<label for="">Fixed Day of Month <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="If basis = Day of Month, all installments fall on this calendar day. Adjusts for short months."></i></label>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<h3 class="group-heading">Billing Controls</h3>
+				<div class="group">
+					<div class="row">
+
+						<div class="col-md-4">
+							<div class="form-check form-switch ps-0 d-flex justify-content-between mt-2 mb-3">
+								<label class="form-check-label" for="setDate">Set Date Billed Equal to Due Date <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="If enabled, bill date = due date. Otherwise, system subtracts lead time."></i></label>
+
+								<input class="paymentSwitch form-check-input"
+								@* data-val="true" *@
+									   type="checkbox"
+									   id="setDate"
+									   name="IsSetBillDateEqualDue"
+									   value="true"
+								@(Model.IsSetBillDateEqualDue ? "checked" : "") />
+
+							</div>
+						</div>
+
+						<div class="col-md-4">
+							<div class="form-floating" id="leadTimeContainer">
+								<input type="text" name="LeadTime" class="form-control" placeholder="Lead time" value="@Model?.LeadTime">
+								<label for="">Lead time <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="If basis = Day of Month, all installments fall on this calendar day. Adjusts for short months."></i></label>
+							</div>
+						</div>
+
+
+
+						<div class="col-md-4">
+							<div class="form-check form-switch ps-0 d-flex justify-content-between mt-2 mb-3">
+								<label class="form-check-label" for="installmentFeeSetup">Installment Fee Setup <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="Add any fees that apply to each installment (e.g., admin fees)."></i></label>
+								<input class="paymentSwitch form-check-input" @* data-val="true" *@ name="IsInstallmentFeeSetup" type="checkbox" value="true" id="installmentFeeSetup"
+								@(Model.IsInstallmentFeeSetup ? "checked" : "")>
+
+							</div>
+						</div>
+
+						@* <div class="col-md-12"><label class="form-check-label mb-2"><strong>Other Options</strong> </label></div> *@
+
+						<div class="col-md-4">
+							<div class="form-check form-switch ps-0 d-flex justify-content-between mt-2 mb-3">
+								<label class="form-check-label" for="autoSendInvoices">Auto-send invoices <i class="ri-information-line" data-bs-toggle="tooltip" data-bs-title="Automatically email invoices when they’re created"></i></label>
+								@* <input type="hidden" name="IsAutoSendInvoices" value="false" /> *@
+								<input class="paymentSwitch form-check-input" @* data-val="true" *@ name="IsAutoSendInvoices" type="checkbox" value="true" id="autoSendInvoices"
+								@(Model.IsAutoSendInvoices ? "checked" : "")>
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="modal-footer text-end position-relative">
+			<div class="position-absolute animate-modal"
+				 style="overflow: hidden; inset: 0; z-index: 5; top:0; background: rgb(255, 255, 255);">
+				<div class="d-flex justify-content-end p-16">
+					<div class="btn-skeleton loading rounded" style="width: 130px; height: 34px;margin-right:12px;"></div>
+					<div class="btn-skeleton loading rounded" style="width: 160px; height: 34px;"></div>
+				</div>
+			</div>
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+			<button type="button" class="btn btn-primary" data-name="btnSaveInstallmentPlan">Save changes</button>
+		</div>
+	</form>
+
+</div>
+<link href="~/css/skeleton.css" rel="stylesheet" />
+<script>
+	@if (Model != null)
+	{
+		<text>
+																		 var PaymentPlan_Id = @Model.PaymentPlan_Id;
+		</text>
+	}
+	else
+	{
+		<text>
+																		var PaymentPlan_Id = 0;
+		</text>
+
+	}
+</script>
+<script>
+	setTimeout(() => {
+	  $('.animate, .animate-modal').hide()
+	}, 1000);
+	$('.modal-link').on("click", function () {
+	  $('.animate-modal').show()
+	  setTimeout(() => {
+		$('.animate-modal').hide()
+	  }, 1000);
+	});
+
+</script>
+<script type="text/javascript">
+		$(document).ready(function () {
+
+		$('#leadTimeContainer').parent().toggle(!$('#setDate').is(':checked'));
+
+		$('#setDate').change(function(){
+		  $('#leadTimeContainer').parent().toggle(!$(this).is(':checked'));
+		});
+
+		const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+	const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+
+		});
+</script>
+
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

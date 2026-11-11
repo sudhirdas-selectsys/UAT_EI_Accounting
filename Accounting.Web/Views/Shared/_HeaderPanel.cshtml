@@ -1,0 +1,39 @@
+﻿@model UserSession
+@{
+    var CompanyName = !string.IsNullOrEmpty(Model?.DefaultCompanyName) ? Model?.DefaultCompanyName : Model?.CompanyName;
+    bool IsSuperAdmin = Model?.UserRoleMappingList?.Any(x => x.Role_Id == MasterLookup._Roles.SuperAdmin) ?? false;
+    bool IsAdminOrSuperAdmin = Model?.UserRoleMappingList?.Any(x => x.Role_Id == MasterLookup._Roles.SuperAdmin || x.Role_Id == MasterLookup._Roles.Admin || x.Role_Id == MasterLookup._Roles.CustomerAdmin) ?? false;
+}
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+        <div style="display: inline-flex; align-items: center;"> <a href="/"> <span class="account-logo" style="color:#5F2EE5;"><img src="~/images/ei-accounting-logo.svg" height="45" title="EI-Accounting" /></span></a> </div>
+    </div>
+    <div class="user-info">
+        <div class="dropdown user-settings" data-name="SelectCompanyUserSettings">
+            <button class="btn btn-secondary no-arrow" type="button" data-name="SelectCompany" aria-controls="switchCompany">
+                <i class="ri-building-line"></i> <span class="selectedCompany">@CompanyName</span>
+            </button>
+
+        </div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-white dropdown-toggle show" data-bs-toggle="dropdown"
+                    aria-expanded="true">
+                <i class="ri-user-3-fill me-1"></i><span>@(Model?.FirstName + " " + Model?.LastName)</span>
+            </button>
+            <ul class="dropdown-menu" style="">
+                @{
+                    if (IsAdminOrSuperAdmin)
+                    {
+                        <li><a class="dropdown-item" href="/SystemConfiguration/Index"><i class="ri-settings-3-line"></i>Manage</a> </li>
+
+                    }
+                }
+                <li><a class="dropdown-item" data-name="btnLoadReports" href="/Reports/Index"><i class="ri-file-chart-line"></i>Reports</a> </li>
+                <li><a class="dropdown-item" data-name="btnUpdatePassword" href="javascript:void(0);"><i class="ri-edit-line"></i>Update Password</a></li>
+                <li><a class="dropdown-item" href="/Login/Logout"><i class="ri-logout-circle-r-line"></i> Logout</a> </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script src="~/js/login.js"></script>

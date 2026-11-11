@@ -1,0 +1,84 @@
+﻿using Accounting.Entities.DB.Transactions;
+using Accounting.Entities.External.EI;
+using Accounting.Entities.External.ePay;
+using Accounting.Entities.Internal;
+using Microsoft.Data.SqlClient;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Accounting.DBUtilities.Interfaces.Transactions
+{
+    public interface IPolicyDetailsRepository
+    {
+        PolicyDetails InsertUpdatePolicyDetails(SqlTransaction sqlTransaction, PolicyDetails policyDetails);
+        PolicyDetailsLineItems InsertUpdatePolicyDetailsLineItems(SqlTransaction sqlTransaction, PolicyDetailsLineItems policyDetailsLineItems);
+        UnderWriterDetails InsertUpdateUnderWriterDetails(SqlTransaction sqlTransaction, UnderWriterDetails underWriterDetails);
+        AgentDetails InsertUpdateAgentDetails(SqlTransaction sqlTransaction, AgentDetails agentDetails); 
+        CarrierDetails InsertUpdateCarrierDetails(SqlTransaction sqlTransaction, CarrierDetails carrierDetails);
+        FinanceDetails InsertUpdateFinanceDetails(SqlTransaction sqlTransaction, FinanceDetails financeDetails);
+        InsuredDetails InsertUpdateInsuredDetails(SqlTransaction sqlTransaction, InsuredDetails insuredDetails);
+        InterestDetails InsertUpdateInterestDetails(SqlTransaction sqlTransaction, InterestDetails interestDetails);
+        WholesalerDetails InsertUpdateWholesalerDetails(SqlTransaction sqlTransaction, WholesalerDetails wholesalerDetails);
+        StateDetails InsertUpdateStateDetails(SqlTransaction sqlTransaction, StateDetails stateDetails);
+        PolicyDetails GetPolicyDetails(long Id);
+        List<PolicyDetailsLineItems> GetPolicyDetailsLineItems(long PolicyDetails_Id);
+        AgentDetails GetAgentDetails(long AgentDetail_Id);
+        CarrierDetails GetCarrierDetails(long CarrierDetail_Id);
+        InsuredDetails GetInsuredDetails(long InsuredDetail_Id);
+        InterestDetails GetInterestDetails(long InterestDetail_Id);
+        WholesalerDetails GetWholesalerDetails(long WholesalerDetail_Id);
+        UnderWriterDetails GetUnderWriterDetails(long UnderWriterDetail_Id);
+        FinanceDetails GetFinanceDetails(long FinanceDetail_Id);
+        PolicyDetails GetPolicyDetailsBySubmission_Id(long Submission_Id, long Client_Id);
+        void InactivePolicyDetailsLineItems(SqlTransaction sqlTransaction, long PolicyDetails_Id, long client_Id);
+        List<PolicyDetails> GetAllPolicyDetails(PolicyDetails policysearch, long Client_Id, int PageSize, int PageNumber, ref long TotalRecords);
+        List<LookupEntity> GetAllAgentDetailsByName(string SearchText, long Client_Id);
+        List<LookupEntity> GetAllInsuredsByName(string SearchText, long Client_Id);
+        List<LookupEntity> GetAllCarriersByName(string SearchText, long Client_Id);
+        List<LookupEntity> GetAllClientsByName(string SearchText, long Client_Id);
+        //List<ARList> GetARSearchResults(Search search);
+        List<InvoiceDetails> GetARSearchResults(Search search, int pageIndex, int pageSize, string SortOrder);
+        List<InvoiceDetails> GetAPSearchResults(Search search, int pageIndex, int pageSize, string SortOrder);
+        List<LookupEntity> GetAllWholesalersByName(string SearchText, long Client_Id);
+        List<LookupEntity> GetAllSalesRepsByName(string SearchText, long Client_Id);
+        List<LookupEntity> GetAllStateDetailsByName(string SearchText, long Client_Id);
+        List<LookupEntity> GetAllFinanceDetailsByName(string SearchText, long Client_Id);
+        List<InvoiceDetails> GetSearchInvoicesPaymentDetails(string InvoiceorPolicyNo, byte Direction_Id, long Client_Id);
+        TransactionDetails GetTransactionDetails(long Quote_Id, long Client_Id);
+        List<InvoiceList> GetAllOpenInvoices(long Client_Id, long Entity_Id, byte EntityType_Id, string querySearch);
+        AgentDetails GetAgentDetailsByReference_Id(long Client_Id, string Reference_Id);
+        InsuredDetails GetInsuredDetailsByReference_Id(long Client_Id, string Reference_Id);
+        CarrierDetails GetCarrierDetailsByReference_Id(long Client_Id, string Reference_Id);
+        WholesalerDetails GetWholesalerDetailsByReference_Id(long Client_Id, string Reference_Id);
+        int InactivePolicyDetails(SqlTransaction sqlTransaction, long PolicyDetails_Id, long client_Id);
+        StateDetails GetStateDetailsByName(string Name, long Client_Id);
+        void UpdatePolicyNumberByPreviousSubmissionID(long Submission_Id, string PolicyNumber, long Client_Id, long OriginalSubmission_Id);
+        void UpdatePolicyNumberByPreviousSubmissionIDWithTransaction(SqlTransaction sqlTransaction, long Submission_Id, string PolicyNumber, long Client_Id, long OriginalSubmission_Id);
+        void updatePayeerAndEntityByInvoiceDetailId(SqlTransaction sqlTransaction, InvoiceDetails invoiceDetails);
+        InvoiceDetails InsertUpdateOtherEntityDetails(SqlTransaction sqlTransaction, InvoiceDetails invoiceDetails, long Client_Id);
+        List<LookupEntity> GetAllOtherEnityDetailsByName(string SearchText, long Client_Id);
+		SalesRepDetails InsertUpdateSalesRepDetails(SqlTransaction sqlTransaction, SalesRepDetails salesRepDetails);
+		InvoiceDetails GetEntityNameByEntityTypeIdAndInvoiceId(long Client_Id, long InvoiceId, byte EntityType_Id);
+        SalesRepDetails GetSalesRepDetails(long Id);
+        InvoiceDetails InsertUpdateSalesRepDetails(SqlTransaction sqlTransaction, InvoiceDetails invoiceDetails, long Client_Id);
+        void UpdateAssignedSalesRepIdByInvoiceIdandEntityId(SqlTransaction sqlTransaction,InvoiceDetails invoiceDetails);
+        CarrierDetails InsertCarrierDetails(CarrierDetails carrierDetails);
+        EntityInfo GetEntityInfo(long Client_Id, long Entity_Id, byte EntityType_Id);
+        List<LookupEntity> GetAllUnderwritersByName(string SearchText, long Client_Id); 
+		OtherEntityDetails GetOtherEntityDetails(long Client_Id, long Id); 
+        ParentAgentDetails InsertUpdateParentAgentDetails(SqlTransaction sqlTransaction, ParentAgentDetails parentAgentDetails);
+        List<EIPost_Req> GetAllTransactionDetailsByDirections(long Quote_Id, long Client_Id, string Type);
+        ReferralUnderwriter InsertUpdateReferralUnderwriter(SqlTransaction sqlTransaction, ReferralUnderwriter referralUnderwriter);
+        ReferralUnderwriter GetReferralUnderwriterDetailsByClientId(long ReferralUnderwriter_Id, long Client_Id);
+        MortgageeDetails GetMortgageeDetails(long MortgageeDetail_Id);
+        MortgageeDetails InsertUpdateMortgageeDetails(SqlTransaction sqlTransaction, MortgageeDetails Details);
+        AgentBrokerContactDetails InsertUpdateAgentBrokerContactDetails(SqlTransaction sqlTransaction, AgentBrokerContactDetails agentBrokerContactDetails, long CreatedOrUpdatedBy);
+        string ProcessBillQueue(long Client_Id, long report_Id, byte fileType_Id, byte direction_Id, string selectedInvoicesJson, string billDetailJson, long user_Id);
+        List<InstallmentDetails> GetInstallmentDetailsByPolicy(long PolicyDetails_Id, long Client_Id, int InstallmentNo);
+        string UpdateBillProcessQueueStatus(long Client_Id, long billProcess_IdOrPayment_Id, byte billProcessStatus_Id, long user_Id);
+        List<LookupEntity> GetAllMortgageeDetailsByName(string SearchText, long Client_Id);
+    }
+}

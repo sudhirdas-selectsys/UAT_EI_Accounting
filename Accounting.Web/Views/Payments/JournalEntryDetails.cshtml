@@ -1,0 +1,52 @@
+﻿@model List<JournalEntriesLog>
+<div data-name="JournalEntryContainerContainer" style="margin-bottom:30px;">
+	<div class="border">
+		<div class="table-responsive table-scroll" style="max-height:340px; overflow-y:auto;">
+			<table class="table  ei-table mb-0">
+				<thead>
+					<tr>
+						<th>S.No</th>
+						<th style="width:250px">COA Name</th>
+						<th style="width:100px">Debit</th>
+						<th style="width:100px">Credit</th>
+						<th style="width:500px">Description</th>
+						<th style="width:100px">Application Number</th>
+						<th style="width:100px">Entry Date</th>
+						<th style="width:100px">Entry Status</th>
+						<th style="width:100px">CreatedBy</th>
+					</tr>
+				</thead>
+				<tbody id="line-items-body">
+					@{
+						if (Model?.Count > 0)
+						{
+							int index = 1;
+							foreach (var item in Model)
+							{
+								string COAName = !string.IsNullOrEmpty(item.DebitCOAName) ? item.DebitCOAName : item.CreditCOAName;
+								double? DebitAmount = item.CreditChartOfAccount_Id == null && item.DebitChartOfAccount_Id != null ? item.Amount : null;
+								double? CreditAmount = item.CreditChartOfAccount_Id != null && item.DebitChartOfAccount_Id == null ? item.Amount : null;
+								<tr>
+									<td>@index</td>
+									<td><div class="text-truncate" title="@COAName" style="width:250px;">@COAName</div></td>
+									<td>@CommonUtility.ConvertToCurrencyFormat(DebitAmount, false, 2)</td>
+									<td>@CommonUtility.ConvertToCurrencyFormat(CreditAmount, false, 2)</td>
+									<td><div class="text-truncate" title="@item.Description" style="width:500px;">@item.Description</div></td>
+									<td>@item.ApplicationNumber</td>
+									<td>@item.EntryDate.ToShortDateString()</td>
+									<td>@LookupUtility.GetAllJournalEntryStatus().FirstOrDefault(x => x.JournalEntryStatus_Id == item.JournalEntryStatus_Id)?.Name</td>
+									<td><div class="text-truncate" title="@item.CreatedByName" style="width:100px;">@item.CreatedByName</div></td>
+								</tr>
+								index++;
+							}
+						}
+						else
+						{
+							<tr><td colspan="9">No records found!</td></tr>
+						}
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>

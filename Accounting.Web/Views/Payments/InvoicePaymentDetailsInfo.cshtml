@@ -1,0 +1,301 @@
+﻿@model InvoicePaymentDetails
+@{
+	var PolicyDetails = Model?.PolicyDetails;
+	var InvoiceDetailsList = Model?.PolicyDetails.InvoicesDetailsList;
+	var TransactionHistoryList = Model?.InvoicePaymentDetailsList;
+}
+
+<p class="invoicepaymentsheader-label">Accounts Receivables</p>
+<div class="table-responsive pd-table-scroll mb-2">
+	<table class="table ei-table mb-0 no-wrap arr-data-table">
+		<thead>
+			<tr>
+				<th style="width:100px;">S.No</th>
+				<th>Transaction Description </th>
+				<th>Effective Date </th>
+				<th>Direction </th>
+				<th>Total Amount </th>
+				<th>Outstanding Balance </th>
+				<th>Status</th>
+			</tr>
+		</thead>
+		<tbody>
+			@{
+				int i = 1;
+				if (InvoiceDetailsList?.Count() > 0)
+				{
+					foreach (var item in InvoiceDetailsList)
+					{
+						LU_BillingType_LineItems_Directions BillingLineItemsDirections = LookupUtility.GetAllLU_BillingType_LineItems_Directions().FirstOrDefault(x => x.BillingType_LineItems_Directions_Id == item.BillingType_LineItems_Directions_Id);
+						LU_LineItems_Directions LineItemsDirections = LookupUtility.GetAllLineItems_Directions().FirstOrDefault(x => x.LineItems_Directions_Id == BillingLineItemsDirections?.LineItems_Directions_Id);
+						LU_LineItems_Clients lineItems_Clients = LookupUtility.GetAllLineItems_Clients().FirstOrDefault(x => x.LineItems_Clients_Id == LineItemsDirections?.LineItems_Clients_Id);
+						LU_LineItems LineItems = LookupUtility.GetAllLineItems().FirstOrDefault(c => c.LineItem_Id == lineItems_Clients?.LineItem_Id);
+						LU_LineItemTypes LineType = LookupUtility.GetAllLineItemTypes().FirstOrDefault(c => c.LineItemType_Id == LineItems?.LineItemType_Id);
+						if (LineItemsDirections?.Direction_Id == MasterLookup._Directions.AR)
+						{
+							<tr>
+								<td>@i</td>
+								<td>
+									<div class="text-truncate" title="@item.Description" style="width:200px;">@item.Description</div>
+								</td>
+								<td>
+									<label class="label">@PolicyDetails?.EffectiveDate.ToShortDateString()</label>
+								</td>
+								<td>
+									<label class="label">@LookupUtility.GetAllDirections().FirstOrDefault(x => x.Direction_Id == LineItemsDirections.Direction_Id)?.Name</label>
+								</td>
+								<td>
+									<label class="label">@CommonUtility.ConvertToCurrencyFormat(item.Amount, false, 2)</label>
+								</td>
+								<td>
+									<label class="label">@CommonUtility.ConvertToCurrencyFormat(item.RemainingBalance, false, 2)</label>
+								</td>
+								<td valign="middle">
+									<span class="badge bg-success">@(item.Paid == true ? "Paid" : (Math.Abs(item.RemainingBalance) < Math.Abs(item.Amount) ? "Partially Paid" : "Un Paid"))</span>
+									@*<span class="badge bg-success">@(item.Paid == true ? "Paid" : "Un Paid")</span>*@
+								</td>
+							</tr>
+							i++;
+						}
+					}
+				}
+				else
+				{
+					<tr><td colspan="10">No records</td></tr>
+				}
+			}
+		</tbody>
+	</table>
+	<p class="mt-3" style="font-size: 12px;"> Transaction History</p>
+	<div class="table-responsive pd-table-scroll mb-5">
+		<table class="table ei-table mb-0 no-wrap  arr-data-table">
+			<thead>
+				<tr>
+					<th style="width:100px;">S.No</th>
+					<th style="width:120px;">Transaction ID</th>
+					<th style="width:120px;">Payment ID</th>
+					<th>Policy Number</th>
+					<th>Invoice #</th>
+					<th>Line Item</th>
+					<th>Transaction Date</th>
+					<th>Payor/Payee Name</th>
+					<th>Agency Name</th>
+					<th>Transaction Type</th>
+					<th>Payment Method</th>
+					<th>Reference Number</th>
+					<th>Amount Paid/Received</th>
+					<th>Bank Account</th>
+					<th>Payment Direction</th>
+				</tr>
+			</thead>
+			<tbody>
+				@{
+					int K = 1;
+					if (TransactionHistoryList?.Count() > 0)
+					{
+						foreach (var item in TransactionHistoryList.Where(d => d.Direction_Id == MasterLookup._Directions.AR))
+						{
+							<tr>
+								<td>@K</td>
+								<td>@item.PaymentApplicationLineItem_Id</td>
+								<td>@item.Payment_Id</td>
+								<td><div class="text-truncate" title="@item.PolicyNumber" style="width:150px;">@item.PolicyNumber</div></td>
+								<td>@item.InvoiceNo</td>
+								<td><div class="text-truncate" title="@item.LineItem" style="width:150px;">@item.LineItem</div></td>
+								<td>@item.TransactionDate.ToShortDateString()</td>
+								<td><div class="text-truncate" title="@item.EntityName" style="width:140px;">@item.EntityName</div></td>
+								<td><div class="text-truncate" title="@item.AgentName" style="width:140px;">@item.AgentName</div></td>
+								<td><div class="text-truncate" title="@LookupUtility.GetAllDirections().FirstOrDefault(x => x.Direction_Id == item.Direction_Id)?.Name" style="width:140px;">@LookupUtility.GetAllDirections().FirstOrDefault(x => x.Direction_Id == item.Direction_Id)?.Name</div></td>
+								<td><div class="text-truncate" title="@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == item.PaymentType_Id)?.Name" style="width:140px;">@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == item.PaymentType_Id)?.Name</div></td>
+								<td><div class="text-truncate" title="@item.ReferenceNumber" style="width:140px;">@item.ReferenceNumber</div></td>
+								<td>@CommonUtility.ConvertToCurrencyFormat(item.AppliedAmount, false, 2)</td>
+								<td><div class="text-truncate" title="@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id)?.Name" style="width:140px;">@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id)?.Name</div></td>
+								<td style="text-align: center;">
+									@if (item.PaymentDirection_Id == MasterLookup._PaymentDirections.Incoming)
+									{
+										<i class="ri-arrow-down-line me-1"></i>
+									}
+									else
+									{
+										<i class="ri-arrow-up-line me-1"></i>
+									}
+									@LookupUtility.GetAllPaymentDirections().FirstOrDefault(x => x.PaymentDirection_Id == item.PaymentDirection_Id)?.Name
+								</td>
+							</tr>
+							K++;
+						}
+					}
+					else
+					{
+						<tr><td colspan="13">No records</td></tr>
+					}
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<p class="invoicepaymentsheader-label">Accounts Payables</p>
+<div class="table-responsive pd-table-scroll">
+	<table class="table ei-table mb-0 no-wrap arr-data-table">
+		<thead>
+			<tr>
+				<th style="width:100px;">S.No</th>
+				<th>Transaction Description </th>
+				<th>Effective Date </th>
+				<th>Direction </th>
+				<th>Total Amount </th>
+				<th>Outstanding Balance </th>
+				<th>Status</th>
+			</tr>
+		</thead>
+		<tbody>
+			@{
+				int j = 1;
+				if (InvoiceDetailsList?.Count() > 0)
+				{
+					foreach (var item in InvoiceDetailsList)
+					{
+						LU_BillingType_LineItems_Directions BillingLineItemsDirections = LookupUtility.GetAllLU_BillingType_LineItems_Directions().FirstOrDefault(x => x.BillingType_LineItems_Directions_Id == item.BillingType_LineItems_Directions_Id);
+						LU_LineItems_Directions LineItemsDirections = LookupUtility.GetAllLineItems_Directions().FirstOrDefault(x => x.LineItems_Directions_Id == BillingLineItemsDirections?.LineItems_Directions_Id);
+						LU_LineItems_Clients lineItems_Clients = LookupUtility.GetAllLineItems_Clients().FirstOrDefault(x => x.LineItems_Clients_Id == LineItemsDirections?.LineItems_Clients_Id);
+						LU_LineItems LineItems = LookupUtility.GetAllLineItems().FirstOrDefault(c => c.LineItem_Id == lineItems_Clients?.LineItem_Id);
+						LU_LineItemTypes LineType = LookupUtility.GetAllLineItemTypes().FirstOrDefault(c => c.LineItemType_Id == LineItems?.LineItemType_Id);
+						if (LineItemsDirections?.Direction_Id == MasterLookup._Directions.AP)
+						{
+							<tr>
+								<td>@j</td>
+								<td>
+									<div class="text-truncate" title="@item.Description" style="width:200px;">@item.Description</div>
+								</td>
+								<td>
+									<label class="label">@PolicyDetails?.EffectiveDate.ToShortDateString()</label>
+								</td>
+								<td>
+									<label class="label">@LookupUtility.GetAllDirections().FirstOrDefault(x => x.Direction_Id == LineItemsDirections.Direction_Id)?.Name</label>
+								</td>
+								<td>
+									<label class="label">@CommonUtility.ConvertToCurrencyFormat(item.Amount, false, 2)</label>
+								</td>
+								<td>
+									<label class="label">@CommonUtility.ConvertToCurrencyFormat(item.RemainingBalance, false, 2)</label>
+								</td>
+								<td valign="middle">
+									<span class="badge bg-success">@(item.Paid == true ? "Paid" : (Math.Abs(item.RemainingBalance) < Math.Abs(item.Amount) ? "Partially Paid" : "Un Paid"))</span>
+									@*<span class="badge bg-success">@(item.Paid == true ? "Paid" : "Un Paid")</span>*@
+								</td>
+							</tr>
+							i++;
+						}
+					}
+				}
+				else
+				{
+					<tr><td colspan="10">No records</td></tr>
+				}
+			}
+		</tbody>
+	</table>
+	<p class=" mt-3" style="font-size: 12px;">Transaction History</p>
+	<div class="table-responsive pd-table-scroll">
+		<table class="table ei-table mb-0 no-wrap  arr-data-table">
+			<thead>
+				<tr>
+					<th style="width:100px;">S.No</th>
+					<th style="width:120px;">Transaction ID</th>
+					<th style="width:120px;">Payment ID</th>
+					<th>Policy Number</th>
+					<th>Invoice #</th>
+					<th>Line Item</th>
+					<th>Transaction Date</th>
+					<th>Payor/Payee Name</th>
+					<th>Agency Name</th>
+					<th>Transaction Type</th>
+					<th>Payment Method</th>
+					<th>Reference Number</th>
+					<th>Amount Paid/Received</th>
+					<th>Bank Account</th>
+					<th>Payment Direction</th>
+				</tr>
+			</thead>
+			<tbody>
+				@{
+					int r = 1;
+					if (TransactionHistoryList?.Count() > 0)
+					{
+						foreach (var item in TransactionHistoryList.Where(d => d.Direction_Id == MasterLookup._Directions.AP))
+						{
+							<tr>
+								<td>@r</td>
+								<td>@item.PaymentApplicationLineItem_Id</td>
+								<td>@item.Payment_Id</td>
+								<td><div class="text-truncate" title="@item.PolicyNumber" style="width:150px;">@item.PolicyNumber</div></td>
+								<td>@item.InvoiceNo</td>
+								<td><div class="text-truncate" title="@item.LineItem" style="width:150px;">@item.LineItem</div></td>
+								<td>@item.TransactionDate.ToShortDateString()</td>
+								<td><div class="text-truncate" title="@item.EntityName" style="width:140px;">@item.EntityName</div></td>
+								<td><div class="text-truncate" title="@item.AgentName" style="width:140px;">@item.AgentName</div></td>
+								<td><div class="text-truncate" title="@LookupUtility.GetAllDirections().FirstOrDefault(x => x.Direction_Id == item.Direction_Id)?.Name" style="width:140px;">@LookupUtility.GetAllDirections().FirstOrDefault(x => x.Direction_Id == item.Direction_Id)?.Name</div></td>
+								<td><div class="text-truncate" title="@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == item.PaymentType_Id)?.Name" style="width:140px;">@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == item.PaymentType_Id)?.Name</div></td>
+								<td><div class="text-truncate" title="@item.ReferenceNumber" style="width:140px;">@item.ReferenceNumber</div></td>
+								<td>@CommonUtility.ConvertToCurrencyFormat(item.AppliedAmount, false, 2)</td>
+								<td><div class="text-truncate" title="@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id)?.Name" style="width:140px;">@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id)?.Name</div></td>
+								<td style="text-align: center;">
+									@if (item.PaymentDirection_Id == MasterLookup._PaymentDirections.Incoming)
+									{
+										<i class="ri-arrow-down-line me-1"></i>
+									}
+									else
+									{
+										<i class="ri-arrow-up-line me-1"></i>
+									}
+									@LookupUtility.GetAllPaymentDirections().FirstOrDefault(x => x.PaymentDirection_Id == item.PaymentDirection_Id)?.Name
+								</td>
+							</tr>
+							K++;
+						}
+					}
+					else
+					{
+						<tr><td colspan="13">No records</td></tr>
+					}
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<div class="modal-footer" style="position: sticky; bottom: 0; background-color: #fff;">
+	<button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+</div>
+
+<style>
+	.pd-table-scroll {
+		height: 100%;
+		overflow-y: auto;
+	}
+
+	.ei-ac-db-table thead tr th:last-child, .ei-ac-db-table thead tr td:last-child {
+		width: auto;
+	}
+
+	.invoicepaymentsheader-label {
+		display: flex;
+		align-items: center;
+		font-size: 16px;
+		font-weight: 600;
+		color: #333;
+	}
+
+		.invoicepaymentsheader-label::after {
+			content: "";
+			flex: 1;
+			height: 1px;
+			background-color: #ddd;
+			margin-left: 10px;
+		}
+
+	.arr-data-table th {
+		white-space: nowrap;
+	}
+</style>

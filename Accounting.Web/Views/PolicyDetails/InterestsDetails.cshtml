@@ -1,0 +1,71 @@
+﻿@model PolicyDetails
+@{
+	var InterestDetails = Model?.InterestDetails;
+}
+
+<div class="row">
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Name" name="InterestDetails.Name" value="@InterestDetails?.Name">
+			<label for="InterestDetails.Name">Name</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Address1" name="InterestDetails.Address1" value="@InterestDetails?.Address1">
+			<label for="InterestDetails.Address1">Address1</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" id="InterestAddress2" placeholder="Address2" name="InterestDetails.Address2" value="@InterestDetails?.Address2">
+			<label for="InterestDetails.Address2">Address2</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="City" name="InterestDetails.City" value="@InterestDetails?.City">
+			<label for="InterestDetails.City">City</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" id="InterestCountry" placeholder="Country" name="InterestDetails.Country" value="@InterestDetails?.Country">
+			<label for="InterestDetails.Country">Country</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" id="InterestCounty" placeholder="County" name="InterestDetails.County" value="@InterestDetails?.County">
+			<label for="InterestDetails.County">County</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<select class="form-select" name="InterestDetails.State">
+				<option value="">Select</option>
+				@{
+					var StateList = LookupUtility.GetAllStates();
+					foreach (var state in StateList)
+					{
+						<option value="@state.StateCode" selected="@(InterestDetails != null && InterestDetails.State == state.StateCode)">@state.StateCode</option>
+					}
+				}
+			</select>
+			<label for="InterestDetails.State">State</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Zipcode" name="InterestDetails.ZipCode" value="@InterestDetails?.ZipCode">
+			<label for="InterestDetails.ZipCode">Zipcode</label>
+		</div>
+	</div>
+</div>

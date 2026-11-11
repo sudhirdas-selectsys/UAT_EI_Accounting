@@ -1,0 +1,146 @@
+﻿@model List<TransactionHistory>
+@{
+	var PageSize = ViewBag.PageSize;
+	var PageIndex = ViewBag.PageIndex;
+	var TotalRecords = ViewBag.TotalRecords;
+}
+
+<div class="position-relative border">
+	<div class="table-responsive table-scroll">
+		<table class="table ei-table mb-0 no-wrap ei-ac-db-table  text-nowrap trns-table">
+			<thead>
+				<tr>
+					<th style="width:120px;">Transaction ID</th>
+					<th>Payment ID</th>
+					<th>Policy Number</th>
+					<th>Invoice #</th>
+					<th>Transaction Date</th>
+					<th>Payor/Payee Name</th>
+					<th>Agency Name</th>
+					<th>Transaction Type</th>
+					<th>Payment Method</th>
+					<th>Reference Number</th>
+					<th>Amount Paid/Received</th>
+					<th>Bank Account</th>
+					<th>Status</th>
+					<th>Payment Direction</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody id="line-items-body">
+				@if (Model?.Count > 0)
+				{
+					foreach (var item in Model)
+					{
+						<tr>
+							<td>@item.PaymentApplicationLineItem_Id</td>
+							<td>@item.Payment_Id</td>
+							<td><div class="text-truncate" title="@item.PolicyNumber" style="width:150px;">@item.PolicyNumber</div></td>
+							<td>@item.InvoiceNo</td>
+							<td>@item.TransactionDate?.ToShortDateString()</td>
+							<td><div class="text-truncate" title="@item.EntityName" style="width:140px;">@item.EntityName</div></td>
+							<td><div class="text-truncate" title="@item.AgentName" style="width:140px;">@item.AgentName</div></td>
+							<td>@LookupUtility.GetAllDirections().FirstOrDefault(x => x.Direction_Id == item.Direction_Id)?.Name</td>
+							<td>@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == item.PaymentType_Id)?.Name</td>
+							<td><div class="text-truncate" title="@item.ReferenceNumber" style="width:140px;">@item.ReferenceNumber</div></td>
+							<td>@CommonUtility.ConvertToCurrencyFormat(item.AppliedAmount, false, 2)</td>
+							<td>@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id)?.Name</td>
+							<td>@LookupUtility.GetAllPaymentStatus().FirstOrDefault(x => x.PaymentStatus_Id == item.PaymentStatus_Id)?.Name</td>
+							<td style="text-align: center;">
+								@if (item.PaymentDirection_Id == MasterLookup._PaymentDirections.Incoming)
+								{
+									<i class="ri-arrow-down-line me-1"></i>
+								}
+								else
+								{
+									<i class="ri-arrow-up-line me-1"></i>
+								}
+								@LookupUtility.GetAllPaymentDirections().FirstOrDefault(x => x.PaymentDirection_Id == item.PaymentDirection_Id)?.Name
+							</td>
+							<td valign="middle">
+								<div class="action-btns">
+									<a href="javascript:void(0)" data-PaymentApplicationLineItem-Id="@item.PaymentApplicationLineItem_Id" data-name="btnViewTransactionHistoryDetails" title="View Transaction History Details"><i class="ri-eye-line save-btn"></i></a>
+									@* <a href="javascript:void(0)" data-PaymentApplicationLineItem-Id="@item.PaymentApplicationLineItem_Id" data-name="btnEditTransactionHistoryDetails"><i class="ri-pencil-line save-btn edit-btn"></i></a>
+									<a href="javascript:void(0)" data-PaymentApplicationLineItem-Id="@item.PaymentApplicationLineItem_Id" data-name="btnDeleteTransactionHistoryDetails"><i class="ri-delete-bin-line delete-btn"></i></a> *@
+								</div>
+							</td>
+						</tr>
+					}
+				}
+				else
+				{
+					<tr><td colspan="14">No records found!</td></tr>
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+<div class="row align-items-center mt-3 mb-3 relative me-5">
+	<div class="col-sm-6 offset-sm-6 xs-center">
+		<div class="row align-items-center justify-content-end table-pagination">
+			<div class="col-auto"><strong>Page Size</strong></div>
+			<div class="col-auto">
+				@{
+					List<int> pageSizeOptions = new List<int> { 20, 40, 50, 100 };
+				}
+				<select class="form-select" data-name="PageSize" data-table-name="TransactionHistoryDetails">
+					@foreach (var size in pageSizeOptions)
+					{
+						<option value="@size" selected="@(PageSize == size)">@size</option>
+					}
+				</select>
+			</div>
+			<div class="col-auto">
+				<strong>
+					@{
+						if (Model?.Count > 0)
+						{
+							@(PageIndex == 0 ? 1 : (PageIndex * PageSize) + 1)
+							<text>-</text>
+							@(PageIndex == 0 ? Model?.Count : (PageIndex * PageSize) + Model?.Count)
+
+						}
+						else
+						{
+							<text>0-0</text>
+						}
+					}
+
+				</strong>
+
+				of <strong>@TotalRecords</strong>
+			</div>
+			<div class="col-auto">
+				<div class="btn-group">
+					@if (PageIndex > 0)
+					{
+						<button type="button" class="btn btn-outline-primary" data-page-index="@PageIndex" data-table-name="TransactionHistoryDetails" data-name="btnPrevious"><i class="fa fa-angle-left"></i></button>
+					}
+					else
+					{
+						<button type="button" class="btn btn-outline-primary" disabled><i class="fa fa-angle-left"></i></button>
+					}
+					@if (TotalRecords > (PageSize * (PageIndex + 1)))
+					{
+						<button type="button" class="btn btn-outline-primary" title="Next" data-page-index="@PageIndex" data-table-name="TransactionHistoryDetails" data-name="btnNext"><i class="fa fa-angle-right"></i></button>
+					}
+					else
+					{
+						<button type="button" class="btn btn-outline-primary" title="Next" disabled><i class="fa fa-angle-right"></i></button>
+					}
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<style>
+	.trns-table tr th div, .trns-table tr th, .trns-table tr td {
+		max-width: inherit !important;
+	}
+
+	.table-scroll {
+		height: calc(100vh - 350px);
+		overflow-y: auto;
+	}
+</style>

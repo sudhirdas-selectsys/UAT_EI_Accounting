@@ -1,0 +1,46 @@
+﻿@model List<Reports>
+@{
+	Layout = null;
+}
+@if (Model != null && Model.Count > 0)
+{
+	var ReportsList = ((List<Reports>)ViewBag.Reports);
+	<ul style="padding: 0;list-style: none;">
+		@foreach (var report in Model.Where(c => c.ParentReportGrouping_Id == null).OrderBy(c => c.Sequence))
+		{
+		if (report.ReportGrouping_Id == null)
+		{
+		<li class="nav-item"> <a class="nav-link" href="javascript:void(0);" data-name="btnLoadReportForm" data-report-id="@report.Report_Id"> <i class="ri-file-chart-line"></i><span>@report.Name</span> </a></li>
+
+		}
+		else
+		{
+		<li class="nav-item">
+			<a class="nav-link" href="#"> <i class="fa-regular fa-square-minus"></i><span>@report.ReportGroupingName</span> </a>
+			<ul id="components-nav" class="nav-content">
+				@{
+					var matchingReports = ReportsList.Where(c => c.ReportGrouping_Id == report.ReportGrouping_Id && c.ParentReportGrouping_Id == null).ToList();
+					foreach (var matchingReport in matchingReports)
+					{
+						var ChildReports = ReportsList.Where(c => c.ParentReportGrouping_Id == matchingReport.ReportGrouping_Id && c.ParentReportGrouping_Id > 0).ToList();
+						if (ChildReports != null && ChildReports.Count > 0)
+						{
+							foreach (var child in ChildReports)
+							{
+								child.ParentReportGrouping_Id = null;
+							}
+							<text> @Html.Partial("ReportNavigationItem", ChildReports)</text>
+						}
+						else
+						{
+							<li class="nav-item"> <a class="nav-link" href="javascript:void(0);" data-name="btnLoadReportForm" data-report-id="@matchingReport.Report_Id"> <i class="ri-file-chart-line"></i><span>@matchingReport.Name</span> </a></li>
+						}
+					}
+				}
+			</ul>
+		</li>
+		}
+		}
+	</ul>
+}
+

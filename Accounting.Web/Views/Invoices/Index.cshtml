@@ -1,0 +1,168 @@
+﻿@using Newtonsoft.Json
+@model PolicyDetails
+@{
+	var InvoicesList = Model?.InvoicesList;
+	long client_Id = ViewBag.Client_Id;
+	var disableAutoExpand = LookupUtility.GetClientSettings(client_Id, MasterLookup._ClientSettings.DisableInvoiceAccordionAutoExpand);
+	var collapseClass = string.IsNullOrEmpty(disableAutoExpand) ? "show" : string.Empty;
+	var enablePolicyDetailsInvoicesGridSorting = LookupUtility.GetClientSettings(Convert.ToInt64(client_Id), MasterLookup._ClientSettings.EnablePolicyDetailsInvoicesGridSorting);
+	List<string> enablePolicyDetailsInvoicesGridSortingList = null;
+	if (!string.IsNullOrWhiteSpace(enablePolicyDetailsInvoicesGridSorting))
+	{
+		enablePolicyDetailsInvoicesGridSortingList = JsonConvert.DeserializeObject<List<string>>(enablePolicyDetailsInvoicesGridSorting);
+	}
+}
+<div data-name="InvoicesContainer">
+	@{
+		Html.RenderPartial("~/Views/Shared/PolicyDetailsHeader.cshtml", Model);
+	}
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="card custom-card">
+				<form data-name="formInvoiceDetails">
+					<div class="bg-white card-body pb-2" style="overflow: auto;height: calc(100vh - 220px);">
+						<div class="accordion ar-accordion states" id="statesAccordion">
+							<input type="hidden" name="Id" value="@Model?.Id" />
+							@{
+								if (Model?.InvoicesList?.Count > 0)
+								{
+									foreach (var invoice in Model.InvoicesList)
+									{
+										<input type="hidden" name="Id" value="@Model?.Id" />
+										<div class="accordion-item">
+											<div class="accordion-header">
+												<button class="accordion-button collapsed state-name" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_@invoice.Id" aria-expanded="true" aria-controls="collapse_@invoice.Id"> Invoice @invoice.InvoiceNo </button>
+												<div class="d-none d-md-flex flex-row state-actions align-items-center justify-content-end">
+													<div class="invoice-data-view-item text-start me-3">
+														<label class="fw-medium">Due On: </label>
+														<span>@invoice.DueDate.ToShortDateString()</span>
+													</div>
+													<div class="invoice-data-view-item text-start ms-3">
+														<label class="fw-medium">Remaining Amount: </label>
+														<span class="premium">@CommonUtility.ConvertToCurrencyFormat(invoice.RemainingBalance, false, 2)</span>
+													</div>
+												</div>
+
+												@if (invoice.Paid)
+												{
+													<div class="d-md-flex flex-row state-actions align-items-center justify-content-end">
+														<span class="paid-label ps-1 me-3" style="color: #6f4ef6; font-weight: 600;"> Paid</span>
+
+													</div>
+												}
+												<div>
+													<a href="javascript:void(0)" data-name="GenerateInvoice" data-policydetails-id="@Model?.Id" data-installmentNo="@invoice?.InstallmentNo">
+														<i class="ri-eye-line me-2" style="font-size:18px;" title="View Invoice"></i>
+													</a>
+													<a href="javascript:void(0)" data-name="DownloadInvoice" data-policydetails-id="@Model?.Id" data-installmentNo="@invoice?.InstallmentNo">
+														<i class="ri-download-2-line" style="font-size:18px;" title="Download Invoice"></i>
+													</a>
+												</div>
+											</div>
+											<div id="collapse_@invoice.Id" class="accordion-collapse collapse @collapseClass" data-bs-parent="#statesAccordion">
+												<div class="accordion-body">
+													<div class="table-responsive" style="height: calc(100vh - 272px);overflow-y: auto;">
+														<table class="table table-striped ei-table text-nowrap" data-sort-config="policydetailsinvoicesgrid">
+															<thead>
+																<tr>
+																	<th width="317.89">Transaction Description </th>
+																	<th width="165.46">Effective Date </th>
+																	<th width="165.46">Direction </th>
+																	<th width="135.38">Amount </th>
+																	<th width="10%"></th>
+																</tr>
+															</thead>
+															<tbody>
+
+																@{
+																	if (invoice.InvoicesDetailsList?.Count > 0)
+																	{
+																		foreach (var invoiceDetail in invoice.InvoicesDetailsList)
+																		{
+																			LU_BillingType_LineItems_Directions BillingLineItemsDirections = LookupUtility.GetAllLU_BillingType_LineItems_Directions().FirstOrDefault(x => x.BillingType_LineItems_Directions_Id == invoiceDetail?.BillingType_LineItems_Directions_Id);
+																			LU_LineItems_Directions LineItemsDirections = LookupUtility.GetAllLineItems_Directions().FirstOrDefault(x => x.LineItems_Directions_Id == BillingLineItemsDirections?.LineItems_Directions_Id);
+																			LU_LineItems_Clients lineItems_Clients = LookupUtility.GetAllLineItems_Clients().FirstOrDefault(x => x.LineItems_Clients_Id == LineItemsDirections?.LineItems_Clients_Id);
+																			LU_LineItems LineItems = LookupUtility.GetAllLineItems().FirstOrDefault(c => c.LineItem_Id == lineItems_Clients?.LineItem_Id);
+																			LU_LineItemTypes LineType = LookupUtility.GetAllLineItemTypes().FirstOrDefault(c => c.LineItemType_Id == LineItems?.LineItemType_Id);
+																			<tr>
+																				<td>
+																					<div class="text-truncate" title="@invoiceDetail?.Description" style="width:200px;">@invoiceDetail?.Description</div>
+																				</td>
+																				<td>
+																					<label class="label">@Model?.EffectiveDate.ToShortDateString()</label>
+																				</td>
+																				<td>
+																					<label class="label">@LookupUtility.GetAllDirections().FirstOrDefault(x => x.Direction_Id == LineItemsDirections?.Direction_Id)?.Name</label>
+																				</td>
+																				<td>
+																					@if (LineItems?.LineItem_Id == MasterLookup._LineItems.TotalCommissionPercentage)
+																					{
+																						<label class="label">@($"{invoiceDetail.Amount} %")</label>
+																					}
+																					else
+																					{
+																						<label class="label">@CommonUtility.ConvertToCurrencyFormat(invoiceDetail.Amount, false, 2)</label>
+
+																					}
+																				</td>
+																				<td valign="middle">
+																					@if (invoiceDetail?.Paid == true)
+																					{
+																						<span class="badge bg-success">Paid</span>
+																					}
+																				</td>
+																			</tr>
+																		}
+																	}
+																}
+															</tbody>
+														</table>
+													</div>
+												</div>
+											</div>
+										</div>
+
+									}
+								}
+							}
+
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript">
+	@if (Model != null)
+	{
+		<text>
+													var PolicyDetails_Id = @Model.Id;
+		</text>
+	}
+	else
+	{
+		<text>
+												var PolicyDetails_Id = 0;
+		</text>
+
+	}
+</script>
+<script>
+	$(function(){
+	appCommon.MakeButtonActive($('[data-tab-name="Invoices"]'));
+	})
+</script>
+<link href="~/css/invoices.css" rel="stylesheet" />
+<script src="~/js/invoices.js" asp-append-version="true"></script>
+@if (enablePolicyDetailsInvoicesGridSortingList?.Any() == true)
+{
+	<script>
+		$(document).ready(function () {
+			$("table[data-sort-config]").removeData("sort-wired");
+			TableSorter.autoWire({
+				policydetailsinvoicesgrid: @Html.Raw(JsonConvert.SerializeObject(enablePolicyDetailsInvoicesGridSortingList))
+			});
+		});
+	</script>
+}

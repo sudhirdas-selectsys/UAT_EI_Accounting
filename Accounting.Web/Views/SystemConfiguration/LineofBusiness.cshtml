@@ -1,0 +1,42 @@
+﻿@using Accounting.Entities.DB.Lookups;
+@model LU_LOBs;
+
+<div>
+	<form data-name="FormLineofBusiness">
+		<div class="row">
+			<div class="mb-3 col-md-12">
+				<div class="form-floating">
+					<input type="hidden" class="form-control" name="LOB_Id" value="@Model?.LOB_Id">
+					<input type="text" class="form-control" placeholder="Name" name="Name" autocomplete="off" data-val="true" value="@Model?.Name">
+					<label>Name</label>
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div class="form-floating">
+					<input type="text" class="form-control" placeholder="Code" name="Code" autocomplete="off" data-val="true" value="@Model?.Code">
+					<label>Code</label>
+				</div>
+			</div>
+		</div>
+		<div class="offcanvas-footer text-end">
+			<button type="button" class="btn btn-secondary" data-name="btnClose" data-bs-dismiss="offcanvas">Close</button>
+			<button type="button" class="btn btn-primary" data-name="btnSaveLineofBusiness">Save changes</button>
+		</div>
+	</form>
+</div>
+<script>
+	@if (Model != null)
+	{
+		<text>
+									 var LOB_Id = @Model.LOB_Id;
+		</text>
+	}
+	else
+	{
+		<text>
+									var LOB_Id = 0;
+		</text>
+
+	}
+</script>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

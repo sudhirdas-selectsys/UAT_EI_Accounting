@@ -1,0 +1,32 @@
+﻿<form data-name="loginform">
+    <p class="h5 mb-2 text-center">Sign In</p>
+    <p class="mb-3 text-muted op-7 fw-normal text-center">Welcome back!</p>
+    <div class="mb-3">
+        <label for="Username" class="form-label">Username</label>
+        <input type="text" data-val="true" name="Username" class="form-control" autocomplete="off">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Password</label>
+        <input type="password" data-val="true" data-val-type="password" name="Password" class="form-control" autocomplete="off">
+    </div>
+    <div class="fp-block mb-2">
+        <div>
+
+        </div>
+        @* <div class="form-check form-switch custom-check mt-0">
+            <input class="form-check-input" type="checkbox" id="flexCheckCustom">
+            <label class="form-check-label" for="flexCheckCustom">
+                Remember me
+            </label>
+        </div> *@
+
+        <a href="javascript:void(0);" id="showForgotPassword"> Forgot Password? </a>
+    </div>
+    <button type="button" data-name="submitlogin" class="btn btn-primary w-100 continue">Sign In</button>
+</form>
+@* <div class="or-divider">OR</div>
+<form asp-controller="Login" asp-action="MicrosoftLogin" method="post">
+    <button type="submit" class="btn btn-outline-primary w-100 mb-3">
+        <img src="~/images/microsoft.png" class="me-2" alt="ms" /> Continue with Microsoft
+    </button>
+</form> *@

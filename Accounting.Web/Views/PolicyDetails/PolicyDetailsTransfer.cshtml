@@ -1,0 +1,90 @@
+﻿@model PolicyDetails
+
+<div>
+	@{
+		Html.RenderPartial("~/Views/Shared/PolicyDetailsHeader.cshtml", Model);
+	}
+	<div class="row">
+		<div class="col-sm-12">
+			<div class="card custom-card">
+				<div class="bg-white card-body pb-2">
+					<div class="position-relative border">
+						<div class="table-responsive table-scroll" style="height: calc(100vh - 220px);">
+							<table class="table ei-table mb-0 no-wrap ei-ac-db-table trns-db-table payment-valign">
+								<thead>
+									<tr>
+										<th style="width:100px;">Submission Id</th>
+										<th>Line Type</th>
+										<th>Total Commission</th>
+										<th>Agent Commission</th>
+										<th>Commission Amount</th>
+										<th>Agent Commission Amount</th>
+										<th>Coverage</th>
+										<th>Description</th>
+										<th>Amount</th>
+									</tr>
+								</thead>
+								<tbody>
+									@{
+										if (Model?.PolicyDetailsLineItemsList.Count > 0)
+										{
+											foreach (var item in Model.PolicyDetailsLineItemsList)
+											{
+												<tr>
+													<td>@item.Submission_Id</td>
+													<td>@item.LineType</td>
+													<td>@($"{item.HouseCommission} %")</td>
+													<td>@($"{item.AgentCommission} %")</td>
+													<td>@(CommonUtility.ConvertToCurrencyFormat(item.CommissionAmount, false, 2))</td>
+													<td>@(CommonUtility.ConvertToCurrencyFormat(item.BrokerCommissionAmount, false, 2))</td>
+													<td>@item.Coverage</td>
+													<td>@item.PolicyDetailDescription</td>
+													<td>
+														@if (item.LineType?.ToLower().Contains("premium") == true)
+														{
+															@CommonUtility.ConvertToCurrencyFormat(item.Premium, false, 2)
+														}
+														else
+														{
+															@CommonUtility.ConvertToCurrencyFormat(item.FeeTaxAmount, false, 2)
+														}
+													</td>
+												</tr>
+											}
+										}
+										else
+										{
+											<tr><td colspan="9">No records found!</td></tr>
+										}
+									}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+</div>
+<script type="text/javascript">
+	@if (Model != null)
+	{
+		<text>
+				var PolicyDetails_Id = @Model.Id;
+		</text>
+	}
+	else
+	{
+		<text>
+				var PolicyDetails_Id = 0;
+		</text>
+
+	}
+</script>
+<script>
+	$(function(){
+	appCommon.MakeButtonActive($('[data-tab-name="PolicyDetailsTransfer"]'));
+	})
+</script>
+<script src="~/js/policydetails.js" asp-append-version="true"></script>

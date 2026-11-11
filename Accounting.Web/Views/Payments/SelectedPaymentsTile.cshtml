@@ -1,0 +1,103 @@
+﻿@model Payments
+@{
+	var Direction_Id = ViewBag.Direction_Id != null ? ViewBag.Direction_Id : 0;
+	var Amount = "";
+	var RemainingAmount = "";
+	if ((Direction_Id == MasterLookup._Directions.AR && Model?.PaymentDirection_Id == MasterLookup._PaymentDirections.Outgoing) || (Direction_Id == MasterLookup._Directions.AP && Model?.PaymentDirection_Id == MasterLookup._PaymentDirections.Incoming))
+	{
+		Amount = $"-{CommonUtility.ConvertToCurrencyFormat(Model?.Amount, false, 2)}";
+		RemainingAmount = (Model?.RemainingAmount ?? 0) == 0 ? CommonUtility.ConvertToCurrencyFormat(Model?.RemainingAmount ?? 0, false, 2) : $"-{CommonUtility.ConvertToCurrencyFormat(Model?.RemainingAmount ?? 0, false, 2)}";
+	}
+	else
+	{
+		Amount = $"{CommonUtility.ConvertToCurrencyFormat(Model?.Amount, false, 2)}";
+		RemainingAmount = $"{CommonUtility.ConvertToCurrencyFormat(Model?.RemainingAmount, false, 2)}";
+	}
+}
+<div class="card arr-card">
+	<input type="hidden" data-name="Payment_Id" value="@Model?.Payment_Id" />
+	<div class="edit-arr"><i class="ri-pencil-line icon-with-circle edit-icon modal-link" data-name="btnEditSelectedPayment" data-payment-id="@Model?.Payment_Id"></i></div>
+	<div class="row align-items-center gx-0 gy-1">
+
+		<div class="col-sm-2">
+			<div class="data-item">
+				<label>Payment ID</label>
+				<span>
+					@Model?.Payment_Id
+					@if (Model?.PaymentDirection_Id == MasterLookup._PaymentDirections.Incoming)
+					{
+						<i class="ri-arrow-down-line  ms-1" title="@LookupUtility.GetAllPaymentDirections().FirstOrDefault(p=>p.PaymentDirection_Id == Model?.PaymentDirection_Id)?.Name" style="font-weight: 500"></i>
+					}
+					else
+					{
+						<i class="ri-arrow-up-line  ms-1" title="@LookupUtility.GetAllPaymentDirections().FirstOrDefault(p=>p.PaymentDirection_Id == Model?.PaymentDirection_Id)?.Name" style="font-weight: 500"></i>
+					}
+				</span>
+
+			</div>
+		</div>
+
+		<div class="col-sm-3">
+			<div class="data-item">
+				<label>Entity Type</label>
+				<span>@LookupUtility.GetAllEntityTypes().FirstOrDefault(c => c.EntityType_Id == Model?.EntityType_Id)?.Name</span>
+			</div>
+		</div>
+
+		<div class="col-sm-2">
+			<div class="data-item">
+				<label>Entity Name</label>
+				<span class="text-truncate" title="@Model?.EntityName">@Model?.EntityName</span>
+			</div>
+		</div>
+
+		<div class="col-sm-2">
+			<div class="data-item">
+				<label>Payment Date</label>
+				<span>@Model?.PaymentDate?.ToShortDateString()</span>
+			</div>
+		</div>
+
+		<div class="col-sm-2">
+			<div class="data-item">
+				<label>@(Direction_Id == MasterLookup._Directions.AR ? "Amount Received" : "Amount Payed")</label>
+				<span>@(Amount)</span>
+			</div>
+		</div>
+
+		<div class="col-sm-2">
+			<div class="data-item">
+				<label>Payment Type</label>
+				<span class="text-truncate" title="@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == Model?.PaymentType_Id)?.Name">@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == Model?.PaymentType_Id)?.Name</span>
+			</div>
+		</div>
+
+		<div class="col-sm-3">
+			<div class="data-item">
+				<label>Reference Number</label>
+				<span class="text-truncate" title="@Model?.ReferenceNumber">@Model?.ReferenceNumber</span>
+			</div>
+		</div>
+
+		<div class="col-sm-2">
+			<div class="data-item">
+				<label>Payment Status</label>
+				<span class="text-truncate" title="@LookupUtility.GetAllPaymentStatus().FirstOrDefault(x => x.PaymentStatus_Id == Model?.PaymentStatus_Id)?.Name">@LookupUtility.GetAllPaymentStatus().FirstOrDefault(x => x.PaymentStatus_Id == Model?.PaymentStatus_Id)?.Name</span>
+			</div>
+		</div>
+
+		<div class="col-sm-2">
+			<div class="data-item">
+				<label>Bank Account</label>
+				<span class="text-truncate" title="@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == Model?.OperatingBank_Id)?.Name">@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == Model?.OperatingBank_Id)?.Name</span>
+			</div>
+		</div>
+		<div class="col-sm-3">
+			<div class="data-item @(Model?.RemainingAmount > 0 ? "incomplete":Model?.RemainingAmount == 0 ? "complete" : "overdue")">
+				<label>Remaining Amount</label>
+				<span> @(RemainingAmount)</span>
+			</div>
+		</div>
+
+	</div>
+</div>

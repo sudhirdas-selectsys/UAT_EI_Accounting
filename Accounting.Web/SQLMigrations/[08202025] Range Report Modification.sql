@@ -1,0 +1,294 @@
+
+--insert into Accounting_LU_SQLInputParameters (SQLQuery_Id,ParameterName,DisplayName,Is_OutputParameter,DataType_Id,HTMLControlType_Id,DataDictionaryType_Id,ApplyRangeValidation,ShowInputField,IsRequired,Sequence,AllowFilterWith_Null,AllowFilterWith_Empty) 
+--											values(9,'Range','Range',0,1,5,3,0,1,0,2,0,0)
+--Go
+--insert into Accounting_LU_SQLInputParameters (SQLQuery_Id,ParameterName,DisplayName,Is_OutputParameter,DataType_Id,HTMLControlType_Id,DataDictionaryType_Id,ApplyRangeValidation,ShowInputField,IsRequired,Sequence,AllowFilterWith_Null,AllowFilterWith_Empty) values(10,'Range','Range',0,1,5,3,0,1,0,2,0,0)
+--Go
+--update [Accounting_LU_SQLInputParameters] set sequence=3 where SQLParameter_Id= 55
+--update [Accounting_LU_SQLInputParameters] set sequence=4 where SQLParameter_Id= 56
+--update [Accounting_LU_SQLInputParameters] set sequence=5 where SQLParameter_Id= 60
+--update [Accounting_LU_SQLInputParameters] set sequence=6 where SQLParameter_Id= 61
+
+--update [Accounting_LU_SQLInputParameters] set sequence=3 where SQLParameter_Id=58
+--update [Accounting_LU_SQLInputParameters] set sequence=4 where SQLParameter_Id=59
+--update [Accounting_LU_SQLInputParameters] set sequence=5 where SQLParameter_Id=62
+--update [Accounting_LU_SQLInputParameters] set sequence=6 where SQLParameter_Id=63
+
+
+  
+--ALTER PROC [dbo].[USP_Accounting_PaymentReport]          
+--(            
+--@Client_Id bigint = null,          
+--@PageSize int = null,        
+--@PageIndex int,  
+--@Range VARCHAR(200) = NULL,  
+--@PaymentFromDate varchar(200)=null,  
+--@PaymentToDate varchar(200)=null,  
+--@TotalRecords int out           
+--)            
+--as                  
+--begin     
+  
+--    DECLARE @CompareDateFrom DATETIME;      
+--    DECLARE @CompareDateTo DATETIME;      
+       
+--    BEGIN      
+--        SET @CompareDateFrom = TRY_CAST(@PaymentFromDate AS DATETIME);      
+--        SET @CompareDateTo = DATEADD(MILLISECOND, -2, DATEADD(DAY, 1, TRY_CAST(@PaymentToDate AS DATETIME)));      
+--    END      
+      
+--If @PageSize is NULL or @PageSize = 0        
+--begin        
+--select * from Accounting_Payments WITH (NOLOCK) where Client_Id=@Client_Id and Status = 1   
+--  AND (@CompareDateFrom IS NULL OR @CompareDateTo IS NULL          
+--        OR (PaymentDate >= @CompareDateFrom AND PaymentDate <= @CompareDateTo))   
+--order by Payment_Id desc;        
+--end        
+--else          
+--begin          
+--SELECT p.Payment_Id,  
+--ET.Name as EntityType,   
+--CASE  
+--    WHEN p.EntityType_Id = 1 THEN ag.Name                  
+--    WHEN p.EntityType_Id = 3 THEN ca.Name                  
+--    WHEN p.EntityType_Id = 2 THEN ins.Name                  
+-- WHEN p.EntityType_Id = 4 THEN AC.CompanyName    
+-- WHEN p.EntityType_Id = 6 THEN WSD.Name      
+-- ELSE NULL                  
+--END AS EntityName,  
+--CONVERT(VARCHAR(10), p.PaymentDate, 101) AS PaymentDate,      
+--CAST(ISNULL(p.Amount, 0) AS DECIMAL(18,2)) AS Amount,  
+--CAST(ISNULL(p.RemainingAmount, 0) AS DECIMAL(18,2)) AS RemainingAmount,  
+--PT.Name AS PaymentType,  
+--p.ReferenceNumber,  
+--PS.Name AS PaymentStatus,  
+--OB.Name AS BankAccount,  
+--PD.Name AS PaymentDirection  
+  
+--FROM Accounting_Payments p   
+--Left JOIN Accounting_LU_EntityTypes ET ON ET.EntityType_Id=p.EntityType_Id  
+--Left JOIN Accounting_LU_PaymentTypes PT ON PT.PaymentType_Id=p.PaymentType_Id  
+--Left JOIN Accounting_LU_PaymentStatus PS ON PS.PaymentStatus_Id=p.PaymentStatus_Id  
+--Left JOIN Accounting_LU_OperatingBanks OB ON OB.OperatingBank_Id=p.OperatingBank_Id  
+--LEFT JOIN Accounting_LU_PaymentDirections PD On PD.PaymentDirection_Id=p.PaymentDirection_Id  
+----LEFT JOIN Accounting_JournalEntries JE ON JE.Source_Id=P.Payment_Id AND JE.SourceType_Id = 3 AND JE.Status = 1      
+--LEFT JOIN Accounting_AgentDetails ag ON ag.AgentDetail_Id = p.Entity_Id AND p.EntityType_Id = 1 AND ag.Status = 1                  
+--LEFT JOIN Accounting_CarrierDetails ca ON ca.CarrierDetail_Id = p.Entity_Id AND p.EntityType_Id = 3 AND ca.Status = 1                  
+--LEFT JOIN Accounting_InsuredDetails ins ON ins.InsuredDetail_Id = p.Entity_Id AND p.EntityType_Id = 2 AND ins.Status = 1                  
+--LEFT JOIN Accounting_Clients AC on AC.Client_Id = p.Entity_Id AND p.EntityType_Id = 4 AND AC.Status = 1     
+--LEFT JOIN Accounting_WholesalerDetails WSD  ON WSD.WholesalerDetail_Id = p.Entity_Id AND p.EntityType_Id = 6 AND WSD.Status = 1     
+--WHERE p.Client_Id=@Client_Id and p.Status = 1   
+--AND (@CompareDateFrom IS NULL OR @CompareDateTo IS NULL          
+--        OR (p.PaymentDate >= @CompareDateFrom AND p.PaymentDate <= @CompareDateTo))   
+--order by p.Payment_Id desc OFFSET @PageSize * @PageIndex ROWS FETCH NEXT @PageSize ROWS ONLY;          
+--end        
+--set @TotalRecords= (select count(*) from Accounting_Payments WITH (NOLOCK) where Client_Id = @Client_Id and status = 1  
+--AND (@CompareDateFrom IS NULL OR @CompareDateTo IS NULL          
+--        OR (PaymentDate >= @CompareDateFrom AND PaymentDate <= @CompareDateTo)));        
+--end 
+
+  
+--ALTER Procedure [dbo].[USP_Accounting_TransactionReport]                      
+--(                                           
+--@TransactionFromDate varchar(200)=NULL,    
+--@TransactionToDate varchar(200)=NULL,    
+--@Client_Id bigint = NULL,  
+--@Range VARCHAR(200) = NULL,       
+--@PageSize int = null,      
+--@PageIndex int,      
+--@TotalRecords int out         
+--)                        
+--as                          
+--begin      
+  
+--    DECLARE @CompareDateFrom DATETIME;      
+--    DECLARE @CompareDateTo DATETIME;      
+       
+--    BEGIN      
+--        SET @CompareDateFrom = TRY_CAST(@TransactionFromDate AS DATETIME);      
+--        SET @CompareDateTo = DATEADD(MILLISECOND, -2, DATEADD(DAY, 1, TRY_CAST(@TransactionToDate AS DATETIME)));      
+--    END      
+      
+--If @PageSize is NULL or @PageSize = 0      
+--begin        
+-- select APALI.PaymentApplicationLineItem_Id AS TransactionID,  
+--  APD.PolicyNumber,                               
+--  AINV.InvoiceNo,         
+--CONVERT(VARCHAR(10), APALI.CreatedOn, 101) AS TransactionDate,                  
+--  CASE                     
+--  WHEN AP.EntityType_Id=1 THEN ADZ.Name                    
+--  WHEN AP.EntityType_Id=2 THEN IDZ.Name                     
+--  WHEN AP.EntityType_Id=3 THEN CDZ.Name                     
+--  WHEN AP.EntityType_Id=4 THEN CZ.CompanyName     
+--  WHEN AP.EntityType_Id=6 THEN WSD.Name     
+--  ELSE NULL END AS PayerOrPayee,                            
+--  AAD.Name AS AgencyName,                
+--  ALUD.Name AS TransactionType,                            
+--  ALUPT.Name PaymentMethod,                           
+--  AP.ReferenceNumber,                       
+--  ALUOB.Name AS BankAccount,                     
+--  ALUPS.Name AS PaymentStatus,                   
+--   CAST(ISNULL(APALI.AppliedAmount, 0) AS DECIMAL(18,2)) AS AmountPaidOrReceived,  
+--  PD.Name AS PaymentDirection  
+  
+--  FROM Accounting_PaymentApplicationLineItems APALI                          
+-- INNER JOIN Accounting_PaymentApplications APA ON APALI.PaymentApplication_Id=APA.PaymentApplication_Id  and APA.Status = 1                        
+-- INNER JOIN Accounting_Payments AP ON APA.Payment_Id = AP.Payment_Id  and AP.Status = 1     
+-- LEFT JOIN Accounting_LU_PaymentDirections PD On PD.PaymentDirection_Id=AP.PaymentDirection_Id  and AP.Status = 1                     
+-- INNER JOIN Accounting_InvoiceDetails AINVD ON APALI.InvoiceLineItem_Id=AINVD.Id   and AINVD.Status = 1                       
+-- LEFT JOIN Accounting_Invoices AINV ON AINVD.Invoice_Id=AINV.Id   and AINV.Status = 1                       
+-- INNER JOIN Accounting_PolicyDetails APD ON AINV.PolicyDetails_Id=APD.Id and APD.Status = 1                         
+-- LEFT JOIN Accounting_AgentDetails AAD ON APD.AgentDetail_Id=AAD.AgentDetail_Id and AAD.Status = 1                    
+-- LEFT JOIN Accounting_AgentDetails ADZ ON ADZ.AgentDetail_Id=AP.Entity_Id AND AP.EntityType_Id=1 and ADZ.Status = 1                         
+-- LEFT JOIN Accounting_InsuredDetails IDZ ON IDZ.InsuredDetail_Id=AP.Entity_Id AND AP.EntityType_Id=2  and IDZ.Status = 1                        
+-- LEFT JOIN Accounting_CarrierDetails CDZ ON CDZ.CarrierDetail_Id=AP.Entity_Id AND AP.EntityType_Id=3 and CDZ.Status = 1                         
+-- LEFT JOIN Accounting_Clients CZ ON CZ.Client_Id=AP.Entity_Id AND AP.EntityType_Id=4 and CZ.Status = 1                         
+-- LEFT JOIN Accounting_WholesalerDetails WSD on WSD.WholesalerDetail_Id = AP.Entity_Id AND AP.EntityType_Id=6 and WSD.Status = 1        
+-- LEFT JOIN Accounting_LU_BillingType_LineItems_Directions ALUBTLI ON AINVD.BillingType_LineItems_Directions_Id=ALUBTLI.BillingType_LineItems_Directions_Id and ALUBTLI.Status = 1                         
+-- LEFT JOIN Accounting_LU_LineItems_Directions ALULID ON ALUBTLI.LineItems_Directions_Id=ALULID.LineItems_Directions_Id   and ALULID.Status = 1                       
+-- LEFT JOIN Accounting_LU_Directions ALUD ON ALULID.Direction_Id=ALUD.Direction_Id  and ALUD.Status = 1                        
+-- LEFT JOIN Accounting_LU_PaymentTypes ALUPT ON AP.PaymentType_Id=ALUPT.PaymentType_Id and ALUPT.Status = 1                         
+-- LEFT JOIN Accounting_LU_OperatingBanks ALUOB ON AP.OperatingBank_Id=ALUOB.OperatingBank_Id  and ALUOB.Status = 1                        
+-- LEFT JOIN Accounting_LU_PaymentStatus ALUPS ON AP.PaymentStatus_Id=ALUPS.PaymentStatus_Id and ALUPS.Status = 1                         
+-- WHERE APD.Client_Id=@Client_Id AND APALI.Status=1    
+--  AND (@CompareDateFrom IS NULL OR @CompareDateTo IS NULL          
+--    OR (APALI.CreatedOn >= @CompareDateFrom AND APALI.CreatedOn <= @CompareDateTo))   
+   
+--ORDER BY APALI.CreatedOn DESC;        
+--end        
+--else        
+--begin        
+--SELECT APALI.PaymentApplicationLineItem_Id AS TransactionID,  
+--  APD.PolicyNumber,                               
+--  AINV.InvoiceNo,         
+--  CONVERT(VARCHAR(10), APALI.CreatedOn, 101) AS TransactionDate,                  
+--  CASE                     
+--  WHEN AP.EntityType_Id=1 THEN ADZ.Name                    
+--  WHEN AP.EntityType_Id=2 THEN IDZ.Name                     
+--  WHEN AP.EntityType_Id=3 THEN CDZ.Name                     
+--  WHEN AP.EntityType_Id=4 THEN CZ.CompanyName     
+--  WHEN AP.EntityType_Id=6 THEN WSD.Name     
+--  ELSE NULL END AS PayerOrPayee,                            
+--  AAD.Name AS AgencyName,                
+--  ALUD.Name AS TransactionType,                            
+--  ALUPT.Name PaymentMethod,                           
+--  AP.ReferenceNumber,                       
+--  ALUOB.Name AS BankAccount,                     
+--  ALUPS.Name AS PaymentStatus,                   
+--  CAST(ISNULL(APALI.AppliedAmount, 0) AS DECIMAL(18,2)) AS AmountPaidOrReceived,  
+--  PD.Name AS PaymentDirection  
+  
+--  FROM Accounting_PaymentApplicationLineItems APALI                          
+--  INNER JOIN Accounting_PaymentApplications APA ON APALI.PaymentApplication_Id=APA.PaymentApplication_Id  and APA.Status = 1                        
+--  INNER JOIN Accounting_Payments AP ON APA.Payment_Id = AP.Payment_Id  and AP.Status = 1  
+--  LEFT JOIN Accounting_LU_PaymentDirections PD On PD.PaymentDirection_Id=AP.PaymentDirection_Id  and AP.Status = 1  
+--  INNER JOIN Accounting_InvoiceDetails AINVD ON APALI.InvoiceLineItem_Id=AINVD.Id   and AINVD.Status = 1                       
+--  LEFT JOIN Accounting_Invoices AINV ON AINVD.Invoice_Id=AINV.Id   and AINV.Status = 1                       
+--  INNER JOIN Accounting_PolicyDetails APD ON AINV.PolicyDetails_Id=APD.Id and APD.Status = 1                         
+--  LEFT JOIN Accounting_AgentDetails AAD ON APD.AgentDetail_Id=AAD.AgentDetail_Id and AAD.Status = 1                    
+--  LEFT JOIN Accounting_AgentDetails ADZ ON ADZ.AgentDetail_Id=AP.Entity_Id AND AP.EntityType_Id=1 and ADZ.Status = 1                         
+--  LEFT JOIN Accounting_InsuredDetails IDZ ON IDZ.InsuredDetail_Id=AP.Entity_Id AND AP.EntityType_Id=2  and IDZ.Status = 1                        
+--  LEFT JOIN Accounting_CarrierDetails CDZ ON CDZ.CarrierDetail_Id=AP.Entity_Id AND AP.EntityType_Id=3 and CDZ.Status = 1                         
+--  LEFT JOIN Accounting_Clients CZ ON CZ.Client_Id=AP.Entity_Id AND AP.EntityType_Id=4 and CZ.Status = 1                         
+--  LEFT JOIN Accounting_WholesalerDetails WSD on WSD.WholesalerDetail_Id = AP.Entity_Id AND AP.EntityType_Id=6 and WSD.Status = 1                                      
+--  LEFT JOIN Accounting_LU_BillingType_LineItems_Directions ALUBTLI ON AINVD.BillingType_LineItems_Directions_Id=ALUBTLI.BillingType_LineItems_Directions_Id and ALUBTLI.Status = 1                         
+--  LEFT JOIN Accounting_LU_LineItems_Directions ALULID ON ALUBTLI.LineItems_Directions_Id=ALULID.LineItems_Directions_Id   and ALULID.Status = 1                       
+--  LEFT JOIN Accounting_LU_Directions ALUD ON ALULID.Direction_Id=ALUD.Direction_Id  and ALUD.Status = 1                        
+--  LEFT JOIN Accounting_LU_PaymentTypes ALUPT ON AP.PaymentType_Id=ALUPT.PaymentType_Id and ALUPT.Status = 1                         
+--  LEFT JOIN Accounting_LU_OperatingBanks ALUOB ON AP.OperatingBank_Id=ALUOB.OperatingBank_Id  and ALUOB.Status = 1                        
+--  LEFT JOIN Accounting_LU_PaymentStatus ALUPS ON AP.PaymentStatus_Id=ALUPS.PaymentStatus_Id and ALUPS.Status = 1     
+--  WHERE APD.Client_Id=@Client_Id AND APALI.Status=1    
+--  AND (@CompareDateFrom IS NULL OR @CompareDateTo IS NULL          
+--    OR (APALI.CreatedOn >= @CompareDateFrom AND APALI.CreatedOn <= @CompareDateTo))   
+  
+--  ORDER BY APALI.CreatedOn DESC  OFFSET @PageSize * @PageIndex ROWS FETCH NEXT @PageSize ROWS ONLY;        
+--  end     
+    
+--  set @TotalRecords= (select count(*) FROM Accounting_PaymentApplicationLineItems APALI                          
+--  INNER JOIN Accounting_PaymentApplications APA ON APALI.PaymentApplication_Id=APA.PaymentApplication_Id  and APA.Status = 1                        
+--  INNER JOIN Accounting_Payments AP ON APA.Payment_Id = AP.Payment_Id  and AP.Status = 1      
+--  LEFT JOIN Accounting_LU_PaymentDirections PD On PD.PaymentDirection_Id=AP.PaymentDirection_Id  and AP.Status = 1  
+--  INNER JOIN Accounting_InvoiceDetails AINVD ON APALI.InvoiceLineItem_Id=AINVD.Id   and AINVD.Status = 1                       
+--  LEFT JOIN Accounting_Invoices AINV ON AINVD.Invoice_Id=AINV.Id   and AINV.Status = 1                       
+--  INNER JOIN Accounting_PolicyDetails APD ON AINV.PolicyDetails_Id=APD.Id and APD.Status = 1                         
+--  LEFT JOIN Accounting_AgentDetails AAD ON APD.AgentDetail_Id=AAD.AgentDetail_Id and AAD.Status = 1                    
+--  LEFT JOIN Accounting_AgentDetails ADZ ON ADZ.AgentDetail_Id=AP.Entity_Id AND AP.EntityType_Id=1 and ADZ.Status = 1                         
+--  LEFT JOIN Accounting_InsuredDetails IDZ ON IDZ.InsuredDetail_Id=AP.Entity_Id AND AP.EntityType_Id=2  and IDZ.Status = 1                        
+--  LEFT JOIN Accounting_CarrierDetails CDZ ON CDZ.CarrierDetail_Id=AP.Entity_Id AND AP.EntityType_Id=3 and CDZ.Status = 1                         
+--  LEFT JOIN Accounting_Clients CZ ON CZ.Client_Id=AP.Entity_Id AND AP.EntityType_Id=4 and CZ.Status = 1                         
+--  LEFT JOIN Accounting_WholesalerDetails WSD on WSD.WholesalerDetail_Id = AP.Entity_Id AND AP.EntityType_Id=6 and WSD.Status = 1                    
+--  LEFT JOIN Accounting_LU_BillingType_LineItems_Directions ALUBTLI ON AINVD.BillingType_LineItems_Directions_Id=ALUBTLI.BillingType_LineItems_Directions_Id and ALUBTLI.Status = 1                         
+--  LEFT JOIN Accounting_LU_LineItems_Directions ALULID ON ALUBTLI.LineItems_Directions_Id=ALULID.LineItems_Directions_Id   and ALULID.Status = 1                       
+--  LEFT JOIN Accounting_LU_Directions ALUD ON ALULID.Direction_Id=ALUD.Direction_Id  and ALUD.Status = 1                        
+--  LEFT JOIN Accounting_LU_PaymentTypes ALUPT ON AP.PaymentType_Id=ALUPT.PaymentType_Id and ALUPT.Status = 1                         
+--  LEFT JOIN Accounting_LU_OperatingBanks ALUOB ON AP.OperatingBank_Id=ALUOB.OperatingBank_Id  and ALUOB.Status = 1                        
+--  LEFT JOIN Accounting_LU_PaymentStatus ALUPS ON AP.PaymentStatus_Id=ALUPS.PaymentStatus_Id and ALUPS.Status = 1                         
+--  WHERE APD.Client_Id=@Client_Id AND APALI.Status=1   
+--  AND (@CompareDateFrom IS NULL OR @CompareDateTo IS NULL          
+--    OR (APALI.CreatedOn >= @CompareDateFrom AND APALI.CreatedOn <= @CompareDateTo))   
+--);        
+--end
+
+
+
+
+
+
+--update [dbo].[Accounting_LU_ReportTemplates] set Template='<!DOCTYPE html>  
+--<html lang="en">
+--   <head>
+--      <meta charset="UTF-8" />
+--      {{fonts}}      
+--      <style>      body, td, table, h1, h2 {        font-family: "Poppins", sans-serif;      }        .agency-billed-table {        width: 100%;      }        .fw-semibold {        font-weight: 600;      }        .fw-medium {        font-weight: 500;      }        .fs-13 {        font-size: 13px;      }        .fs-12 {        font-size: 12px;      }        .fs-14 {        font-size: 14px;      }        .lh-20 {        line-height: 20px;      }        .lh-18 {        line-height: 18px;      }        .pc-left {        background-color: #F0F0F0;        padding: 10px;        width: 240px;        color: #085284;        vertical-align: top;      }        .bg-dark {        background-color: #085284;      }        .ac-header {        background-color: #085284;        font-size: 13px;        color: #fff;        font-weight: 500;        padding: 5px 0;        line-height: 20px;        border: 1px dotted white;        box-sizing: border-box;      }        .due-date-alert {        border: 1px dotted #FF0000;        color: #FF0000;        font-weight: 600;        text-transform: uppercase;        padding: 4px 0;      }        .agency-billed-table .t-head td {        font-weight: 600;      }        .td-bg-light {        background-color: #F0F0F0;      }        .mb-0 {        margin-bottom: 0;      }        .mt-0 {        margin-top: 0;      }        .px-8 {        padding-left: 8px;        padding-right: 8px;      }        .border-top-1 {        border-top: 1px solid #CCCCCC;      }        .border-right-1 {        border-right: 1px solid #CCCCCC;      }        .border-1 {        border: 1px solid #ccc;      }        .border-right-0 {        border-right: 1px solid #ccc;      }        .pt-0 {        padding-top: 0 !important;      }        .pd-table td {        padding: 12px 8px;        color: #000;      }        .ps-35 {        padding-left: 30px;      }        .ps-50 {        padding-left: 50px;      }        .fw-400 {        font-weight: 400;      }        .border-top-dark {        border-top: 1px solid #000;      }        .text-dark {        color: #000;      }        .sepearator {        border-bottom: 3px solid #085284;        margin: 0;        width: 100%;      }        .pt-8 {        padding-top: 12px;      }        .pb-8 {        padding-bottom: 12px;      }        .pb-0 {        padding-bottom: 0;      }        .page-break {        page-break-after: always;        break-after: page;      }    </style>
+--   </head>
+--   <body>
+--      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+--         <tr>
+--            <td style="padding: 20px 0; font-family: ''Poppins'', sans-serif; color: #333; font-size: 15px; line-height: 23px;">
+--               <table border="0" cellspacing="0" cellpadding="0" width="1050" align="center" style="border-color: rgba(0, 0, 0, .09);">
+--                  <tr>
+--                     <td>
+--                        <!-- Spacer -->                
+--                        <table cellpadding="0" border="0" cellspacing="0" width="100%">
+--                           <tr>
+--                              <td height="20" class="p-0"></td>
+--                           </tr>
+--                        </table>
+--                        <!-- Header with Logo & Address -->                
+--                        <table class="agency-billed-table">
+--                           <tr>
+--                              <td>{{clientLogo}}</td>
+--                              <td align="right" class="fs-13 lh-20">                      <span class="fw-semibold">{{clientCompanyName}}</span><br />                      {{clientAddress}},<br />                      {{clientCityStateZip}}<br />                    </td>
+--                           </tr>
+--                        </table>
+--                        <!-- Spacer -->                
+--                        <table cellpadding="0" border="0" cellspacing="0" width="100%">
+--                           <tr>
+--                              <td height="20" class="p-0"></td>
+--                           </tr>
+--                        </table>
+--                        <!-- Statement Header -->                
+--                        <table class="agency-billed-table">
+--                           <tr>
+--                              <td align="center">
+--                                 <div class="bg-dark ac-header">Account Statement</div>
+--                              </td>
+--                           </tr>
+--                        </table>
+--                        <!-- Spacer -->                
+--                        <table cellpadding="0" border="0" cellspacing="0" width="100%">
+--                           <tr>
+--                              <td height="20" class="p-0"></td>
+--                           </tr>
+--                        </table>
+--                        <!-- Dynamic Agent Loop -->                
+--				{{dynamicAgentloopingLogic}}                               
+			
+--                     </td>
+--                  </tr>
+--               </table>
+--            </td>
+--         </tr>
+--      </table>
+--   </body>
+--</html>' where Report_Id=2

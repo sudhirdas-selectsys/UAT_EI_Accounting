@@ -1,0 +1,146 @@
+﻿@model Payments
+@{
+	UserSession userSession = Context.Session.GetObjectFromJson<UserSession>("UserSession");
+}
+<div class="row" data-name="PaymentsSection">
+	<form data-name="frmPaymentDetails">
+		<input type="hidden" name="Payment_Id" value="@Model?.Payment_Id" />
+		<input type="hidden" name="IsEdit" value="@Convert.ToString(Model?.IsEdit)" />
+		<input type="hidden" name="RemainingAmount" value="@Model?.RemainingAmount" />
+		<input type="hidden" name="Client_Id" value="@userSession.Client_Id" />
+		<div class="col-sm-12">
+			<div class="data-item">
+				<label>Entity Type</label>
+				<select class="form-select" data-val="true" name="EntityType_Id" data-name="EntityType_Id">
+					<option value="">Select</option>
+					@{
+						var EntityTypeList = LookupUtility.GetAllEntityTypes()?.Where(e => e.EntityType_Id != MasterLookup._EntityTypes.BillingCompany && e.EntityType_Id != MasterLookup._EntityTypes.IssuingCompany);
+						var entityTypeSettings = LookupUtility.GetClientSettings(userSession.Client_Id, MasterLookup._ClientSettings.EntityTypeVisibility);
+						if (!string.IsNullOrWhiteSpace(entityTypeSettings))
+						{
+							var visibilityMap = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, bool>>(entityTypeSettings);
+							EntityTypeList = EntityTypeList?.Where(x => !visibilityMap.TryGetValue(x.Code, out var isVisible) || isVisible).ToList();
+						}
+						foreach (var entity in EntityTypeList)
+						{
+							<option value="@entity.EntityType_Id" selected="@(Model!=null && Model.EntityType_Id == entity.EntityType_Id)">@entity.Name</option>
+						}
+					}
+				</select>
+			</div>
+		</div>
+		<div class="col-sm-12">
+			<div class="data-item">
+				<label>Payment Direction</label>
+				<select class="form-select @(Model?.IsEdit == true ? "disabled-link" : "")" data-val="true" name="PaymentDirection_Id" data-name="PaymentDirection_Id">
+					<option value="">Select</option>
+					@{
+						var DirectionList = LookupUtility.GetAllPaymentDirections();
+						foreach (var item in DirectionList)
+						{
+							<option value="@item.PaymentDirection_Id" selected="@(Model!=null && Model.PaymentDirection_Id == item.PaymentDirection_Id)">@item.Name</option>
+						}
+					}
+				</select>
+			</div>
+		</div>
+
+		<div class="col-sm-12">
+			<div class="data-item">
+				<label>Entity Name</label>
+				<input type="text" class="form-control" data-val="true" placeholder="Entity Name" data-name="EntityName" name="EntityName" value="@Model?.EntityName">
+				<input type="hidden" name="Entity_Id" data-name="Entity_Id" value="@Model?.Entity_Id" />
+				<div class="text-end"><small><a href="javascript:void(0);" data-name="AddEntityName" title="Add New Entity Name">Can't find? Add</a></small></div>
+			</div>
+		</div>
+
+		<div class="col-sm-12">
+			<div class="data-item">
+				<label>Payment Date</label>
+				<input class="form-control flatpickr flatpickr-input" data-val="true" type="text" readonly="readonly" name="PaymentDate" value="@Model?.PaymentDate?.ToShortDateString()">
+			</div>
+		</div>
+
+		<div class="col-sm-12">
+			<div class="data-item">
+				<label>Amount</label>
+				<input type="text" class="form-control @(Model?.IsEdit == true ? "disabled-link" : "")" data-val="true" placeholder="Amount" data-blur-currency="true" data-currency-fractiondigits="2" data-val-type="currency" data-val-touched="true" name="Amount" autocomplete="off" value="@CommonUtility.ConvertToCurrencyFormat(Model?.Amount, false, 2)">
+				@* <input type="text" class="form-control" data-val="true" placeholder="Amount" data-val-type="currency" name="Amount" value="@CommonUtility.ConvertToCurrencyFormat(Model?.Amount)"> *@
+			</div>
+		</div>
+
+		<div class="col-sm-12">
+			<div class="data-item">
+				<label>Payment Type</label>
+				<select class="form-select" name="PaymentType_Id" data-val="true">
+					<option value="">Select</option>
+					@{
+						var paymentTypesList = LookupUtility.GetAllPaymentTypes();
+						var paymentTypeSettings = LookupUtility.GetClientSettings(userSession.Client_Id, MasterLookup._ClientSettings.PaymentTypeVisibility);
+						if (!string.IsNullOrWhiteSpace(paymentTypeSettings))
+						{
+							var visibilityMap = Newtonsoft.Json.JsonConvert.DeserializeObject<Dictionary<string, bool>>(paymentTypeSettings);
+							paymentTypesList = paymentTypesList?.Where(x => !visibilityMap.TryGetValue(x.Code, out var isVisible) || isVisible).ToList();
+						}
+						foreach (var type in paymentTypesList)
+						{
+							<option value="@type.PaymentType_Id" selected="@(Model != null && Model.PaymentType_Id == type.PaymentType_Id)">@type.Name</option>
+						}
+					}
+				</select>
+			</div>
+		</div>
+
+		<div class="col-sm-12">
+			<div class="data-item">
+				<label>Reference Number</label>
+				<input type="text" class="form-control" placeholder="Reference Number" data-val="true" name="ReferenceNumber" value="@Model?.ReferenceNumber">
+			</div>
+		</div>
+
+		<div class="col-sm-12">
+			<div class="data-item">
+				<label>Payment Status</label>
+				<select class="form-select" name="PaymentStatus_Id" data-val="true">
+					<option value="">Select</option>
+					@{
+						var PaymentStatusList = LookupUtility.GetAllPaymentStatus()
+						?.Where(y => y != null &&
+						(y.PaymentStatus_Id == MasterLookup._PaymentStatus.Completed ||
+						y.PaymentStatus_Id == MasterLookup._PaymentStatus.PendingSettlement))
+						.ToList();
+						foreach (var status in PaymentStatusList)
+						{
+							<option value="@status.PaymentStatus_Id" selected="@(Model!=null && Model.PaymentStatus_Id == status.PaymentStatus_Id)">@status.Name</option>
+						}
+					}
+				</select>
+			</div>
+		</div>
+
+		<div class="col-sm-12">
+			<div class="data-item">
+				<label>Bank Account</label>
+				<select class="form-select" name="OperatingBank_Id" data-val="true">
+					<option value="">Select</option>
+					@{
+						var BankList = LookupUtility.GetAllOperatingBanks().Where(x => x.Client_Id == userSession.Client_Id).ToList();
+						foreach (var bank in BankList)
+						{
+							<option value="@bank.OperatingBank_Id" selected="@(Model!=null && Model.OperatingBank_Id == bank.OperatingBank_Id)">@bank.Name</option>
+						}
+					}
+				</select>
+			</div>
+		</div>
+	</form>
+</div>
+<div class="offcanvas-footer text-end row" style="background-color:white">
+	<button type="button" class="btn btn-secondary" data-bs-dismiss="offcanvas">Close</button>
+	<button type="button" class="btn btn-primary" data-name="btnSavePaymentDetails">Post Payment</button>
+</div>
+<script>
+	$(function(){
+		appCommon.InitializePanelOrFormValidations($('[data-name="frmPaymentDetails"]'));
+	})
+</script>

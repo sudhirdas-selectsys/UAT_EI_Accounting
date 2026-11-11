@@ -1,0 +1,160 @@
+﻿@model Payments
+@{
+	var writeOffItem = (Model?.WriteoffPaymentApplicationLineItems != null) ? Model.WriteoffPaymentApplicationLineItems : null;
+	bool isExistingWriteoff = writeOffItem != null;
+}
+<style>
+	.paymentReceiptButton .btn-outline-primary i{
+		color: #dc3545
+	}
+
+	.paymentReceiptButton .btn-outline-primary:hover i {
+		color: #fff
+	}
+</style>
+<div class="row mb-2">
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Payment Id</label>
+			<span>@Model?.Payment_Id</span>
+		</div>
+	</div>
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Entity Type</label>
+			<span>@LookupUtility.GetAllEntityTypes().FirstOrDefault(c => c.EntityType_Id == Model?.EntityType_Id)?.Name</span>
+		</div>
+	</div>
+
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Entity Name</label>
+			<span>@Model?.EntityName</span>
+		</div>
+	</div>
+
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Payment Date</label>
+			<span>@Model?.PaymentDate?.ToShortDateString()</span>
+		</div>
+	</div>
+
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Amount</label>
+			<span>@CommonUtility.ConvertToCurrencyFormat(Model?.Amount, false, 2)</span>
+		</div>
+	</div>
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Remaining Balance</label>
+			<span>@CommonUtility.ConvertToCurrencyFormat(Model?.RemainingAmount, false, 2)</span>
+		</div>
+	</div>
+
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Payment Type</label>
+			<span>@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == Model?.PaymentType_Id)?.Name</span>
+		</div>
+	</div>
+
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Reference Number</label>
+			<span>@Model?.ReferenceNumber</span>
+		</div>
+	</div>
+
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Payment Status</label>
+			<span>@LookupUtility.GetAllPaymentStatus().FirstOrDefault(x => x.PaymentStatus_Id == Model?.PaymentStatus_Id)?.Name</span>
+		</div>
+	</div>
+
+	<div class="col-sm-3">
+		<div class="data-item">
+			<label>Bank Account</label>
+			<span>@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == Model?.OperatingBank_Id)?.Name</span>
+		</div>
+	</div>
+	<div class="col-sm-6 d-flex justify-content-end align-items-center paymentReceiptButton">
+		<button type="button" data-name="btnGeneratePaymentReceipt" data-payment-id=@Model?.Payment_Id class="btn btn-outline-primary btn-sm me-2">
+			<i class="ri-file-pdf-2-line me-1"></i> View Receipt
+		</button>
+	</div>
+</div>
+
+<table class="table table-bordered table-striped ei-table">
+	<thead class="table-light">
+		<tr>
+			<th style="width: 30%;">Write-off Amount</th>
+			<th style="width: 50%;">Write-off Note</th>
+			<th style="width: 20%;" class="text-center">Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		<tr data-name="trPaymentWriteoff">
+			<input type="hidden" name="Payment_Id" value="@Model?.Payment_Id" />
+			<td>
+				<input type="text" class="form-control" data-val="true" placeholder="Amount" data-currency-fractiondigits="2" name="Amount" autocomplete="off" data-name="PaymentWriteoffAmount" value="@(Model?.WriteoffPaymentApplicationLineItems?.AppliedAmount.ToString() ?? "")" @(isExistingWriteoff ? "disabled" : "") />
+			</td>
+			<td>
+				<textarea class="form-control" data-val="true" placeholder="Write-off note" name="Note" autocomplete="off" data-name="Writeoffnote" @(isExistingWriteoff ? "disabled" : "")>@(writeOffItem?.Notes)</textarea>
+			</td>
+			<td class="text-center align-middle">
+				<div class="action-btns d-flex justify-content-center gap-2">
+					<a href="javascript:void(0)" data-name="btnEditPaymentWriteoffAmount" style="@(isExistingWriteoff ? "" : "display:none;")" title="Edit Payment Write off Amount"><i class="ri-pencil-line save-btn"></i></a>
+					<a href="javascript:void(0)" data-name="btnSavePaymentWriteoffAmount" style="@(isExistingWriteoff ? "display:none;" : "")" title="Save Payment Write off Amount"><i class="ri-save-3-line save-btn"></i></a>
+					<a href="javascript:void(0)" data-name="btnUpdatePaymentWriteoffAmount" style="display:none;" title="Update Payment Write off Amount"><i class="ri-save-3-line save-btn"></i></a>
+					<a href="javascript:void(0)" data-name="btnDeletePaymentWriteoffAmount" style="display:none;" title="Delete Payment Write off Amount"><i class="ri-delete-bin-line delete-btn"></i></a>
+					<a href="javascript:void(0)" data-name="btnCancelPaymentWriteoffAmount" style="display:none;" title="Cancel Payment Write off Amount"><i class="ri-close-line delete-btn"></i></a>
+				</div>
+			</td>
+		</tr>
+	</tbody>
+</table>
+
+<div class="table-responsive table-scroll">
+	<table class="table ei-table mb-0 no-wrap ei-ac-db-table trns-db-table arr-data-table">
+		<thead>
+			<tr>
+				<th style="width:100px;">S.No</th>
+				<th>Invoice No</th>
+				<th>Policy No</th>
+				<th>Agency Name</th>
+				<th>Insured Name</th>
+				<th>Line Item Name</th>
+				<th style="width:120px;">Applied Amount</th>
+
+			</tr>
+		</thead>
+		<tbody>
+			@{
+				int i = 1;
+				if (Model?.PaymentApplicationLineItemsList?.Count() > 0)
+				{
+					foreach (var item in Model.PaymentApplicationLineItemsList)
+					{
+						<tr>
+							<td>@i</td>
+							<td><div class="text-truncate" title="@item.InvoiceNo" style="width:120px;">@item.InvoiceNo</div></td>
+							<td><div class="text-truncate" title="@item.PolicyNumber" style="width:100px;">@item.PolicyNumber</div></td>
+							<td><div class="text-truncate" title="@item.AgencyName" style="width:175px;">@item.AgencyName</div></td>
+							<td><div class="text-truncate" title="@item.InsuredsName" style="width:175px;">@item.InsuredsName</div></td>
+							<td><div class="text-truncate" title="@item.LineItemName" style="width:180px;">@item.LineItemName</div></td>
+							<td class="text-center">@CommonUtility.ConvertToCurrencyFormat(item.AppliedAmount, false, 2)</td>
+						</tr>
+						i++;
+					}
+				}
+				else
+				{
+					<tr><td colspan="7">No records</td></tr>
+				}
+			}
+		</tbody>
+	</table>
+</div>

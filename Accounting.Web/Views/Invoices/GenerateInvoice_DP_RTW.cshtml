@@ -1,0 +1,716 @@
+﻿@using Newtonsoft.Json
+@using Humanizer
+@model PolicyDetails
+@{
+    var Clients = Model.Clients;
+    var AgentDetails = Model.AgentDetails;
+    var CarrierDetails = Model.CarrierDetails;
+    var InsuredDetails = Model.InsuredDetails;
+    var WholesalerDetails = Model.WholesalerDetails;
+    var BillingType_Id = LookupUtility.GetAllBillingTypes().FirstOrDefault(x => x.Code == Model.BillType)?.BillingType_Id;
+    var MortgageeDetails = Model.MortgageeDetails;
+    var PolicyDetails_Id = Model.Id;
+    var InstallmentNo = Model?.InstallmentNo;
+    var minPremium = Model.PolicyDetailsLineItemsList
+                    .Where(x => x.LineType != null && x.LineType.Equals("Premium", StringComparison.OrdinalIgnoreCase))
+                    .Select(x => (double?)x.MinPremium)
+                    .FirstOrDefault();
+    var PaymentDueOn = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymentDueOn);
+    bool Is_Installment = Model?.InvoicesList.Count() > 1;
+    var paymentLink = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymentFooter);
+    var accountNumber = AgentDetails?.EI_Accounting_Id ?? @Model?.ExternalAccountInformation?.AccountNumber ?? string.Empty;
+    var postalCode = BillingType_Id switch
+    {
+        var x when x == MasterLookup._BillingTypes.Agency
+            => AgentDetails?.ZipCode ?? string.Empty,
+
+        var x when x == MasterLookup._BillingTypes.Insured
+            => InsuredDetails?.ZipCode ?? string.Empty,
+
+        var x when x == MasterLookup._BillingTypes.Mortgagee
+            => MortgageeDetails?.ZipCode ?? string.Empty,
+
+        _ => string.Empty
+    };
+    string dynamicURL = string.Format(paymentLink, accountNumber, postalCode);
+}
+
+<style>
+    :root {
+        --navy: #07518a;
+        --blue: #07518a;
+        --line: #aeb5ba;
+        --light: #f3f4f5;
+        --text: #252a2e;
+    }
+
+    .page {
+        width: 8.5in;
+        height: 11in;
+        margin: 0 auto;
+        padding: 0.28in 0.28in 0.22in;
+        background: white;
+        box-sizing: border-box;
+    }
+
+    .layout-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+    }
+
+        .layout-table td {
+            vertical-align: top;
+        }
+
+    .top-table {
+        border-bottom: 2px solid #34383b;
+        padding-bottom: 7px;
+    }
+
+    .brand {
+        width: 100%;
+    }
+
+    .logo {
+        width: 270px;
+        max-width: 100%;
+        height: auto;
+        max-height: 45px;
+        object-fit: contain;
+        object-position: left center;
+    }
+
+    .address {
+        font-size: 9pt;
+        margin-top: 7px;
+    }
+
+    .invoice-head {
+        width: 100%;
+        text-align: right;
+        margin-top: 15px;
+        display: block;
+    }
+
+    .invoiceTag {
+        margin: 0 0 3px;
+        color: var(--navy);
+        font-size: 20pt;
+        letter-spacing: 4px;
+        margin-top: 12px;
+    }
+
+    .meta {
+        font-size: 9.5pt;
+        line-height: 1.55;
+    }
+
+    .due {
+        color: var(--navy);
+        font-weight: 700;
+        font-size: 10.5pt;
+    }
+
+    .section-title {
+        color: var(--navy);
+        font-weight: 700;
+        font-size: 11.5pt;
+        margin: 12px 0 0;
+    }
+
+    .bill-grid {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 6px 0 0;
+    }
+
+        .bill-grid td {
+            width: 33.33%;
+            vertical-align: top;
+            padding-right: 18px;
+        }
+
+    .field-label {
+        color: #777;
+        font-size: 9pt;
+        font-weight: 700;
+        margin-bottom: 3px;
+    }
+
+    .bill-block {
+        line-height: 1.35;
+    }
+
+    .rule-title {
+        margin: 10px 0 6px;
+        padding-bottom: 5px;
+        border-bottom: 1px solid #6f7477;
+    }
+
+    .policy {
+        width: 100%;
+        border-collapse: collapse;
+        padding: 8px 4px 7px;
+        line-height: 1.25;
+    }
+
+        .policy td {
+            padding: 3px 0;
+            vertical-align: top;
+        }
+
+        .policy .key {
+            width: 32%;
+            font-weight: 700;
+        }
+
+    .charges-grid {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: -1px 0;
+        margin-top: 6px;
+    }
+
+        .charges-grid td {
+            width: 50%;
+            vertical-align: top;
+        }
+
+    .charge-card {
+        border: 1px solid #b9bec2;
+        min-height: 310px;
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+    }
+
+    .card-head {
+        background: var(--blue);
+        color: white;
+        font-weight: 700;
+        padding: 8px 10px;
+        font-size: 9pt;
+    }
+
+    .charge-body {
+        padding: 7px 9px;
+        vertical-align: top;
+    }
+
+    .charge-row {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .charge-row td {
+            padding: 3px 5px;
+            line-height: 1.2;
+            vertical-align: top;
+            font-size: 10.5pt;
+        }
+
+            .charge-row td:first-child {
+                width: 100%;
+            }
+
+            .charge-row td.amount {
+                width: 1%;
+                white-space: nowrap;
+                text-align: right;
+            }
+
+    .downpayment {
+        border: 1px solid #d0d0d0;
+        background: #f5f5f5;
+        padding: 9px;
+        margin-bottom: 14px;
+    }
+
+        .downpayment .label {
+            font-size: 9pt;
+            font-weight: 700;
+            color: #555;
+        }
+
+        .downpayment .amount {
+            display: block;
+            font-size: 16px;
+            font-weight: 700;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+    .totals {
+        border-top: 2px solid #b8b8b8;
+        padding: 6px 9px 5px;
+        background: white;
+    }
+
+    .payment-title {
+        border-top: 3px solid var(--blue);
+        padding-top: 10px;
+        margin-top: 12px;
+        margin-bottom: 8px;
+    }
+
+    .payment-grid {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        border: 1px solid #b6b6b6;
+    }
+
+    .payment-cell {
+        border-right: 1px solid #b6b6b6;
+        min-width: 0;
+        vertical-align: top;
+    }
+
+    .payment-grid td:last-child {
+        border-right: 0;
+    }
+
+    .payment-subhead {
+        font-size: 9pt;
+        text-decoration: underline;
+        padding: 5px 6px;
+        border-bottom: 1px solid #b6b6b6;
+        color: var(--navy);
+        font-weight: 700;
+        text-align: center;
+    }
+
+    .payment-content {
+        padding: 8px 6px;
+        font-size: 9.5pt;
+        line-height: 1.35;
+        min-height: 73px;
+    }
+
+    .center {
+        text-align: center;
+    }
+
+    .pay-link {
+        display: block;
+        background: var(--blue);
+        color: white;
+        text-decoration: none;
+        font-weight: 700;
+        padding: 7px 3px;
+        margin: 10px 3px 0;
+        text-align: center;
+        border-radius: 4px;
+    }
+
+    #anochortag:hover {
+        color: white;
+    }
+
+    .instructions-section {
+        margin-top: 24px;
+        padding: 0 4px;
+    }
+
+    .instructions-title {
+        color: #07518a;
+        font-weight: bold;
+        font-size: 11.5pt;
+        margin-bottom: 8px;
+    }
+
+    .instructions-text {
+        margin: 0;
+        font-size: 10pt;
+        line-height: 1.5;
+        color: #333;
+    }
+
+    .footer {
+        padding-top: 7px;
+        border-top: 1px solid #333;
+        text-align: center;
+        color: #777;
+        font-size: 8pt;
+    }
+
+    .fs-13 td {
+        font-size: 16px;
+    }
+</style>
+
+@{
+    double installmentsPremiumAmount = Model.InvoicesList
+    .Where(invoice => invoice.InstallmentNo != 0)
+    .Sum(invoice => invoice.Amount);
+
+    double downPaymentPremiumAmount = 0;
+    var downPaymentinvoiceList = Model?.InvoicesList.Where(x => x.InstallmentNo == InstallmentNo).ToList();
+
+    if (!Is_Installment)
+    {
+        if (Model?.PolicyDetailsLineItemsList?.Count > 0)
+        {
+            foreach (var item in Model.PolicyDetailsLineItemsList)
+            {
+                if (item.LineType != null && item.LineType.Equals("PREMIUM", StringComparison.OrdinalIgnoreCase))
+                {
+                    downPaymentPremiumAmount = item.Premium;
+                }
+            }
+        }
+    }
+    else
+    {
+        foreach (var item in downPaymentinvoiceList)
+        {
+            downPaymentPremiumAmount = item.InvoicesDetailsList.Sum(i => i.ActualPremium);
+        }
+    }
+    double totalPremium = downPaymentPremiumAmount + installmentsPremiumAmount;
+
+    double feeTaxAmount = 0;
+
+    if (downPaymentinvoiceList != null)
+    {
+        foreach (var invoice in downPaymentinvoiceList)
+        {
+            foreach (var item in invoice.InvoicesDetailsList.GroupBy(x => x.Description).Select(g => g.First()))
+            {
+                if (!string.IsNullOrEmpty(item.LineTypeName) && (item.LineTypeName.Equals("TAX", StringComparison.OrdinalIgnoreCase) || item.LineTypeName.Equals("Fee", StringComparison.OrdinalIgnoreCase)))
+                {
+                    feeTaxAmount += item.Amount;
+                }
+            }
+        }
+    }
+    double totalAmountDue = totalPremium + feeTaxAmount;
+    double downPaymentAmount = downPaymentPremiumAmount + feeTaxAmount;
+    int installmentCount = Model?.InvoicesList?.Count ?? 0;
+}
+
+<main class="page" style="font-family:Arial,Helvetica,sans-serif;background:#ffffff;font-size:13px;">
+    <header>
+        <table class="layout-table top-table">
+            <tbody>
+                <tr>
+                    <td class="brand">
+                        @{
+                            string base64Image = Clients != null && Clients.Logo != null ? Convert.ToBase64String(Clients.Logo) : "";
+                            string imgSrc = !string.IsNullOrEmpty(base64Image) ? $"data:image/jpg;base64,{base64Image}" : "";
+                        }
+                        <img class="logo" src="@imgSrc" alt="Risk Theory Insurance Services logo">
+                        <div class="address">14001 Dallas Parkway, Suite 700, Dallas, TX 75240</div>
+                    </td>
+                </tr>
+                <tr>
+                    <td class="invoice-head">
+                        <h1 class="invoiceTag">INVOICE</h1>
+                        <div class="meta">Invoice# @Model?.Invoices?.InvoiceNo&nbsp; | &nbsp;Date: @Model?.Invoices?.BillDate.ToString(MasterLookup._ServerDateFormat)</div>
+
+                        @{
+                            double downPaymenttotalAmountDue = 0;
+                            double downPaymentActualamount = 0;
+                            if (Model?.InvoicesList?.Count > 0)
+                            {
+                                var invoiceListCalc = Model?.InvoicesList.Where(x => x.InstallmentNo == InstallmentNo).ToList();
+                                if (invoiceListCalc != null)
+                                {
+                                    foreach (var invoice in invoiceListCalc)
+                                    {
+                                        downPaymenttotalAmountDue += Convert.ToDouble(invoice.RemainingBalance);
+                                        downPaymentActualamount += Convert.ToDouble(invoice.Amount);
+                                    }
+                                }
+                            }
+                        }
+                        <div class="due">
+                            Due Amount: @CommonUtility.ConvertToCurrencyFormat(totalAmountDue, false, 2)&nbsp; | &nbsp;Due Date: @Model?.Invoices?.DueDate.ToString(MasterLookup._ServerDateFormat)
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </header>
+    <div class="section-title">Bill To:</div>
+    <table class="bill-grid">
+        <tbody>
+            <tr>
+                @if (MortgageeDetails != null && BillingType_Id == MasterLookup._BillingTypes.Mortgagee)
+                {
+                    <td>
+                        <div class="bill-block">
+                            <div class="field-label">MORTGAGEE</div>
+                            @MortgageeDetails?.Name<br>
+                            @MortgageeDetails?.Address1<br>
+                            @MortgageeDetails?.City, @MortgageeDetails?.State @MortgageeDetails?.ZipCode
+                        </div>
+                    </td>
+                }
+                <td>
+                    <div class="bill-block">
+                        <div class="field-label">INSURED</div>
+                        @InsuredDetails?.Name<br>
+                        @if (!string.IsNullOrEmpty(@InsuredDetails?.Address2))
+                        {
+                            @("c/o " + InsuredDetails.Address2)
+                            <br />
+                        }
+                        @InsuredDetails?.Address1<br>
+                        @InsuredDetails?.City, @InsuredDetails?.State @InsuredDetails?.ZipCode
+                    </div>
+                </td>
+                <td>
+                    <div class="bill-block">
+                        <div class="field-label">PRODUCER</div>
+                        @AgentDetails?.Name<br>
+                        @AgentDetails?.Address1<br>
+                        @AgentDetails?.City, @AgentDetails?.State @AgentDetails?.ZipCode
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section-title rule-title">POLICY INFORMATION</div>
+    <table class="policy">
+        <tbody>
+            <tr><td class="key">Policy Number:</td><td>@Model?.PolicyNumber</td></tr>
+            <tr><td class="key">Policy Term:</td><td>@Model?.EffectiveDate.ToString(MasterLookup._ServerDateFormat) - @Model?.ExpirationDate.ToString(MasterLookup._ServerDateFormat)</td></tr>
+            <tr><td class="key">Coverage:</td><td>@Model?.PolicyDetailsLineItemsList?.FirstOrDefault()?.Coverage</td></tr>
+            <tr><td class="key">Carrier:</td><td>@CarrierDetails?.Name</td></tr>
+        </tbody>
+    </table>
+
+    <div class="section-title rule-title">CHARGE DETAILS</div>
+    <table class="charges-grid">
+        <tbody>
+            <tr>
+                <td>
+                    <table class="charge-card">
+                        <tr>
+                            <td class="card-head">OPTION 1 — PAY IN FULL</td>
+                        </tr>
+                        <tr>
+                            <td class="charge-body">
+                                <table class="charge-row">
+                                    <tbody>
+                                        @{
+                                            bool alternateRow = false;
+                                            if (!Is_Installment)
+                                            {
+                                                if (Model?.PolicyDetailsLineItemsList?.Count > 0)
+                                                {
+                                                    foreach (var item in Model.PolicyDetailsLineItemsList)
+                                                    {
+                                                        if (item.LineType != null && item.LineType.Contains("PREMIUM", StringComparison.OrdinalIgnoreCase))
+                                                        {
+                                                            <tr>
+                                                                <td style="@(alternateRow ? "background:#f5f5f5;" : "")">Premium - @Model.TransactionType - @item.Coverage</td>
+                                                                <td class="amount" style="@(alternateRow ? "background:#f5f5f5;" : "")">@CommonUtility.ConvertToCurrencyFormat(item.Premium, false, 2)</td>
+                                                            </tr>
+                                                            alternateRow = !alternateRow;
+                                                        }
+                                                        if (item.FeeTaxAmount != 0)
+                                                        {
+                                                            <tr>
+                                                                <td style="@(alternateRow ? "background:#f5f5f5;" : "")">@item.PolicyDetailDescription</td>
+                                                                <td class="amount" style="@(alternateRow ? "background:#f5f5f5;" : "")">@CommonUtility.ConvertToCurrencyFormat(item.FeeTaxAmount, false, 2)</td>
+                                                            </tr>
+                                                            alternateRow = !alternateRow;
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            else
+                                            {
+                                                if (Model?.InvoicesList?.Count > 0)
+                                                {
+                                                    var invoiceListOpt1 = Model?.InvoicesList.Where(x => x.InstallmentNo == InstallmentNo).ToList();
+                                                    if (invoiceListOpt1 != null)
+                                                    {
+                                                        foreach (var invoice in invoiceListOpt1)
+                                                        {
+                                                            foreach (var item in invoice.InvoicesDetailsList.GroupBy(x => x.Description).Select(g => g.First()))
+                                                            {
+                                                                if (!string.IsNullOrEmpty(item.LineTypeName) && item.LineTypeName.Contains("PREMIUM", StringComparison.OrdinalIgnoreCase))
+                                                                {
+                                                                    <tr>
+                                                                        <td style="@(alternateRow ? "background:#f5f5f5;" : "")">@item.Description</td>
+                                                                        <td class="amount" style="@(alternateRow ? "background:#f5f5f5;" : "")">@CommonUtility.ConvertToCurrencyFormat((item.ActualPremium + installmentsPremiumAmount), false, 2)</td>
+                                                                    </tr>
+                                                                    alternateRow = !alternateRow;
+                                                                }
+                                                                if (!string.IsNullOrEmpty(item.LineTypeName) && (item.LineTypeName.Equals("TAX", StringComparison.OrdinalIgnoreCase) || item.LineTypeName.Equals("Fee", StringComparison.OrdinalIgnoreCase)))
+                                                                {
+                                                                    <tr>
+                                                                        <td style="@(alternateRow ? "background:#f5f5f5;" : "")">@item.Description</td>
+                                                                        <td class="amount" style="@(alternateRow ? "background:#f5f5f5;" : "")">@CommonUtility.ConvertToCurrencyFormat(item.Amount, false, 2)</td>
+                                                                    </tr>
+                                                                    alternateRow = !alternateRow;
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="totals">
+                                <table class="charge-row fs-13">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>TOTAL:</strong></td>
+                                            <td class="amount"><strong>@CommonUtility.ConvertToCurrencyFormat(totalAmountDue, false, 2)</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="charge-row">
+                                    <tbody>
+                                        <tr>
+                                            <td>Payments received:</td>
+                                            <td class="amount">(@CommonUtility.ConvertToCurrencyFormat(Model?.TotalAppliedAmount, false, 2))</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="charge-row fs-13">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>TOTAL DUE @Model?.Invoices?.DueDate.ToString(MasterLookup._ServerDateFormat):</strong></td>
+                                            <td class="amount"><strong>@CommonUtility.ConvertToCurrencyFormat((totalAmountDue - Model?.TotalAppliedAmount), false, 2)</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+
+                <td>
+                    <table class="charge-card">
+                        <tr>
+                            <td class="card-head">OPTION 2 — @installmentCount.ToWords().Transform(To.UpperCase) INSTALLMENTS</td>
+                        </tr>
+                        <tr>
+                            <td class="charge-body">
+                                <div class="downpayment">
+                                    <div class="label">DOWN PAYMENT — DUE @Model?.Invoices?.DueDate.ToString(MasterLookup._ServerDateFormat)</div>
+                                    <span class="amount">@CommonUtility.ConvertToCurrencyFormat(downPaymentAmount, false, 2)</span>
+                                </div>
+                                <table class="charge-row">
+                                    <tbody>
+                                        @{
+                                            if (Model?.InvoicesList != null)
+                                            {
+                                                var subsequentInstallments = Model.InvoicesList.Where(x => x.InstallmentNo > 0).OrderBy(x => x.InstallmentNo).ToList();
+                                                foreach (var inst in subsequentInstallments)
+                                                {
+                                                    <tr>
+                                                        <td>Installment @inst.InstallmentNo due @inst.DueDate.ToString(MasterLookup._ServerDateFormat)</td>
+                                                        <td class="amount">@CommonUtility.ConvertToCurrencyFormat(inst.RemainingBalance, false, 2)</td>
+                                                    </tr>
+                                                }
+                                            }
+                                        }
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="totals">
+                                <table class="charge-row fs-13">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>TOTAL:</strong></td>
+                                            <td class="amount"><strong>@CommonUtility.ConvertToCurrencyFormat(totalAmountDue, false, 2)</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="charge-row">
+                                    <tbody>
+                                        <tr>
+                                            <td>Payments received:</td>
+                                            <td class="amount">(@CommonUtility.ConvertToCurrencyFormat(Model?.TotalAppliedAmount, false, 2))</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table class="charge-row fs-13">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>TOTAL DUE @Model?.Invoices?.DueDate.ToString(MasterLookup._ServerDateFormat):</strong></td>
+                                            <td class="amount"><strong>@CommonUtility.ConvertToCurrencyFormat((downPaymentAmount - Model?.TotalAppliedAmount), false, 2)</strong></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="section-title payment-title">PAYMENT OPTIONS</div>
+    <table class="payment-grid">
+        <thead>
+            <tr>
+                <th class="payment-cell" colspan="2"><div class="payment-subhead">Please make all checks payable to Risk Theory Insurance Services and follow the below mailing instructions</div></th>
+                <th class="payment-cell"><div class="payment-subhead">ACH/ Wire Payment</div></th>
+                <th class="payment-cell"><div class="payment-subhead">Online Payment</div></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="payment-cell">
+                    <div class="payment-subhead" style="text-decoration: underline; border-bottom: 1px solid #b6b6b6; padding: 5px 6px;">For Regular U.S. Mail:</div>
+                    <div class="payment-content">Risk Theory Insurance Services <b>III</b><br>PO Box 669609<br>Dallas, TX 75266-0534</div>
+                </td>
+                <td class="payment-cell">
+                    <div class="payment-subhead" style="text-decoration: underline; border-bottom: 1px solid #b6b6b6; padding: 5px 6px;">For Overnight delivery:</div>
+                    <div class="payment-content">Wholesale Lockbox Department<br>Attn: PO Box 669609<br>3000 Kellway Dr, Suite 120<br>Carrollton, TX 75006</div>
+                </td>
+                <td class="payment-cell">
+                    <div class="payment-content center">Capital One Bank<br><br>Account # 208 286 2051<br>Routing # 065 000 090<br>Type: Checking</div>
+                </td>
+                <td class="payment-cell">
+                    <div class="payment-content center">
+                        To make an online payment, please click below link.
+                        <a id="anochortag" class="pay-link" href="@dynamicURL">Click to Pay Online</a>
+                    </div>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+
+    <section class="instructions-section">
+        <div class="section-title instructions-title">PAYMENT INSTRUCTIONS</div>
+        <p class="instructions-text">Please select one of the payment options above. If you choose to pay online, you may elect to pay either the down payment invoice or all installment invoices. To remit payment in full, please select <strong>All Invoices</strong> and submit payment.</p>
+    </section>
+
+    <div style="margin-top: 15px;" class="modal-footer">
+        <button type="button" class="btn btn-primary" data-policydetails_id="@PolicyDetails_Id" data-installmentno="@InstallmentNo" data-name="downloadPdf" style="background:var(--blue); color:white; border:none; padding:8px 15px; font-weight:bold; cursor:pointer; border-radius:4px;">Get PDF</button>
+    </div>
+
+    <footer class="footer">Risk Theory Insurance Services, LLC | 14001 Dallas Parkway, Suite 700, Dallas, TX 75240 | Please remit payment by @Model?.Invoices?.DueDate.ToString(MasterLookup._ServerDateFormat)</footer>
+</main>
+
+<style>
+    [data-name="GenericModal"] .modal-dialog {
+        --bs-modal-width: 900px !important;
+    }
+
+    [data-name="GenericModal"] .modal-body {
+        padding: 40px;
+    }
+
+    [data-name="GenericModal"] .btn-primary {
+        background-color: #004f90 !important;
+        border-color: #004f90 !important;
+        color: #fff;
+    }
+</style>

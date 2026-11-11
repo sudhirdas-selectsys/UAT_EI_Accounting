@@ -1,0 +1,64 @@
+﻿@{
+	var Invoice_Id = ViewBag.InvoiceId;
+}
+<div data-name="EditEntityNameContainer">
+	<div class="search-filters mb-2">
+		<form data-name="frmEditEntityNameSearch">
+			<input type="hidden" name="Invoice_Id" data-name="Invoice_Id" value="@Invoice_Id" />
+			<div class="row align-items-center" data-name="EditEntityNameSection">
+				<div class="col-md-6">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end">Payor Type:</label>
+						<div class="col-12 col-xl-8">
+							<select class="form-select" name="payeeType_Id" data-name="PayeeType_Id">
+								<option value="">Select</option>
+								@{
+									var EntitypeList = LookupUtility.GetAllEntityTypes();
+									foreach (var entity in EntitypeList)
+									{
+										<option value="@entity.EntityType_Id">@entity.Name</option>
+									}
+								}
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-6">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end">Payor Name:</label>
+						<div class="col-12 col-xl-8">
+							<input type="text" class="form-control" placeholder="Entity Name" name="PayeeName" data-name="PayeeName" value="">
+							<input type="hidden" name="Payee_Id" data-name="Payee_Id" value="" />
+							<input type="hidden" name="Id" data-name="Id" />
+							<input type="hidden" name="PayorType_Id" data-name="PayorType_Id" value="" />
+						</div>
+					</div>
+
+				</div>
+			</div>
+			<button type="button" class="btn btn-primary" data-name="btnSaveEntity">Save changes</button>
+		</form>
+	</div>
+</div>
+
+<style>
+	[data-name="PaymentsGridContainer"] {
+		min-height: auto !important;
+	}
+
+	.range-date, .range-date::placeholder {
+		font-size: 12px;
+	}
+
+		.range-date + i {
+			right: 5px;
+			top: -1px;
+		}
+</style>
+@* <script>
+		$(document).ready(function(){
+		$('[data-name="GenericModal"] .modal-dialog').removeAttr('style');
+	$('[data-name="GenericModal"] .modal-dialog').addClass('modal-lg').removeClass('modal-md');
+	})
+</script> *@
+<script src="~/js/editentitydetaisaccountreceivable.js"></script>

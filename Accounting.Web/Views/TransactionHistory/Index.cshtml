@@ -1,0 +1,128 @@
+﻿<div data-name="TransactionHistoryContainer">
+	<div class="search-filters mb-2">
+		<form data-name="frmTransactionHistorySearch">
+			<div class="row align-items-start" data-name="TransactionHistorySection">
+				<div class="col-md-4">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Transaction Type:</label>
+						<div class="col-12 col-xl-7">
+							<select class="form-select" name="Direction_Id" data-name="Direction_Id">
+								<option value="">Select</option>
+								@{
+									var DirectionsList = LookupUtility.GetAllDirections();
+									foreach (var direction in DirectionsList)
+									{
+										<option value="@direction.Direction_Id">@direction.Name</option>
+									}
+								}
+							</select>
+
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payor/Payee:</label>
+						<div class="col-12 col-xl-7">
+							<input type="text" class="form-control" placeholder="Payor/Payee Name" data-name="PayorOrPayee" autocomplete="off" name="EntityName">
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Invoice Number:</label>
+						<div class="col-12 col-xl-7">
+							<input type="text" class="form-control" placeholder="Invoice Number" data-name="InvoiceNumber" autocomplete="off" name="InvoiceNumber">
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Transaction Date:</label>
+						<div class="col-12 col-xl-7">
+							<div class="custom-input-group w-100">
+								<input class="form-control flatpickr flatpickr-input" type="text" placeholder="MM/DD/YYYY" readonly="readonly" name="TransactionDate">
+								<i class="ri-calendar-line"></i>
+							</div>
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payment Method:</label>
+						<div class="col-12 col-xl-7">
+							<select class="form-select" name="PaymentType_Id" data-name="PaymentType_Id">
+								<option value="">Select</option>
+								@{
+									var PaymentTypeList = LookupUtility.GetAllPaymentTypes();
+									foreach (var paymenttype in PaymentTypeList)
+									{
+										<option value="@paymenttype.PaymentType_Id">@paymenttype.Name</option>
+									}
+								}
+							</select>
+
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Policy Number:</label>
+						<div class="col-12 col-xl-7">
+							<input type="text" class="form-control" placeholder="Policy Number" data-name="PolicyNumber" autocomplete="off" name="PolicyNumber">
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4">
+					<div class="row mx-0 my-1">
+						<div class="note-field">
+							<label class="col-form-label col-form-label-sm text-end">Amount Range:</label>
+							<input type="text" class="form-control" placeholder="From" autocomplete="off" name="Amount_From">
+							<input type="text" class="form-control" placeholder="To" autocomplete="off" name="Amount_To">
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end">Payment Status:</label>
+						<div class="col-12 col-xl-8">
+							<select class="form-select" name="PaymentStatus_Id" data-name="PaymentStatus_Id">
+								<option value="">Select</option>
+								@{
+									var PaymentStatusList = LookupUtility.GetAllPaymentStatus();
+									foreach (var paymentstatus in PaymentStatusList)
+									{
+										<option value="@paymentstatus.PaymentStatus_Id">@paymentstatus.Name</option>
+									}
+								}
+							</select>
+
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end">Payment Id:</label>
+						<div class="col-12 col-xl-8">
+							<input type="text" class="form-control" placeholder="Payment Id" name="Payment_Id">
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<div class="col-sm-6"></div>
+						<div class="col-sm-6 text-end">
+							<button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnResetTransactionHistory"><i class="ri-loop-left-line me-1"></i>Reset</button>
+							<button type="button" class="btn btn-primary btn-sm fw-medium" data-name="btnSearchTransactionHistory"><i class="ri-search-2-line me-1"></i>Search</button>
+						</div>
+					</div>
+					@* <div class="row mx-0 my-1 justify-content-end">
+						<div class="col-md-2">
+							<button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnSearchTransactionHistory">Search</button>
+						</div>
+
+					</div> *@
+				</div>
+			</div>
+		</form>
+	</div>
+	<div data-name="TransactionHistoryGridContainer">
+	</div>
+</div>
+<style>
+	[data-name="TransactionHistoryGridContainer"] {
+		min-height: auto !important;
+	}
+
+	.table-scroll {
+		height: calc(100vh - 400px) !important;
+		overflow-y: auto;
+	}
+</style>
+<script src="~/js/transactionhistory.js" asp-append-version="true"></script>

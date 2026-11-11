@@ -1,0 +1,520 @@
+--/****** Object:  StoredProcedure [dbo].[USP_Accounting_AgencyBillAccountStatementReport]    Script Date: 4/22/2026 10:55:49 AM ******/
+--SET ANSI_NULLS ON
+--GO
+--SET QUOTED_IDENTIFIER ON
+--GO
+
+--ALTER PROC [dbo].[USP_Accounting_AgencyBillAccountStatementReport]                                                                                    
+--(                          
+-- @Client_Id BIGINT = NULL,                                                                                      
+--    --@AgentDetail_Id BIGINT = NULL,          
+-- @AgentDetail_Id NVARCHAR(MAX) = NULL,            
+--    @InvoiceDate VARCHAR(100) = NULL,                                                                                      
+--    @InvoiceCreatedFromDate VARCHAR(200) = NULL,                                                                                      
+--    @InvoiceCreatedToDate VARCHAR(200) = NULL,                                                                                      
+--    @InvoiceEffectiveFromDate VARCHAR(200) = NULL,                                                                                      
+--    @InvoiceEffectiveToDate VARCHAR(200) = NULL,                                                                                      
+--    @Range VARCHAR(200) = NULL ,                                                                                     
+-- @WholesalerDetail_Id BIGINT = NULL,                                                          
+-- @InvoiceNumber VARCHAR(200) = NULL,                                                               
+-- @CarrierDetail_Id BIGINT = NULL,                                                                                  
+-- @LOB_Id INT = NULL,                                                                          
+-- @OutstandingBalances bit = null,                                  
+-- @Simplified bit = null,                                
+--    @ParentAgentDetail_Id BIGINT = NULL,                               
+-- @As_Of_Date VARCHAR(200) = NULL,  
+-- @LOB_Carrier_Grouping_Id INT = NULL  
+--)                                                                                    
+--AS                                                                                    
+--BEGIN                             
+----=========================                          
+---- update NetAmount and Remaining balance for House Commission - Hamed (02/10/2026)                          
+----=========================                          
+--    DECLARE @CompareDateFrom DATETIME;                                                                                    
+--    DECLARE @CompareDateTo DATETIME;                                                                                    
+                                                                                    
+--    IF @InvoiceDate = 'InvoiceCreatedDate'                                                                                    
+--    BEGIN                                                                                    
+--        SET @CompareDateFrom = CONVERT(DATETIME, CONVERT(VARCHAR(11), @InvoiceCreatedFromDate, 101));                                                                                    
+--        SET @CompareDateTo = DATEADD(ms, -2, DATEADD(d, 1, CONVERT(DATETIME, CONVERT(VARCHAR(11), @InvoiceCreatedToDate, 101))));                                                                                    
+--    END                                                                                    
+--    ELSE IF @InvoiceDate = 'InvoiceEffectiveDate'                                                                                    
+--    BEGIN                                                                                    
+--        SET @CompareDateFrom = CONVERT(DATETIME, CONVERT(VARCHAR(11), @InvoiceEffectiveFromDate, 101));                                                                                    
+--        SET @CompareDateTo = DATEADD(ms, -2, DATEADD(d, 1, CONVERT(DATETIME, CONVERT(VARCHAR(11), @InvoiceEffectiveToDate, 101))));                                                                                    
+--    END     
+    
+-- -- Cache the Data at Once Start                 
+-- DECLARE @TempAgencyHierarchy TABLE (AgentDetail_Id BIGINT);    
+-- DECLARE @TempAgentIds TABLE (AgentDetail_Id BIGINT);    
+    
+-- DROP TABLE IF EXISTS #TempBasePolicyDetails;    
+-- DROP TABLE IF EXISTS #TempAccounting_InsuredDetails;    
+-- DROP TABLE IF EXISTS #TempAccounting_InvoiceDetails;    
+-- DROP TABLE IF EXISTS #TempPolicyLOBs;    
+-- DROP TABLE IF EXISTS #TempAggregatedPremiumCommissionInvoiceDetails;    
+-- DROP TABLE IF EXISTS #TempInvoicesPayment;    
+-- DROP TABLE IF EXISTS #TempLOBCarrierGroupingInvoices_AgencyBill;
+-- DROP TABLE IF EXISTS #TempFeeData;    
+-- DROP TABLE IF EXISTS #TempPaymentApplication;    
+-- DROP TABLE IF EXISTS #BillingTypeLineItemDirectionLookup;    
+
+-- CREATE TABLE #TempLOBCarrierGroupingInvoices_AgencyBill(Invoice_Id BIGINT)
+    
+-- IF @ParentAgentDetail_Id IS NOT NULL    
+-- BEGIN    
+--     INSERT INTO @TempAgencyHierarchy (AgentDetail_Id)    
+--     SELECT AgentDetail_Id FROM dbo.GetAgencyHierarchy(@ParentAgentDetail_Id);    
+-- END    
+    
+    
+-- IF @AgentDetail_Id IS NOT NULL    
+-- BEGIN    
+--     INSERT INTO @TempAgentIds (AgentDetail_Id)    
+--     SELECT TRY_CAST(LTRIM(RTRIM(value)) AS BIGINT) FROM STRING_SPLIT(@AgentDetail_Id, ',')    
+--     WHERE TRY_CAST(LTRIM(RTRIM(value)) AS BIGINT) IS NOT NULL;    
+-- END    
+    
+--    --#TempBasePolicyDetails Start    
+-- SELECT IES.PolicyDetails_Id,IES.InvoiceNo,IES.Id AS Invoice_Id,IES.Amount AS InvoicesAmount,IES.RemainingBalance AS InvoicesRemainingBalance,    
+-- IES.DueDate AS InvoicesDueDate,IES.CreatedOn AS InvoicesCreatedOn,    
+-- APD.Client_Id,APD.PolicyNumber,APD.AgentDetail_Id,APD.BillType,APD.CarrierDetail_Id,APD.InsuredDetail_Id,APD.EffectiveDate,APD.ExpirationDate,APD.WholesalerDetail_Id,APD.TransactionType,    
+-- APD.EndorsementNumber,APD.CreatedOn AS PolicyDetailsCreatedOn,    
+-- CD.Name AS CarrierName    
+-- INTO #TempBasePolicyDetails    
+-- FROM Accounting_PolicyDetails APD    
+-- INNER JOIN Accounting_Invoices IES ON APD.Id = IES.PolicyDetails_Id AND IES.Status = 1    
+-- LEFT JOIN Accounting_CarrierDetails CD ON APD.CarrierDetail_Id = CD.CarrierDetail_Id AND CD.Status = 1    
+-- WHERE APD.Status = 1 AND APD.Client_Id = @Client_Id AND APD.BillType = 'Agency'    
+    
+-- CREATE NONCLUSTERED INDEX NC_TempBasePolicyDetails_ClientPolicy ON #TempBasePolicyDetails (Client_Id, PolicyDetails_Id)    
+-- INCLUDE (InvoiceNo, Invoice_Id, InvoicesAmount, InvoicesRemainingBalance, InvoicesDueDate);    
+-- --#TempBasePolicyDetails End    
+    
+-- --#TempAccounting_InsuredDetails Start    
+-- SELECT AINSD.* INTO #TempAccounting_InsuredDetails    
+-- FROM Accounting_InsuredDetails AINSD    
+-- INNER JOIN (SELECT DISTINCT InsuredDetail_Id FROM #TempBasePolicyDetails) TBPD ON AINSD.InsuredDetail_Id = TBPD.InsuredDetail_Id    
+-- WHERE AINSD.Client_Id = @Client_Id AND AINSD.Status = 1    
+    
+-- CREATE NONCLUSTERED INDEX NC_TempAccounting_InsuredDetails ON #TempAccounting_InsuredDetails (Client_Id, InsuredDetail_Id)    
+-- --#TempAccounting_InsuredDetails End    
+    
+-- --#TempAccounting_InvoiceDetails Start    
+-- SELECT AID.* INTO #TempAccounting_InvoiceDetails    
+-- FROM Accounting_InvoiceDetails AID    
+-- INNER JOIN #TempBasePolicyDetails TBPD ON AID.Invoice_Id = TBPD.Invoice_Id AND AID.Status = 1    
+    
+-- CREATE NONCLUSTERED INDEX NC_TempAccounting_InvoiceDetails ON #TempAccounting_InvoiceDetails (Id, Invoice_Id,BillingType_LineItems_Directions_Id)       
+-- --#TempAccounting_InvoiceDetails End    
+     
+-- --#BillingTypeLineItemDirectionLookup Start    
+-- SELECT     
+--    BLD.BillingType_LineItems_Directions_Id,    
+--    LI.Code        AS LineItemCode,    
+--    LI.Name        AS LineItemName,    
+--    LI.LineItem_Id,    
+--    LIT.Code       AS LineItemTypeCode,    
+--    LUD.Code       AS DirectionCode,    
+--    LUD.Direction_Id    
+-- INTO #BillingTypeLineItemDirectionLookup    
+-- FROM Accounting_LU_BillingType_LineItems_Directions BLD    
+-- JOIN Accounting_LU_LineItems_Directions LD  ON LD.LineItems_Directions_Id = BLD.LineItems_Directions_Id  AND LD.Status  = 1    
+-- JOIN Accounting_LU_LineItems_Clients LIC ON LIC.LineItems_Clients_Id = LD.LineItems_Clients_Id AND LIC.Status = 1 AND LIC.Client_Id = @Client_Id    
+-- JOIN Accounting_LU_LineItems LI  ON LI.LineItem_Id  = LIC.LineItem_Id AND LI.Status  = 1    
+-- JOIN Accounting_LU_LineItemTypes LIT ON LIT.LineItemType_Id  = LI.LineItemType_Id  AND LIT.Status = 1    
+-- JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id AND LUD.Status = 1    
+-- WHERE BLD.Status = 1;    
+     
+-- CREATE NONCLUSTERED INDEX NC_BillingTypeLineItemDirectionLookup ON #BillingTypeLineItemDirectionLookup (BillingType_LineItems_Directions_Id) INCLUDE (LineItemCode, LineItemName, LineItemTypeCode, DirectionCode, Direction_Id);    
+-- --#BillingTypeLineItemDirectionLookup End    
+    
+-- SELECT * FROM Accounting_AgentDetails WHERE Client_Id = @Client_Id AND Status = 1                              
+--    --AND (@AgentDetail_Id IS NULL OR AgentDetail_Id = @AgentDetail_Id);        
+-- AND (@AgentDetail_Id IS NULL OR AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgentIds))     
+-- AND (@ParentAgentDetail_Id IS NULL OR AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgencyHierarchy))      
+    
+--    SELECT APD.* FROM Accounting_PolicyDetails APD     
+-- INNER JOIN (SELECT DISTINCT PolicyDetails_Id FROM #TempBasePolicyDetails) TBPD ON APD.Id = TBPD.PolicyDetails_Id AND APD.Client_Id = @Client_Id AND APD.Status = 1                                                                             
+-- WHERE APD.BillType = 'Agency' AND                                                                              
+--    (                                                     
+--        @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                                                                       
+--        OR                                       
+--        (                                                                
+--            @InvoiceDate = 'InvoiceEffectiveDate'                                                               
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                                
+--            AND APD.EffectiveDate > @CompareDateFrom AND APD.EffectiveDate <= @CompareDateTo                                                                                
+--        )                                                                  
+--        OR                                                                                
+--        (                                                       
+--            @InvoiceDate = 'InvoiceCreatedDate'                                                                                
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                                
+--            AND APD.CreatedOn > @CompareDateFrom AND APD.CreatedOn <= @CompareDateTo                                                                                
+--        )                                                                     
+--    )                          
+-- --AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)        
+-- AND (@AgentDetail_Id IS NULL OR APD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgentIds))        
+-- AND (@WholesalerDetail_Id IS NULL OR APD.WholesalerDetail_Id = @WholesalerDetail_Id)                                                             
+-- AND (@CarrierDetail_Id IS NULL OR APD.CarrierDetail_Id = @CarrierDetail_Id)       
+-- AND (@ParentAgentDetail_Id IS NULL OR APD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgencyHierarchy))      
+        
+-- SELECT DISTINCT TBPD.PolicyNumber,TBPD.AgentDetail_Id,IND.Name AS InsuredName,LOB.Name AS LOBName,TBPD.CarrierName AS CarrierName            
+-- INTO #TempPolicyLOBs    
+-- FROM #TempBasePolicyDetails TBPD        
+--    JOIN #TempAccounting_InsuredDetails IND ON IND.InsuredDetail_Id = TBPD.InsuredDetail_Id AND IND.Status = 1                                                                                                                                                
+   
+              
+--    JOIN #TempAccounting_InvoiceDetails ID ON ID.Invoice_Id = TBPD.Invoice_Id AND ID.Status = 1                             
+--    JOIN Accounting_LU_LOBs LOB ON LOB.LOB_Id = ID.LOB_Id AND LOB.Status = 1                                                                       
+--    WHERE     
+-- (                                       
+--  @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                                                                       
+--        OR                                                                                
+--        (                                               
+--            @InvoiceDate = 'InvoiceEffectiveDate'                                    
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                                
+--            AND TBPD.EffectiveDate > @CompareDateFrom AND TBPD.EffectiveDate <= @CompareDateTo                                                                                
+--        )                                                                                
+--        OR                                                                                
+--        (                                                                                
+--            @InvoiceDate = 'InvoiceCreatedDate'                                                                                
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                                
+--            AND TBPD.InvoicesCreatedOn > @CompareDateFrom AND TBPD.InvoicesCreatedOn <= @CompareDateTo                                                                                
+--  )    
+-- )                                                                                 
+-- -- AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)        
+-- AND (@AgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgentIds ))        
+-- AND (@WholesalerDetail_Id IS NULL OR TBPD.WholesalerDetail_Id = @WholesalerDetail_Id)                                                        
+-- -- AND (@InvoiceNumber IS NULL OR TBPD.InvoiceNo=@InvoiceNumber)                
+-- AND (@InvoiceNumber IS NULL OR TBPD.InvoiceNo = @InvoiceNumber OR TBPD.InvoiceNo LIKE '%' + @InvoiceNumber + '%'                
+--  OR TRY_CAST(REPLACE(TBPD.InvoiceNo, 'INV', '') AS INT) = TRY_CAST(@InvoiceNumber AS INT))                
+-- AND (@As_Of_Date IS NULL OR TBPD.EffectiveDate <= @As_Of_Date)                                              
+-- AND (@CarrierDetail_Id IS NULL OR TBPD.CarrierDetail_Id = @CarrierDetail_Id)     
+-- AND (@ParentAgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgencyHierarchy))       
+-- AND (@LOB_Id IS NULL OR EXISTS (                                                                          
+--  SELECT 1                                                                          
+--  FROM Accounting_InvoiceDetails AID                                                                          
+--  WHERE AID.Invoice_Id = TBPD.Invoice_Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id))                                                                          
+-- --     AND (                                                                    
+-- --    @OutstandingBalances IS NULL        
+-- --    OR @OutstandingBalances = 0                                                                     
+-- --    OR (                                                                    
+-- --    @OutstandingBalances = 1                                                                     
+-- --        AND TBPD.RemainingBalance != 0                                                               
+-- --        AND ID.RemainingBalance != 0                                                                    
+-- --    )                                                                    
+-- --)                   
+-- AND (     @OutstandingBalances IS NULL     OR @OutstandingBalances = 0     OR (         @OutstandingBalances = 1     AND TBPD.InvoicesRemainingBalance <> 0     ) )       
+     
+-- CREATE NONCLUSTERED INDEX NC_TempPolicyLOBs ON #TempPolicyLOBs (PolicyNumber, InsuredName)    
+    
+                                      
+--    SELECT PolicyNumber,InsuredName,AgentDetail_Id,CarrierName,                                                                        
+--        STUFF((                                                                  
+--            SELECT DISTINCT ', ' + L2.LOBName                                                                                    
+--            FROM #TempPolicyLOBs L2                                                                                    
+--            WHERE L2.PolicyNumber = L1.PolicyNumber AND L2.InsuredName = L1.InsuredName                                         
+--            FOR XML PATH(''), TYPE                                                                                    
+--        ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS LOBNames                                                                                    
+--    FROM #TempPolicyLOBs L1                                                                                    
+--    GROUP BY PolicyNumber, InsuredName, AgentDetail_Id, CarrierName;      
+     
+     
+-- SELECT TBPD.Invoice_Id AS InvoiceId,TBPD.PolicyDetails_Id,TBPD.InvoiceNo,                                                                                    
+-- SUM(CASE WHEN TL.LineItemCode = 'CarrierPremium' AND TL.DirectionCode = 'AR' THEN TID.Amount ELSE 0 END) AS PremiumAR,                                                                                    
+--    SUM(CASE WHEN TL.LineItemCode = 'AgencyBrokerCommission' AND TL.DirectionCode = 'C' THEN TID.Amount ELSE 0 END) AS AgentCommission,                                                  
+-- SUM(CASE WHEN TL.LineItemCode = 'AgencyBrokerCommission' AND TL.DirectionCode = 'C' THEN TID.RemainingBalance ELSE 0 END) AS AgentCommissionRemainingBalance,                                                  
+-- SUM(CASE WHEN TL.LineItemCode = 'MGACommission' AND TL.DirectionCode = 'IN' THEN TID.Amount ELSE 0 END) AS MGACommission                
+-- INTO #TempAggregatedPremiumCommissionInvoiceDetails    
+-- FROM #TempBasePolicyDetails TBPD                                          
+-- JOIN #TempAccounting_InvoiceDetails TID ON TID.Invoice_Id = TBPD.Invoice_Id     
+-- JOIN #BillingTypeLineItemDirectionLookup TL ON TL.BillingType_LineItems_Directions_Id = TID.BillingType_LineItems_Directions_Id                                                                                
+--    WHERE                                                                              
+-- (                                                                                
+--        @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                                                                                
+--        OR                                                                                
+--        (                                                                                
+--            @InvoiceDate = 'InvoiceEffectiveDate'                                                               
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                                
+--            AND TBPD.EffectiveDate > @CompareDateFrom AND TBPD.EffectiveDate <= @CompareDateTo                                                                                
+--        )                                                                                
+--        OR                                                                                
+--        (                                                                                
+--            @InvoiceDate = 'InvoiceCreatedDate'                                                                                
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                          
+--            AND TBPD.InvoicesCreatedOn > @CompareDateFrom AND TBPD.InvoicesCreatedOn <= @CompareDateTo                                          )    
+-- )                                                                                
+-- --  AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)        
+--    AND (@AgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgentIds))        
+-- AND (@WholesalerDetail_Id IS NULL OR TBPD.WholesalerDetail_Id = @WholesalerDetail_Id)                                                        
+-- --AND (@InvoiceNumber IS NULL OR I.InvoiceNo=@InvoiceNumber)                
+--    AND (@InvoiceNumber IS NULL OR TBPD.InvoiceNo = @InvoiceNumber OR TBPD.InvoiceNo LIKE '%' + @InvoiceNumber + '%'                 
+--  OR TRY_CAST(REPLACE(TBPD.InvoiceNo, 'INV', '') AS INT) = TRY_CAST(@InvoiceNumber AS INT))      
+-- AND (@ParentAgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgencyHierarchy))       
+-- AND (@As_Of_Date IS NULL OR TBPD.EffectiveDate <= @As_Of_Date)                                              
+-- AND (@CarrierDetail_Id IS NULL OR TBPD.CarrierDetail_Id = @CarrierDetail_Id)                                                                           
+-- AND (@LOB_Id IS NULL OR EXISTS (                                                                          
+--  SELECT 1 FROM Accounting_InvoiceDetails AID                                                                          
+--  WHERE AID.Invoice_Id = TBPD.Invoice_Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id))                                                                           
+-- --  AND (                        
+-- --    @OutstandingBalances IS NULL                                                                    
+-- --    OR @OutstandingBalances = 0                                                                     
+-- --    OR (                                                                    
+-- --        @OutstandingBalances = 1                                                                     
+-- --        AND I.RemainingBalance != 0                                
+-- --        AND ID.RemainingBalance != 0                                                                    
+-- --    )                                                                    
+-- --)                   
+-- AND (     @OutstandingBalances IS NULL     OR @OutstandingBalances = 0     OR (         @OutstandingBalances = 1         AND TBPD.InvoicesRemainingBalance <> 0     ) )    
+-- GROUP BY TBPD.Invoice_Id,TBPD.PolicyDetails_Id,TBPD.InvoiceNo    
+    
+-- CREATE NONCLUSTERED INDEX NC_AggregatedPremiumCommissionInvoiceDetails ON #TempAggregatedPremiumCommissionInvoiceDetails (InvoiceId, PolicyDetails_Id,InvoiceNo)    
+    
+-- SELECT  TBPD.Invoice_Id As InvoiceId,                                          
+-- SUM(CASE WHEN p.EntityType_Id = 5 AND (@As_Of_Date IS NULL OR P.PaymentDate <= @As_Of_Date) THEN PALI.AppliedAmount ELSE 0 END) AS AmountFinanced,                                            
+-- SUM(CASE WHEN p.EntityType_Id <> 5 AND (@As_Of_Date IS NULL OR P.PaymentDate <= @As_Of_Date) THEN PALI.AppliedAmount ELSE 0 END) AS AmountPaid    
+-- INTO #TempInvoicesPayment    
+--    FROM #TempAccounting_InvoiceDetails TID                                            
+--    JOIN #TempBasePolicyDetails TBPD ON TBPD.Invoice_Id = TID.Invoice_Id     
+-- JOIN #BillingTypeLineItemDirectionLookup TL ON TL.BillingType_LineItems_Directions_Id = TID.BillingType_LineItems_Directions_Id AND TL.Direction_Id = 1          
+--    JOIN Accounting_PaymentApplicationLineItems PALI ON TID.Id = PALI.InvoiceLineItem_Id AND PALI.Status = 1                                            
+--    JOIN Accounting_PaymentApplications PA ON PA.PaymentApplication_Id = PALI.PaymentApplication_Id AND PA.Status = 1                                            
+--    JOIN Accounting_Payments P ON P.Payment_Id = PA.Payment_Id AND P.Status = 1                                                                                                            
+-- GROUP BY TBPD.Invoice_Id      
+    
+-- CREATE NONCLUSTERED INDEX NC_TempInvoicesPayment ON #TempInvoicesPayment (InvoiceId) 
+ 
+
+-- IF @LOB_Carrier_Grouping_Id IS NOT NULL
+-- BEGIN
+--	 INSERT INTO #TempLOBCarrierGroupingInvoices_AgencyBill(Invoice_Id)
+--     SELECT DISTINCT TBPD.Invoice_Id
+--     FROM #TempBasePolicyDetails TBPD
+--     JOIN #TempAccounting_InvoiceDetails TID  ON TID.Invoice_Id = TBPD.Invoice_Id
+--     JOIN Accounting_LOB_Carrier_Grouping LCG ON LCG.LOB_Carrier_Grouping_Id = @LOB_Carrier_Grouping_Id AND LCG.Status = 1 AND LCG.Client_Id = @Client_Id
+--     JOIN Accounting_Carrier_GroupingDetails CG  ON LCG.LOB_Carrier_Grouping_Id = CG.LOB_Carrier_Grouping_Id AND CG.Status = 1
+--     LEFT JOIN Accounting_LOB_GroupingDetails LG ON LG.LOB_Carrier_Grouping_Id = LCG.LOB_Carrier_Grouping_Id AND LG.Status = 1
+--     WHERE (LG.LOB_Id IS NULL OR TID.LOB_Id = LG.LOB_Id);
+ 
+-- END
+-- ELSE
+-- BEGIN
+--     -- Null filter = all invoices pass; skip the table entirely
+--     -- We handle this with the macro below
+--	 INSERT INTO #TempLOBCarrierGroupingInvoices_AgencyBill(Invoice_Id)
+--     SELECT DISTINCT Invoice_Id 
+--     FROM #TempBasePolicyDetails;
+-- END
+-- CREATE NONCLUSTERED INDEX NC_TempLOBCarrierGroupingInvoices_AgencyBill ON #TempLOBCarrierGroupingInvoices_AgencyBill (Invoice_Id);
+
+    
+-- SELECT TBPD.PolicyDetails_Id,TBPD.Invoice_Id AS Invoice_Id,TID.Id AS InvoiceDetail_Id,ABD.AgentDetail_Id,ABD.Name AS [Agency Name],    
+-- CONCAT(ABD.Address1, ', ', ABD.City, ', ', ABD.State, ', ', ABD.ZipCode) AS [Agency Address],     
+-- CONCAT(TBPD.TransactionType, ' ',REPLACE(LTRIM(RTRIM(TL.LineItemName)), 'Carrier Premium', 'Premium')) AS LineItemDescription,                                                                                
+-- TBPD.InvoiceNo AS IdNo,TBPD.EffectiveDate,TBPD.ExpirationDate,TID.Amount AS GrossAmount,0 AS AgentCommPercentage,0 AS AgentCommission,                                                  
+--    0 AS AgentCommissionRemainingBalance,TID.Amount AS NetAmount,TBPD.InvoicesDueDate AS DueDate,TBPD.PolicyNumber,TID.RemainingBalance ,                                                              
+-- CAST(0 AS BIT) AS IsHouseCommission,TBPD.TransactionType,COALESCE(IFC.AmountFinanced, 0) AS AmountFinanced,                                            
+--    COALESCE(IFC.AmountPaid, 0) AS AmountPaid,AID.Name As [InsuredName], TBPD.CarrierName AS [CarrierName],LOB.Name AS [LOBNames],        
+-- TBPD.EndorsementNumber,TBPD.PolicyDetailsCreatedOn AS CreatedOn    
+-- INTO #TempFeeData    
+--    FROM #TempBasePolicyDetails TBPD    
+--    JOIN #TempAccounting_InvoiceDetails TID ON TID.Invoice_Id = TBPD.Invoice_Id     
+--    JOIN #BillingTypeLineItemDirectionLookup TL ON TL.BillingType_LineItems_Directions_Id = TID.BillingType_LineItems_Directions_Id           
+-- JOIN Accounting_LU_LOBs LOB  ON LOB.LOB_Id = TID.LOB_Id AND LOB.Status = 1    
+--    LEFT JOIN Accounting_PaymentApplicationLineItems PALI ON TID.Id = PALI.InvoiceLineItem_Id AND PALI.Status = 1                                            
+-- LEFT JOIN Accounting_PaymentApplications PA ON PA.PaymentApplication_Id = PALI.PaymentApplication_Id AND PA.Status = 1                                            
+-- LEFT JOIN Accounting_Payments P ON P.Payment_Id = PA.Payment_Id AND P.Status = 1                         
+-- LEFT JOIN #TempAccounting_InsuredDetails AID on AID.InsuredDetail_Id =TBPD.InsuredDetail_Id                                                                
+--    LEFT JOIN Accounting_AgentDetails ABD on ABD.AgentDetail_Id =TBPD.AgentDetail_Id AND ABD.Status=1                 
+-- LEFT JOIN #TempInvoicesPayment IFC ON IFC.InvoiceId = TBPD.Invoice_Id                                            
+-- WHERE                                                                               
+-- (                                                         
+--  @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                                                                                
+--        OR                                                                                
+--        (                                                                                
+--            @InvoiceDate = 'InvoiceEffectiveDate'                                                                                
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                             
+--            AND TBPD.EffectiveDate > @CompareDateFrom AND TBPD.EffectiveDate <= @CompareDateTo                                                                                
+--        )                                                                                
+--        OR                                        
+--        (                                                                                
+--            @InvoiceDate = 'InvoiceCreatedDate'                                                                                
+--           AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                                
+--  AND TBPD.InvoicesCreatedOn > @CompareDateFrom AND TBPD.InvoicesCreatedOn <= @CompareDateTo                                                                        
+--        )    
+-- )                                  
+-- AND (TL.LineItemTypeCode = 'Fee' OR TL.LineItemTypeCode = 'Tax') AND TL.DirectionCode = 'AR'                                                                              
+-- --AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)        
+-- AND (@AgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgentIds))     
+-- AND (@ParentAgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgencyHierarchy))       
+-- AND (@WholesalerDetail_Id IS NULL OR TBPD.WholesalerDetail_Id = @WholesalerDetail_Id)                                                        
+-- --  AND (@InvoiceNumber IS NULL OR TBPD.InvoiceNo=@InvoiceNumber)                 
+--    AND (@InvoiceNumber IS NULL OR TBPD.InvoiceNo = @InvoiceNumber OR TBPD.InvoiceNo LIKE '%' + @InvoiceNumber + '%'                
+--  OR TRY_CAST(REPLACE(TBPD.InvoiceNo, 'INV', '') AS INT) = TRY_CAST(@InvoiceNumber AS INT))                
+-- AND (@As_Of_Date IS NULL OR TBPD.EffectiveDate <= @As_Of_Date)                                              
+-- AND (@CarrierDetail_Id IS NULL OR TBPD.CarrierDetail_Id = @CarrierDetail_Id)                                                                
+-- AND (@LOB_Id IS NULL OR EXISTS (SELECT 1                                                                          
+--  FROM Accounting_InvoiceDetails AID                                                                          
+--  WHERE AID.Invoice_Id = TBPD.Invoice_Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id))                                                                               
+-- --    AND (                                                                    
+-- --    @OutstandingBalances IS NULL                                                                     
+-- --    OR @OutstandingBalances = 0                                                        
+-- --    OR (                                                                    
+-- --        @OutstandingBalances = 1                   
+-- --        AND TBPD.RemainingBalance != 0                                                                     
+-- --        AND TID.RemainingBalance != 0                                                                    
+-- -- )                                                                    
+-- --)                   
+-- AND (     @OutstandingBalances IS NULL     OR @OutstandingBalances = 0     OR (         @OutstandingBalances = 1         AND TBPD.InvoicesRemainingBalance <> 0     ) )                  
+-- AND EXISTS (SELECT 1 FROM #TempLOBCarrierGroupingInvoices_AgencyBill LCGI WHERE lcgi.Invoice_Id = TBPD.Invoice_Id)
+        
+     
+-- SELECT TBPD.PolicyDetails_Id,TBPD.Invoice_Id AS Invoice_Id,TID.Id AS InvoiceDetail_Id,ABD.AgentDetail_Id,ABD.Name AS [Agency Name],    
+-- CONCAT(ABD.Address1, ', ', ABD.City, ', ', ABD.State, ', ', ABD.ZipCode) AS [Agency Address], 'Cash Receipt' AS LineItemDescription,                     
+-- CONCAT('Payment #', ' ', P.Payment_Id) AS IdNo,CAST(P.PaymentDate AS DATE) AS EffectiveDate,                                                                                    
+-- TBPD.ExpirationDate,0 AS GrossAmount,0 AS AgentCommPercentage,0 AS AgentCommission,                                                   
+--    0 AS AgentCommissionRemainingBalance,CASE WHEN P.PaymentDirection_Id = 1 THEN -PALI.AppliedAmount ELSE ABS(PALI.AppliedAmount) END AS NetAmount,                                                                                    
+-- TBPD.InvoicesDueDate AS DueDate,TBPD.PolicyNumber,0 AS RemainingBalance,CASE WHEN TL.LineItemCode='HouseCommission' THEN CAST(1 AS BIT) else CAST(0 AS BIT) END AS IsHouseCommission,                                                   
+-- TBPD.TransactionType,IFC.AmountFinanced,IFC.AmountPaid,AID.Name As [InsuredName], CD.Name AS [CarrierName],LOB.Name AS [LOBNames],      
+-- TBPD.EndorsementNumber,TBPD.PolicyDetailsCreatedOn AS CreatedOn    
+-- INTO #TempPaymentApplication    
+--    FROM #TempBasePolicyDetails TBPD    
+--    JOIN #TempAccounting_InvoiceDetails TID ON TID.Invoice_Id = TBPD.Invoice_Id    
+--    JOIN #BillingTypeLineItemDirectionLookup TL ON TL.BillingType_LineItems_Directions_Id = TID.BillingType_LineItems_Directions_Id                                                                                  
+--    JOIN Accounting_LU_LOBs LOB ON LOB.LOB_Id = TID.LOB_Id AND LOB.Status = 1                                                                                    
+--    JOIN Accounting_PaymentApplicationLineItems PALI ON PALI.InvoiceLineItem_Id = TID.Id AND PALI.Status = 1                                                                                    
+-- JOIN Accounting_PaymentApplications PA ON PA.PaymentApplication_Id = PALI.PaymentApplication_Id AND PA.Status = 1                        
+-- LEFT JOIN Accounting_InsuredDetails AID on AID.InsuredDetail_Id =TBPD.InsuredDetail_Id AND AID.Status=1 --v                                                                  
+-- LEFT JOIN Accounting_CarrierDetails CD on CD.CarrierDetail_Id =TBPD.CarrierDetail_Id AND CD.Status=1   --v                                                                         
+-- LEft JOIN Accounting_AgentDetails ABD on ABD.AgentDetail_Id =TBPD.AgentDetail_Id AND ABD.Status=1     --v                      
+--    JOIN Accounting_Payments P ON P.Payment_Id = PA.Payment_Id AND P.Status = 1                                            
+-- LEFT JOIN #TempInvoicesPayment IFC ON IFC.InvoiceId = TBPD.Invoice_Id    
+-- OUTER APPLY  (         
+--  SELECT SUM(PALI.AppliedAmount) AS PaidAmount FROM Accounting_PaymentApplicationLineItems PALI                      
+--  JOIN Accounting_PaymentApplications PA ON PA.PaymentApplication_Id = PALI.PaymentApplication_Id AND PA.Status = 1                     
+--  JOIN Accounting_Payments P ON P.Payment_Id = PA.Payment_Id AND P.Status = 1                      
+--  WHERE PALI.InvoiceLineItem_Id = TID.Id AND PALI.Status = 1                       
+--  AND (@As_Of_Date IS NULL OR P.PaymentDate <= @As_Of_Date)     
+-- ) AP            
+--    WHERE                                                                             
+-- (                                                                                
+--  @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                                                                                
+--        OR                                                           
+--        (                                                                                
+--   --    @InvoiceDate = 'InvoiceEffectiveDate'                                                                                
+--   --    AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                  
+--   --    AND PD.EffectiveDate > @CompareDateFrom AND PD.EffectiveDate <= @CompareDateTo                                      
+--   --)                                                                                
+--   --OR                                                                                
+--   --(                                                                                
+--   --    @InvoiceDate = 'InvoiceCreatedDate'                                                                                
+--   --    AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                                
+--   --    AND TBPD.InvoicesCreatedOn > @CompareDateFrom AND TBPD.InvoicesCreatedOn <= @CompareDateTo--))                
+--  @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                      
+--                AND P.PaymentDate > @CompareDateFrom AND P.PaymentDate <= @CompareDateTo                                                      
+--            )                                                      
+-- )               
+-- --  AND LUD.Code = 'AR' AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)        
+--    AND TL.DirectionCode = 'AR' AND (@AgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgentIds))       
+-- AND (@ParentAgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgencyHierarchy))       
+-- AND (@WholesalerDetail_Id IS NULL OR TBPD.WholesalerDetail_Id = @WholesalerDetail_Id)                                                        
+-- --AND (@InvoiceNumber IS NULL OR TBPD.InvoiceNo=@InvoiceNumber)                
+-- AND (@InvoiceNumber IS NULL OR TBPD.InvoiceNo = @InvoiceNumber OR TBPD.InvoiceNo LIKE '%' + @InvoiceNumber + '%'                
+--  OR TRY_CAST(REPLACE(TBPD.InvoiceNo, 'INV', '') AS INT) = TRY_CAST(@InvoiceNumber AS INT))                
+-- AND (@As_Of_Date IS NULL OR P.PaymentDate <= @As_Of_Date)                                              
+-- AND (@CarrierDetail_Id IS NULL OR TBPD.CarrierDetail_Id = @CarrierDetail_Id)                                                                           
+-- AND (@LOB_Id IS NULL OR EXISTS ( SELECT 1 FROM Accounting_InvoiceDetails AID                                                                          
+--  WHERE AID.Invoice_Id = TBPD.Invoice_Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id))                                   
+                  
+-- AND (@OutstandingBalances IS NULL OR @OutstandingBalances = 0 OR (         @OutstandingBalances = 1         AND TBPD.InvoicesRemainingBalance <> 0     ) )          
+--  AND EXISTS (SELECT 1 FROM #TempLOBCarrierGroupingInvoices_AgencyBill LCGI WHERE LCGI.Invoice_Id = TBPD.Invoice_Id)
+
+    
+                                                                                                                                                   
+--    SELECT TBPD.PolicyDetails_Id,TBPD.Invoice_Id AS Invoice_Id,TID.Id AS InvoiceDetail_Id,ABD.AgentDetail_Id,ABD.Name AS [Agency Name],                       
+-- CONCAT(ABD.Address1, ', ', ABD.City, ', ', ABD.State, ', ', ABD.ZipCode) AS [Agency Address],                      
+-- CONCAT(TBPD.TransactionType, ' ',REPLACE(LTRIM(RTRIM(TL.LineItemName)), 'Carrier Premium', 'Premium')) AS LineItemDescription,                                                                       
+-- TBPD.InvoiceNo AS IdNo,TBPD.EffectiveDate,TBPD.ExpirationDate,                                                                                    
+-- APCID.AgentCommission + PremiumAR + MGACommission AS GrossAmount,                                                                                    
+-- ((APCID.AgentCommission) / (NULLIF(APCID.AgentCommission + PremiumAR + MGACommission, 0)) * 100) AS AgentCommPercentage,                                                                                      
+--    APCID.AgentCommission,APCID.AgentCommissionRemainingBalance,    
+-- APCID.PremiumAR + APCID.MGACommission AS NetAmount,                                                                         
+--    TBPD.InvoicesDueDate AS DueDate,TBPD.PolicyNumber,                          
+-- TID.RemainingBalance + APCID.MGACommission as RemainingBalance,                                                              
+-- CASE WHEN TL.LineItemCode='HouseCommission' THEN CAST(1 AS BIT) else CAST(0 AS BIT) END AS IsHouseCommission,                                                    
+-- TBPD.TransactionType,                                            
+-- COALESCE(IFC.AmountFinanced, 0) AS AmountFinanced,                                            
+-- COALESCE(IFC.AmountPaid, 0) AS AmountPaid,                      
+-- AID.Name As [InsuredName], CD.Name AS [CarrierName], LOB.Name AS [LOBNames],      
+-- TBPD.EndorsementNumber,TBPD.PolicyDetailsCreatedOn AS CreatedOn    
+--    FROM #TempBasePolicyDetails TBPD    
+--    JOIN #TempAccounting_InvoiceDetails TID ON TID.Invoice_Id = TBPD.Invoice_Id    
+-- JOIN #BillingTypeLineItemDirectionLookup TL ON TL.BillingType_LineItems_Directions_Id = TID.BillingType_LineItems_Directions_Id                                                              
+--    JOIN #TempAggregatedPremiumCommissionInvoiceDetails APCID ON APCID.InvoiceId = TBPD.Invoice_Id    
+--    JOIN Accounting_LU_LOBs LOB ON LOB.LOB_Id = TID.LOB_Id AND LOB.Status = 1                       
+-- LEFT JOIN Accounting_AgentDetails ABD on ABD.AgentDetail_Id = TBPD.AgentDetail_Id AND ABD.Status = 1 -- ADDED THIS JOIN                      
+-- LEFT JOIN Accounting_PaymentApplicationLineItems PALI ON TID.Id = PALI.InvoiceLineItem_Id AND PALI.Status = 1                                            
+--    LEFT JOIN Accounting_PaymentApplications PA ON PA.PaymentApplication_Id = PALI.PaymentApplication_Id AND PA.Status = 1                                            
+--    LEFT JOIN Accounting_InsuredDetails AID on AID.InsuredDetail_Id =TBPD.InsuredDetail_Id AND AID.Status=1 --v                                                                   
+-- LEFT JOIN Accounting_CarrierDetails CD on CD.CarrierDetail_Id =TBPD.CarrierDetail_Id AND CD.Status=1 ---v                   
+-- LEFT JOIN Accounting_Payments P ON P.Payment_Id = PA.Payment_Id AND P.Status = 1                                            
+-- LEFT JOIN #TempInvoicesPayment IFC ON IFC.InvoiceId = TBPD.Invoice_Id    
+--    WHERE                                                                            
+-- (                                                                                
+--        @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                                                                                
+--        OR                                                                                
+--        (                                                 
+--            @InvoiceDate = 'InvoiceEffectiveDate'                                          
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                                
+--            AND TBPD.EffectiveDate > @CompareDateFrom AND TBPD.EffectiveDate <= @CompareDateTo                                                                                
+--        )                                      
+--        OR                                                
+--        (                                                                                
+--            @InvoiceDate = 'InvoiceCreatedDate'                                                                                
+--      AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                                                                                
+--            AND TBPD.InvoicesCreatedOn > @CompareDateFrom AND TBPD.InvoicesCreatedOn <= @CompareDateTo                                                                                
+--        )    
+-- )                                                                                    
+-- --  AND LI.Code = 'CarrierPremium' AND LUD.Code = 'AR'  AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)        
+--    AND TL.LineItemCode = 'CarrierPremium' AND TL.DirectionCode  = 'AR'  AND (@AgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgentIds))      
+-- AND (@ParentAgentDetail_Id IS NULL OR TBPD.AgentDetail_Id IN (SELECT DISTINCT AgentDetail_Id FROM @TempAgencyHierarchy))       
+-- AND (@WholesalerDetail_Id IS NULL OR TBPD.WholesalerDetail_Id = @WholesalerDetail_Id)                                                        
+-- --AND (@InvoiceNumber IS NULL OR I.InvoiceNo=@InvoiceNumber)                
+-- AND (@InvoiceNumber IS NULL OR TBPD.InvoiceNo = @InvoiceNumber OR TBPD.InvoiceNo LIKE '%' + @InvoiceNumber + '%'                
+--  OR TRY_CAST(REPLACE(TBPD.InvoiceNo, 'INV', '') AS INT) = TRY_CAST(@InvoiceNumber AS INT))                
+-- AND  (@As_Of_Date IS NULL OR (P.PaymentDate <= @As_Of_Date OR TBPD.EffectiveDate <= @As_Of_Date ) )                                               
+-- AND (@CarrierDetail_Id IS NULL OR TBPD.CarrierDetail_Id = @CarrierDetail_Id)                                        
+--    AND (@LOB_Id IS NULL OR EXISTS (SELECT 1 FROM Accounting_InvoiceDetails AID                                                        
+--  WHERE AID.Invoice_Id = TBPD.Invoice_Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id))                                     
+-- -- AND (                                                                    
+-- --    @OutstandingBalances IS NULL                                                                     
+-- --    OR @OutstandingBalances = 0                                                                     
+-- --    OR (                                                                    
+-- --        @OutstandingBalances = 1                                                                     
+-- --        AND I.RemainingBalance != 0                                                         
+-- --        AND ID.RemainingBalance != 0                                                                  
+-- --    )                                                                    
+-- --)                       
+-- AND (   @OutstandingBalances IS NULL     OR @OutstandingBalances = 0     OR (         @OutstandingBalances = 1         AND TBPD.InvoicesRemainingBalance <> 0     ) )                  
+--  AND EXISTS (SELECT 1 FROM #TempLOBCarrierGroupingInvoices_AgencyBill LCGI WHERE lcgi.Invoice_Id = TBPD.Invoice_Id)
+
+
+--    UNION ALL                                                                                    
+                                                         
+--    SELECT * FROM #TempFeeData                                                                      
+                                                                                    
+--    UNION ALL                                                                                    
+                                                                                    
+--    SELECT * FROM #TempPaymentApplication order by CreatedOn asc,InvoiceDetail_Id asc        
+    
+-- DROP TABLE IF EXISTS #TempBasePolicyDetails;    
+-- DROP TABLE IF EXISTS #TempAccounting_InsuredDetails;    
+-- DROP TABLE IF EXISTS #TempAccounting_InvoiceDetails;    
+-- DROP TABLE IF EXISTS #TempPolicyLOBs;    
+-- DROP TABLE IF EXISTS #TempAggregatedPremiumCommissionInvoiceDetails;    
+-- DROP TABLE IF EXISTS #TempInvoicesPayment;    
+-- DROP TABLE IF EXISTS #TempLOBCarrierGroupingInvoices_AgencyBill;
+-- DROP TABLE IF EXISTS #TempFeeData;    
+-- DROP TABLE IF EXISTS #TempPaymentApplication;    
+-- DROP TABLE IF EXISTS #BillingTypeLineItemDirectionLookup;   
+--END     

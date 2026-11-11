@@ -1,0 +1,283 @@
+﻿.table-loading .t-head th, .table-loading .t-body td {
+    background: #e2e2e2;
+}
+
+.table-loading .t-head th, .table-loading .t-body td {
+    position: relative;
+    color: transparent;
+    overflow: hidden;
+    padding: 0;
+}
+
+.table-loading .t-body td {
+    height: 36px;
+}
+
+table.table-loading {
+    border-collapse: inherit;
+}
+
+.card__title.loading {
+    height: 36px;
+    width: 150px;
+    position: absolute;
+}
+
+.search-input {
+    position: absolute;
+    height: 45px;
+    width: 100%;
+    max-width: 460px;
+    right: 156px;
+    border-radius: 4px;
+}
+
+.new-quote {
+    position: absolute;
+    right: 0;
+    height: 45px;
+    width: 140px;
+    border-radius: 4px;
+}
+
+.table__pagination {
+    position: absolute;
+    right: 0;
+    height: 37px;
+    width: 300px;
+    bottom: 16px;
+}
+
+@supports (-ms-ime-align: auto) {
+    .insure-loader {
+        left: 260px;
+        right: 210px;
+    }
+}
+
+.loading {
+    position: relative;
+    background-color: #e2e2e2;
+}
+
+    .loading::after {
+        display: block;
+        content: "";
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        transform: translateX(-100%);
+        background: -webkit-gradient(linear, left top, right top, from(transparent), color-stop(rgba(255, 255, 255, 0.4)), to(transparent));
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+        animation: loading 0.8s infinite;
+        top: 0;
+    }
+
+@keyframes loading {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.card__title.loading {
+    height: 25px;
+    width: 200px;
+    margin-bottom: 24px;
+}
+
+.db-btn.loading {
+    width: 126.38px;
+    height: 30px;
+    border-radius: 4px;
+    position: absolute;
+}
+
+.ar-btn.loading {
+    width: 286.85px;
+    height: 30px;
+    position: absolute;
+    border-radius: 4px;
+    left: 136px;
+}
+
+.ap-btn.loading {
+    width: 277.61px;
+    height: 30px;
+    position: absolute;
+    border-radius: 4px;
+    left: 433px;
+}
+
+.th-btn.loading {
+    width: 180px;
+    height: 30px;
+    position: absolute;
+    border-radius: 4px;
+    left: 721px;
+}
+
+.payment-btn.loading {
+    width: 118.24px;
+    height: 30px;
+    position: absolute;
+    border-radius: 4px;
+    left: 912px;
+}
+
+.input-skeleton {
+    width: 100%;
+    height: 30px;
+    border-radius: 6px;
+}
+
+.form-label-skeleton {
+    width: 100%;
+    height: 20px;
+    border-radius: 6px;
+}
+
+.transaction-table-skeleton .ei-table tr th {
+    background-color: #e2e2e2;
+    height: 54px;
+}
+
+.transaction-table-skeleton .ei-table tr td {
+    background-color: #e2e2e2;
+}
+
+.transaction-table-skeleton .table-scroll {
+    overflow-y: hidden;
+    overflow-x: hidden;
+}
+
+.transaction-table-skeleton .db-table th {
+    height: 34px !important;
+}
+
+.p-16 {
+    padding: 16px;
+}
+
+.px-16 {
+    padding-left: 16px;
+    padding-right: 16px;
+}
+
+.animate-modal {
+    display: none;
+}
+
+    .animate-modal .data-item, .animate .data-item {
+        border-bottom: 0;
+    }
+
+        .animate-modal .data-item .form-label-skeleton {
+            height: 19.5px;
+            margin-bottom: 3px;
+            width: 150px;
+        }
+
+        .animate-modal .data-item .input-skeleton {
+            height: 26.6px;
+        }
+
+        .animate-modal .data-item .text-skeleton {
+            height: 21px;
+            border-radius: 6px;
+        }
+
+.br-6 {
+    border-radius: 6px;
+}
+
+.pt-40 {
+    padding-top: 40px;
+}
+
+.checkbox-skeleton {
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    margin-right: 8px;
+    border-radius: 4px;
+}
+
+.label-skeleton {
+    height: 14px;
+    display: inline-block;
+    /*  vertical-align: middle;*/
+    border-radius: 4px;
+    width: 200px !important;
+}
+
+.animate-modal .form-check {
+    padding-left: 0;
+}
+
+.skeleton-circle {
+    display: inline-block;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+}
+
+.skeleton-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.skeleton-title {
+    width: 300px;
+    height: 20px;
+}
+
+.skeleton-subtitle {
+    height: 16px;
+}
+
+.pd-tabs .w-138 {
+    width: 135px;
+}
+
+.skeleton-tab {
+    width: 120px;
+    height: 32px;
+    border-radius: 6px;
+    margin-top: 5px;
+}
+
+.input-label-skeleton {
+    width: 200px;
+    margin-bottom: 3px;
+    height: 19.5px;
+    border-radius: 6px;
+}
+
+.py-16 {
+    padding-bottom: 16px;
+    padding-top: 16px;
+}
+
+.skeleton-label {
+    height: 14px;
+    border-radius: 4px;
+}
+
+
+.skeleton-text {
+    height: 18px;
+    border-radius: 4px;
+}
+
+.loading.ww-50 {
+    width: 119px;
+}
+
+.loading.ww-25 {
+    width: 86px;
+}
+
+.loading.ww-30 {
+    width: 86px;
+}

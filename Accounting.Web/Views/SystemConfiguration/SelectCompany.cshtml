@@ -1,0 +1,80 @@
+﻿@model List<Clients>
+@{
+    Users User = ViewBag.User != null ? (Users)ViewBag.User : new Users();
+    UserSession userSession = Context.Session.GetObjectFromJson<UserSession>("UserSession");
+}
+<div class="row g-0">
+    <div class="col-sm-12">
+        <div class="user-info align-items-start h-100">
+            <div class=" user-settings w-100 position-relative">
+                <div class="dropdown-menu dropdown-menu-end w-100 show">
+                    <div class="role-container" data-name="divCompanyList">
+                        @if (Model.Count > 0)
+                        {
+                            foreach (var item in Model)
+                            {
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <div class="dropdown-item @(item.Client_Id == userSession?.Client_Id ? "active-company" : "") " data-client-id="@item.Client_Id">
+                                        @{
+                                            // string base64Image = Convert.ToBase64String(item.Logo);
+                                            // string imgSrc = !string.IsNullOrEmpty(base64Image) ? $"data:image/jpg;base64,{base64Image}" : "";
+                                            string[] words = item.CompanyName.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                                            string initials = string.Concat(words.Select(w => w[0]));
+                                        }
+                                        <div class="d-flex align-items-center company-select w-100" data-name="divSelectCompany" style="cursor: pointer;">
+
+                                            <div class="c-logo me-2"><span>@initials</span></div>
+                                            <span class="company-name">@item.CompanyName</span>
+                                        </div>
+                                    </div>
+                                    <div class="form-check form-switch m-0">
+                                        <input class="form-check-input company-radio" data-name="rdnDefaultClient" data-client-id="@item.Client_Id" @(item.Client_Id == User?.DefaultClient_Id ? "checked" : "") type="radio" name="role" value="">
+                                    </div>
+
+                                </div>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="offcanvas-footer position-absolute text-center w-100" style="background-color:white">
+    <button type="button" class="btn btn-secondary me-1" data-bs-dismiss="offcanvas">Close</button>
+    <button type="button" class="btn btn-primary" data-name="btnSaveDefaultClientSettings" style="display:none; width:100px;">Save</button>
+    <button type="button" class="btn btn-primary ms-1" data-name="btnSelectCompany">Select</button>
+</div>
+
+<style>
+    .offcanvas-footer .btn {
+        width: 90px;
+    }
+
+    .c-logo {
+        width: 36px;
+        height: 36px;
+        background-color: #6a44f1;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        color: #fff;
+        font-size: 14px;
+    }
+
+    .offcanvas-footer {
+        padding: 1rem;
+        position: sticky !important;
+        bottom: 0;
+    }
+
+    [data-name="OffCanvasRightGeneral"] {
+        min-width: 525px;
+    }
+
+        [data-name="OffCanvasRightGeneral"] .dropdown-item {
+            min-width: 350px;
+        }
+</style>

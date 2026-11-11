@@ -1,0 +1,125 @@
+﻿@model PolicyDetails
+<div data-name="InfoContainer">
+	<form data-name="frmInvoicePaymentInfo">
+		<div class="row">
+			<div class="col-sm-6">
+				<div class="data-item">
+					<label>Invoice #</label>
+					<span class="popInv">@Model?.Invoices?.InvoiceNo</span>
+				</div>
+			</div>
+			<div class="col-sm-6">
+				<div class="data-item">
+					<label>Policy Number</label>
+					<span class="popPn">@Model?.PolicyNumber</span>
+				</div>
+			</div>
+			<div class="col-sm-6">
+				<div class="data-item mb-0">
+					<label>Agency Name</label>
+					<span class="popAn">@Model?.AgentDetails?.Name</span>
+				</div>
+			</div>
+			<div class="col-sm-6">
+				<div class="data-item mb-0">
+					<label>Insured's Name</label>
+					<span class="popIn">@Model?.InsuredDetails?.Name</span>
+				</div>
+			</div>
+			<div class="col-sm-12">
+				<div class="data-item">
+					<label>Balance Due</label>
+					<input type="hidden" data-name="RemainingBalance" value="@CommonUtility.ConvertToCurrencyFormat(Model?.Invoices?.RemainingBalance)" />
+					<span>@CommonUtility.ConvertToCurrencyFormat(Model?.Invoices?.RemainingBalance)</span>
+				</div>
+			</div>
+			<input type="hidden" name="Id" value="@Model?.Invoices?.Id" />
+			<input type="hidden" name="TotalAmount" value="@Model?.Invoices?.RemainingBalance" />
+			<input type="hidden" name="PolicyDetails_Id" value="@Model?.Invoices?.PolicyDetails_Id" />
+			<input type="hidden" name="Payment_Id" value="@Model?.Invoices?.Payment_Id" />
+			<input type="hidden" name="Amount" value="@Model?.Invoices?.Amount" />
+			<div data-name="SplitPaymentContainer" class="d-none">
+				<table class="table mb-0">
+					<tbody>
+						@{
+							if (Model?.Invoices?.InvoicesDetailsList?.Count > 0)
+							{
+								int i = 0;
+								foreach (var item in Model.Invoices.InvoicesDetailsList)
+								{
+									if (item.Paid == false)
+									{
+										<input type="hidden" name="InvoicesDetailsList[@i].Id" value="@item.Id" />
+										<input type="hidden" name="InvoicesDetailsList[@i].PolicyDetails_Id" value="@item.PolicyDetails_Id" />
+										<input type="hidden" name="InvoicesDetailsList[@i].Invoice_Id" value="@item.Invoice_Id" />
+										<input type="hidden" name="InvoicesDetailsList[@i].LOB_Id" value="@item.LOB_Id" />
+										<input type="hidden" name="InvoicesDetailsList[@i].PaidOn" value="@item.PaidOn" />
+										<input type="hidden" name="InvoicesDetailsList[@i].RemainingBalance" value="@item.RemainingBalance" />
+										<input type="hidden" name="InvoicesDetailsList[@i].Entity_Id" value="@item.Entity_Id" />
+										<input type="hidden" name="InvoicesDetailsList[@i].EntityType_Id" value="@item.EntityType_Id" />
+										<input type="hidden" name="InvoicesDetailsList[@i].BillingType_LineItems_Directions_Id" value="@item.BillingType_LineItems_Directions_Id" />
+										LU_BillingType_LineItems_Directions BillingLineItemsDirections = LookupUtility.GetAllLU_BillingType_LineItems_Directions().FirstOrDefault(x => x.BillingType_LineItems_Directions_Id == item.BillingType_LineItems_Directions_Id);
+										LU_LineItems_Directions LineItemsDirections = LookupUtility.GetAllLineItems_Directions().FirstOrDefault(x => x.LineItems_Directions_Id == BillingLineItemsDirections?.LineItems_Directions_Id);
+										LU_LineItems_Clients lineItems_Clients = LookupUtility.GetAllLineItems_Clients().FirstOrDefault(x => x.LineItems_Clients_Id == LineItemsDirections?.LineItems_Clients_Id);
+										LU_LineItems LineItems = LookupUtility.GetAllLineItems().FirstOrDefault(c => c.LineItem_Id == lineItems_Clients?.LineItem_Id)!;
+										if (LineItems.LineItemType_Id == MasterLookup._LineItemTypes.Fee || LineItems.LineItemType_Id == MasterLookup._LineItemTypes.Tax || LineItems.LineItemType_Id == MasterLookup._LineItemTypes.CarrierFee)
+										{
+											<tr>
+												<td><label>@item.Description</label></td>
+												<td>
+													<input type="hidden" data-name="IsInvliceLineItemPaid" name="InvoicesDetailsList[@i].Paid" value="false" />
+													<input type="hidden" name="InvoicesDetailsList[@i].Amount" value="@item.Amount" />
+													<input type="checkbox" class="form-check-input" />
+													<span class="badge bg-success ms-2">@CommonUtility.ConvertToCurrencyFormat(item.Amount)</span>
+												</td>
+											</tr>
+										}
+										else
+										{
+											<tr>
+												<td><label>@item.Description</label></td>
+												<td>
+													<input type="hidden" name="InvoicesDetailsList[@i].Paid" value="@item.Paid" />
+													<input class="form-control" data-name="PremiumAmount" type="text" name="InvoicesDetailsList[@i].Amount" data-val-type="currency" value="@CommonUtility.ConvertToCurrencyFormat(item.RemainingBalance)">
+												</td>
+											</tr>
+										}
+										i++;
+									}
+									else
+									{
+										<tr>
+											<td><label>@item.Description</label></td>
+											<td>
+												<span class="badge bg-success ms-2">@CommonUtility.ConvertToCurrencyFormat(item.Amount)</span>
+											</td>
+										</tr>
+									}
+								}
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="modal-footer justify-content-center border-top-0">
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-name="btnClosePaymentWindow">Close</button>
+			@if (Model?.Invoices?.RemainingBalance != 0 && Model?.Invoices?.Paid == false)
+			{
+				<button type="button" class="btn btn-primary applyFullPayment" data-payment-id="@Model?.Invoices?.Payment_Id" data-invoice-id="@Model?.Invoices?.Id" data-name="btnApplyFullPayment">
+					Apply
+					Full Payment
+				</button>
+				<button type="button" class="btn btn-secondary d-none" data-name="btnBackPaymentScreen">Back</button>
+				<button type="button" class="btn btn-primary d-none" data-name="btnApplyPartialInvoiceAmount">Apply Partial Invoice Amount</button>
+				<button type="button" class="btn btn-primary" data-name="btnSplitPayment">Split Payment</button>
+				<button type="button" class="btn btn-primary applyPartialPayment d-none" data-name="btnSavePartialPayment">Save Partial Payment</button>
+			}
+		</div>
+	</form>
+</div>
+<script>
+	$(function(){
+		appCommon.InitializePanelOrFormValidations($('[data-name="InfoContainer"]'));
+	})
+</script>

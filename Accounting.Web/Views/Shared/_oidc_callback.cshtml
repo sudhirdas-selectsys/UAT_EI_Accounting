@@ -1,0 +1,85 @@
+﻿@{
+    Layout = "";
+    ViewData["Title"] = "Azure SSO";
+
+    var Message = ViewBag.Message;
+    if (string.IsNullOrEmpty(Message))
+    {
+        Message = "We're unable to process your sign-in. For assistance, please contact our support team.";
+    }
+}
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap" rel="stylesheet">
+<div class="insured-container d-flex align-items-center justify-content-center min-vh-100 text-center">
+   
+                <div class="signout-wrapper sie-error-card pt-5">
+                    <img src="~/images/sign-in-error-v2.svg" alt="sign in Error" width="250">
+        <p class="h5 mb-2 text-center fw-bold">Sign-in error</p>
+                    @* <div class="sie-error-title">Sign-in error</div> *@
+
+                    <div class="sie-error-text">
+                        <p>@Html.Raw(Message)</p>
+                        <p style="margin-top: 30px;"><a href="/Login/Index">Go back to login page</a></p>
+                    </div>
+                </div>
+
+           
+</div>
+<style>
+
+  
+
+    .sie-error-card {
+        padding: 20px 30px 30px 30px;
+        min-width: 420px;
+        max-width: 420px;
+        box-sizing: border-box;
+        position: relative;
+        background-color: #FFF;
+        box-shadow: 0px 4px 25px rgb(0 40 58 / 50%);
+        border-radius: 8px;
+    }
+
+        .sie-error-card img {
+            max-width: 280px;
+            margin-bottom: 50px;
+        }
+
+    .sie-error-title {
+        font-size: 24px;
+        font-weight: bold;
+        margin-bottom: 0px;
+    }
+
+        .sie-error-title::after {
+            content: "";
+            display: block;
+            width: 60px;
+            height: 3px;
+            background: #B8AAFF;
+            margin: 8px auto;
+        }
+
+    .sie-error-text {
+        font-size: 16px;
+        line-height: 24px;
+        color: #333;
+    }
+
+        .sie-error-text a {
+            color: #3C2D89;
+            font-weight: 500;
+            font-size: 14px;
+            text-decoration: underline;
+        }
+
+body{
+        font-family: "Plus Jakarta Sans", serif !important;
+        margin: 0;
+        padding: 0;
+        background: linear-gradient(360deg, #6f4ef6 0%, #5F2EE5 100%);
+}
+  
+</style>

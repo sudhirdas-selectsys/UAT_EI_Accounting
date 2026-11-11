@@ -1,0 +1,325 @@
+﻿@model List<LOBCarrierGrouping>
+@{
+    var LobsList = ViewBag.ClientLobsList as List<LU_LOBs>;
+    var CarrierList = ViewBag.ClientCarrierList as List<CarrierDetails>;
+    var Client = ViewBag.Client;
+}
+
+<div class="position-relative">
+    <form data-name="frmLOBCarrierGroupingForm">
+        <div class="row align-items-center search-filters lob-cg mb-2">
+            <div class="col-md-11">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="row mx-0 my-1 g-0">
+                            <label class="col-12 col-xl-3 col-form-label col-form-label-sm text-end">LOB:</label>
+                            <div class="col-12 col-xl-9">
+                                <div class="position-relative custom-multi-selection" data-name="lob-container">
+                                    <button class="form-select select-lob text-start d-flex align-items-center flex-wrap gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                        <span class="default-text">Select</span>
+                                        <div class="selected-chips d-flex flex-wrap gap-1"></div>
+                                    </button>
+                                    <ul class="dropdown-menu" style="height:320px;overflow-y:auto;width:266px;">
+                                        @{
+                                            if (LobsList != null)
+                                            {
+                                                <li class="dropdown-item">
+                                                    <input class="form-check-label" type="checkbox" id="selectAllLobs" data-name="lob-option" name="LOBNames" data-lob-id="0" onchange="toggleAllLobs(this,'lob-container','lob-option')">
+                                                    <label class="form-check-label ms-2" for="selectAllLobs">Select All</label>
+                                                </li>
+
+                                                foreach (var lobs in LobsList)
+                                                {
+                                                    <li class="dropdown-item">
+                                                        <input class="form-check-label" type="checkbox" data-name="lob-option" name="LOBNames" data-lob-id="@lobs.LOB_Id" id="lob_.@lobs.LOB_Id" value="@lobs.Name">
+                                                        <label title="@lobs.Name" style="text-overflow:ellipsis;width:200px;overflow:hidden;" class="form-check-label ms-2" for="lob_.@lobs.LOB_Id">@lobs.Name</label>
+                                                    </li>
+                                                }
+                                            }
+                                        }
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    @{
+                        var clientsetting = LookupUtility.GetClientSettings(Client, MasterLookup._ClientSettings.Is_AllowCarrierGrouping);
+                        if (clientsetting != "true")
+                        {
+                            <div class="col-md-4">
+                                <div class="row mx-0 my-1 g-0">
+                                    <label class="col-12 col-xl-3 col-form-label col-form-label-sm text-end">Carrier:</label>
+                                    <div class="col-12 col-xl-9">
+                                        <div class="position-relative custom-multi-selection">
+                                            <button class="form-select text-start d-flex align-items-center flex-wrap gap-2 disabled-link" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                                <div class="selected-chips d-flex flex-wrap gap-1">
+                                                    <span class="badge bg-primary rounded-pill">All</span>
+                                                </div>
+                                            </button>
+                                            <ul class="dropdown-menu d-none">
+                                                <li class="dropdown-item">
+                                                    <input class="form-check-label" type="checkbox" id="selectAllCarriers" checked>
+                                                    <label class="form-check-label ms-2" for="selectAllCarriers">Select All</label>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="col-md-4">
+                                <div class="row mx-0 my-1 g-0">
+                                    <label class="col-12 col-xl-3 col-form-label col-form-label-sm text-end">Carrier:</label>
+                                    <div class="col-12 col-xl-9">
+                                        <div class="position-relative custom-multi-selection" data-name="carrier-container">
+                                            <button class="form-select select-lob text-start d-flex align-items-center flex-wrap gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                                <span class="default-text">Select</span>
+                                                <div class="selected-chips d-flex flex-wrap gap-1"></div>
+                                            </button>
+                                            <ul class="dropdown-menu" style="height:320px;overflow-y:auto;width:266px;">
+                                                @{
+                                                    if (CarrierList != null)
+                                                    {
+                                                        <li class="dropdown-item">
+                                                            <input class="form-check-label" type="checkbox" id="selectAllCarriers" data-name="carrier-option" name="CarrierNames" data-carrier-id="0" onchange="toggleAllCarriers(this,'carrier-container','carrier-option')">
+                                                            <label class="form-check-label ms-2" for="selectAllCarriers">Select All</label>
+                                                        </li>
+
+                                                        foreach (var carriers in CarrierList)
+                                                        {
+                                                            <li class="dropdown-item">
+                                                                <input class="form-check-label" type="checkbox" data-name="carrier-option" name="CarrierNames" data-carrier-id="@carriers.CarrierDetail_Id" id="carrier_.@carriers.CarrierDetail_Id" value="@carriers.Name">
+                                                                <label title="@carriers.Name" style="text-overflow:ellipsis;width:200px;overflow:hidden;" class="form-check-label ms-2" for="carrier_.@carriers.CarrierDetail_Id">@carriers.Name</label>
+                                                            </li>
+                                                        }
+                                                    }
+                                                }
+                                            </ul>
+                                        </div>
+                                        <a href="javascript:void(0)" data-name="btncantfindcarrier">
+                                            <span class="col-form-label col-form-label-sm ms-auto text-nowrap">
+                                                Can't find Carrier?
+                                            </span>
+                                        </a>
+                                    </div>
+                                </div>
+
+                            </div>
+                        }
+                    }
+
+                    <div class="col-md-4">
+                        <div class="row mx-0 my-1 g-0">
+                            <label class="col-12 col-xl-4 col-form-label col-form-label-sm text-end">Description:</label>
+                            <div class="col-12 col-xl-8">
+                                <input type="text" class="form-control" placeholder="Enter Description" name="Description" data-name="description" autocomplete="off" maxlength="100">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-primary  btn-sm" data-name="btnAddLobCarrierGroup">Save</button>
+            </div>
+        </div>
+    </form>
+    <div class="table-responsive table-scroll">
+        <table class="table table-bordered table-striped table-hover ei-table">
+            <thead class="table-light">
+                <tr>
+                    <th>S.No</th>
+                    <th style="width:210px;">LOB</th>
+                    <th style="width:350px;">Carrier</th>
+                    <th style="width:550px;">Description</th>
+                    <th style="width:100px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @{
+                    if (Model?.Count > 0)
+                    {
+                        int Index = 1;
+                        @foreach (var item in Model)
+                        {
+                            <tr data-lob-carrier-grouping-id="@item.LOB_Carrier_Grouping_Id">
+                                <td>@Index</td>
+                                <td>
+                                    <div data-name="viewlobgroup" class="text-truncate" style="max-width:210px;" title="@item.LOBs">@item.LOBs</div>
+                                    <div data-name="editlobgroup" style="display:none;">
+                                        <div class="position-relative custom-multi-selection" data-name="edit-lob-container">
+                                            <button class="form-select select-lob text-start d-flex align-items-center flex-wrap gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                                <span class="default-text" data-name="default-select">Select</span>
+                                                <div class="selected-chips d-flex flex-wrap gap-1">
+                                                    @{
+                                                        var selectedLOBs = item.LOBs?.Split(',').Select(x => x.Trim()).ToList() ?? new List<string>();
+                                                        foreach (var lob in selectedLOBs)
+                                                        {
+                                                            <span class="badge bg-primary rounded-pill">@lob</span>
+                                                        }
+                                                    }
+                                                </div>
+                                            </button>
+                                            <ul class="dropdown-menu" style="height:320px;overflow-y:auto;width:210px;">
+                                                <li class="dropdown-item">
+                                                    <input class="form-check-label" type="checkbox" id="selectAllLobs_@item.LOB_Carrier_Grouping_Id" data-name="edit-lob-option" name="LOBNames" data-lob-id="0" onchange="toggleAllLobs(this,'edit-lob-container','edit-lob-option')">
+                                                    <label class="form-check-label ms-2" for="selectAllLobs_@item.LOB_Carrier_Grouping_Id">Select All</label>
+                                                </li>
+                                                @{
+                                                    var allLobs = LookupUtility.GetAllLOBs();
+                                                    foreach (var lob in allLobs)
+                                                    {
+                                                        var isChecked = selectedLOBs.Contains(lob.Name) ? "checked" : "";
+                                                        <li class="dropdown-item">
+                                                            <input class="form-check-label" type="checkbox" name="LOBNames" data-name="edit-lob-option" data-lob-id="@lob.LOB_Id" value="@lob.Name" id="lob_@item.LOB_Carrier_Grouping_Id.@lob.Name" @isChecked>
+                                                            <label title="@lob.Name" style="text-overflow:ellipsis;width:150px;overflow:hidden;" class="form-check-label ms-2" for="lob_@item.LOB_Carrier_Grouping_Id.@lob.Name">@lob.Name</label>
+                                                        </li>
+                                                    }
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div data-name="viewcarriergroup" class="text-truncate" style="max-width:210px;" title="@item.Carriers">@item.Carriers</div>
+                                    <div data-name="editcarriergroup" style="display:none;">
+                                        <div class="position-relative custom-multi-selection" data-name="edit-carrier-container">
+
+                                            <button class="form-select select-carrier text-start d-flex align-items-center flex-wrap gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                                <span class="default-text" data-name="default-select">Select</span>
+                                                <div class="selected-chips d-flex flex-wrap gap-1">
+                                                    @{
+                                                        var selectedcarriers = item.Carriers?.Split(',').Select(x => x.Trim()).ToList() ?? new List<string>();
+                                                        foreach (var carrier in selectedcarriers)
+                                                        {
+                                                            <span class="badge bg-primary rounded-pill">@carrier</span>
+                                                        }
+                                                    }
+                                                </div>
+                                            </button>
+                                            <ul class="dropdown-menu" style="height:320px;overflow-y:auto;width:210px;">
+                                                <li class="dropdown-item">
+                                                    <input class="form-check-label" type="checkbox" id="selectAllCarriers_@item.LOB_Carrier_Grouping_Id" data-name="edit-carrier-option" name="CarrierNames" data-carrier-id="0" onchange="toggleAllCarriers(this,'edit-carrier-container','edit-carrier-option')">
+                                                    <label class="form-check-label ms-2" for="selectAllCarriers_@item.LOB_Carrier_Grouping_Id">Select All</label>
+                                                </li>
+                                                @{
+                                                    var allCarriers = CarrierList;
+                                                    foreach (var Carrier in allCarriers)
+                                                    {
+                                                        var isChecked = selectedcarriers.Contains(Carrier.Name) ? "checked" : "";
+                                                        <li class="dropdown-item">
+                                                            <input class="form-check-label" type="checkbox" name="CarrierNames" data-name="edit-carrier-option" data-carrier-id="@Carrier.CarrierDetail_Id" value="@Carrier.Name" id="carrier_@item.LOB_Carrier_Grouping_Id.@Carrier.Name" @isChecked>
+                                                            <label title="@Carrier.Name" style="text-overflow:ellipsis;width:150px;overflow:hidden;" class="form-check-label ms-2" for="carrier_@item.LOB_Carrier_Grouping_Id.@Carrier.Name">@Carrier.Name</label>
+                                                        </li>
+                                                    }
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                <td>
+                                    <div data-name="viewdescription"><label class="label">@item.Description</label></div>
+                                    <div data-name="editdescription" style="display:none;"><input type="text" class="form-control" placeholder="Enter Description" name="Description_[@item.LOB_Carrier_Grouping_Id]" data-name="editdescription" value="@item.Description" autocomplete="off" maxlength="100"></div>
+                                </td>
+                                <td valign="middle">
+                                    <div class="action-btns">
+                                        <a href="javascript:void(0)" data-lob-carrier-grouping-Id="@item?.LOB_Carrier_Grouping_Id" data-name="btnEditLOBCarrierGrouping" title="Edit LOB-Carrier-Grouping"><i class="ri-pencil-line save-btn edit-btn modal-link mx-0"></i></a>
+                                        <a href="javascript:void(0)" data-lob-carrier-grouping-Id="@item?.LOB_Carrier_Grouping_Id" data-name="btnSaveLOBCarrierGrouping" title="Update LOB-Carrier-Grouping" style="display: none;"><i class="ri-save-3-line save-btn"></i></a>
+                                        <a href="javascript:void(0)" data-lob-carrier-grouping-Id="@item?.LOB_Carrier_Grouping_Id" data-name="btnCancelLOBCarrierGrouping" title="Cancel" style="display: none;"><i class="ri-close-line delete-btn"></i></a>
+                                        <a href="javascript:void(0)" data-lob-carrier-grouping-Id="@item?.LOB_Carrier_Grouping_Id" data-name="btnDeleteLOBCarrierGrouping" title="Delete LOB-Carrier-Grouping"><i class="ri-delete-bin-6-line text-danger delete-btn mx-0"></i></a>
+                                    </div>
+                                </td>
+                            </tr>
+                            Index++;
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="5">No records found!</td></tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function toggleAllLobs(source, containerDataName, checkboxDataName) {
+        const container = $(source).closest(`[data-name="${containerDataName}"]`);
+        const isChecked = source.checked;
+        container.find(`[data-name="${checkboxDataName}"]`).prop('checked', isChecked).trigger('change');
+    }
+    function toggleAllCarriers(source, containerDataName, checkboxDataName) {
+        const container = $(source).closest(`[data-name="${containerDataName}"]`);
+        const isChecked = source.checked;
+
+        container.find(`[data-name="${checkboxDataName}"]`).not(source).prop('checked', isChecked).trigger('change');
+    }
+
+    $(document).ready(function () {
+        $('[data-name="btncantfindcarrier"]').off('click');
+        $('[data-name="btncantfindcarrier"]').on('click',function(){
+            appCommon.ExecuteAjaxGetMethod("/SystemConfiguration/AddCarrier", function (response) {
+        if (response != null && response != undefined) {
+            appCommon.GenericModalFunction("Add Carrier", response);
+            }}, true);
+        });
+
+
+        $('.custom-multi-selection').each(function () {
+            const container = $(this);
+            const chips = container.find('.selected-chips');
+            const defaultText = container.find('.default-text');
+            const checkboxes = container.find('.dropdown-item input[type="checkbox"]');
+
+            function updateChips() {
+                const checked = checkboxes.filter(':checked');
+                chips.empty();
+
+                if (checked.length === 0) {
+                    defaultText.show();
+                } else if (checked.length === checkboxes.length) {
+                    defaultText.hide();
+                    chips.append(
+                        '<div class="chip d-flex align-items-center gap-1 all-chip" data-value="all">' +
+                        '<span>All</span>' +
+                        '<span class="remove-chip" style="cursor:pointer;">&times;</span>' +
+                        '</div>'
+                    );
+                } else {
+                    defaultText.hide();
+                    checked.each(function () {
+                        const value = $(this).val();
+                        chips.append(
+                            '<div class="chip d-flex align-items-center gap-1" data-value="' + value + '">' +
+                            '<span>' + value + '</span>' +
+                            '<span class="remove-chip" style="cursor:pointer;">&times;</span>' +
+                            '</div>'
+                        );
+                    });
+                }
+            }
+
+            checkboxes.on('change', updateChips);
+            updateChips();
+        });
+
+        $(document).on('click', '.remove-chip', function (e) {
+            e.stopPropagation();
+            const chip = $(this).closest('.chip');
+            const value = chip.data('value');
+            const container = chip.closest('.custom-multi-selection');
+
+            if (value === 'all') {
+                container.find('.dropdown-item input[type="checkbox"]').prop('checked', false).trigger('change');
+            } else {
+                container.find('input[type="checkbox"][value="' + value + '"]').prop('checked', false).trigger('change');
+            }
+        });
+    });
+</script>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

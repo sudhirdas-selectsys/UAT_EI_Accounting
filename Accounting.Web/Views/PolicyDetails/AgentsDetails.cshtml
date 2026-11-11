@@ -1,0 +1,67 @@
+﻿@model PolicyDetails
+@{
+	var AgentDetails = Model?.AgentDetails;
+}
+
+<div class="row">
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Name" name="AgentDetails.Name" value="@AgentDetails?.Name">
+			<label for="AgentDetails.Name">Name</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Address1" name="AgentDetails.Address1" value="@AgentDetails?.Address1">
+			<label for="AgentDetails.Address1">Address1</label>
+		</div>
+	</div>
+
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="col-sm-12">
+			<div class="form-floating">
+				<input type="text" class="form-control" placeholder="Address2" name="AgentDetails.Address2" value="@AgentDetails?.Address2">
+				<label for="AgentDetails.Address2">Address2</label>
+			</div>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="City" name="AgentDetails.City" value="@AgentDetails?.City">
+			<label for="AgentDetails.City">City</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Country" name="AgentDetails.Country" value="@AgentDetails?.Country">
+			<label for="AgentDetails.Country">Country</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="County" name="AgentDetails.County" value="@AgentDetails?.County">
+			<label for="AgentDetails.County">County</label>
+		</div>
+	</div>
+	<div class="col-md-6 col-xl-4 mb-3">
+		<div class="form-floating">
+			<select class="form-select" name="AgentDetails.State">
+				<option value="" selected="">Select</option>
+				@{
+					var StateList = LookupUtility.GetAllStates();
+					foreach (var state in StateList)
+					{
+						<option value="@state.StateCode" selected="@(AgentDetails != null && AgentDetails.State == state.StateCode)">@state.StateCode</option>
+					}
+				}
+			</select>
+			<label for="AgentDetails.State">State</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Zipcode" name="AgentDetails.ZipCode" value="@AgentDetails?.ZipCode">
+			<label for="AgentDetails.ZipCode">Zipcode</label>
+		</div>
+	</div>
+</div>

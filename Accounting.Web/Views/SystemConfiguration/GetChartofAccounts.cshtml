@@ -1,0 +1,68 @@
+﻿@model List<ChartofAccounts>
+@{
+	int Service_Id = ViewBag.Service_Id != null ? Convert.ToInt32(ViewBag.Service_Id) : 0;
+
+	bool showAccountTypeColumns = Service_Id == MasterLookup._Services.Intuit;
+}
+<style>
+	.table-scroll {
+		height: calc(100vh - 200px);
+		overflow-y: auto;
+	}
+</style>
+<div>
+	<div class="card position-relative">
+		<div class="mb-2 mt-0 d-flex justify-content-end cta-buttons">
+			<button id="btnSaveCOAs" class="btn btn-primary me-2" style="display:none;">Save Selected COAs</button>
+			<button class="btn btn-primary btn-sm" data-name="btnSyncChartOfAccounts"><i class="ri-refresh-line me-1"></i>Sync Chart of Accounts</button>
+		</div>
+		<div class="table-responsive table-scroll">
+			<table class="table table-bordered table-striped table-hover ei-table">
+				<thead class="table-light">
+					<tr>
+						<th>S.No</th>
+						<th>Name</th>
+						@if (showAccountTypeColumns)
+						{
+							<th>Account Type</th>
+							<th>Account Sub Type</th>
+						}
+						<th>ReferenceID</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					@{
+						int i = 0;
+						if (Model?.Count() > 0)
+						{
+							@foreach (var item in Model)
+							{
+								i++;
+								<tr>
+									<td>@i</td>
+									<td hidden><span data-name="ChartOfAccounts_Id">@item.ChartOfAccounts_Id</span></td>
+									<td><span data-name="Name">@item.Name</span></td>
+									@if (showAccountTypeColumns)
+									{
+										<td><span data-name="AccountType">@item.AccountType</span></td>
+										<td><span data-name="AccountSubType">@item.AccountSubType</span></td>
+									}
+									<td><span data-name="ReferenceID">@item.ReferenceID</span></td>
+									<td><input data-name="chkEIUsage" data-chartofaccount-id="@item.ChartOfAccounts_Id" data-original-checked="@(item.Is_UsedByEI.ToString().ToLower())" @(item.Is_UsedByEI ? "checked" : "") type="checkbox" /></td>
+								</tr>
+							}
+						}
+						else
+						{
+							<tr><td colspan="5">No records found.</td></tr>
+						}
+
+
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+</div>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

@@ -1,0 +1,9 @@
+﻿[data-name="sort-icon"] {
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 4px;
+}
+
+[data-name="sort-icon"]:hover {
+    color: blue;
+}

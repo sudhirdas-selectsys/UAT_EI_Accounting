@@ -1,0 +1,394 @@
+﻿@using System.IO;
+@model PolicyDetails
+@{
+    var Clients = Model.Clients;
+    var AgentDetails = Model.AgentDetails;
+    var CarrierDetails = Model.CarrierDetails;
+    var InsuredDetails = Model.InsuredDetails;
+    var WholesalerDetails = Model.WholesalerDetails;
+    var BillingType_Id = LookupUtility.GetAllBillingTypes().FirstOrDefault(x => x.Code == Model.BillType)?.BillingType_Id;
+    var LOB = LookupUtility.GetAllLOBs();
+    var PolicyDetails_Id = Model.Id;
+    var InstallmentNo = Model.InstallmentNo;
+    var minPremium = Model.PolicyDetailsLineItemsList
+                    .Where(x => x.LineType != null && x.LineType.Equals("Premium", StringComparison.OrdinalIgnoreCase))
+                    .Select(x => (double?)x.MinPremium)
+                    .FirstOrDefault();
+    var PaymentDueOn = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymentDueOn);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>@($"{Clients.CompanyCode} Invoice")</title>
+    <style>
+        img {
+            overflow-clip-margin: content-box;
+            overflow: clip;
+        }
+
+        [data-name="GenericModal"] .modal-dialog:has(.viewPaymentsModal) {
+            --bs-modal-width: 900px !important;
+        }
+    </style>
+</head>
+<body style="width: 100%; margin: 0; padding: 0; background-color: #f5f5f5;text-align: center; font-family: 'Roboto', sans-serif !important;">
+    <div style="width: 100%; text-align: center;background-color: #fff;margin: 0 auto;" class="viewPaymentsModal">
+        <table style="width: 100%; " cellspacing="0" cellpadding="0">
+            <tbody>
+                <tr>
+                    <td height="20"></td>
+                </tr>
+                <tr>
+                    @* @{
+                        string base64Image = Clients != null ? Convert.ToBase64String(Clients.Logo) : "";
+                        string imgSrc = !string.IsNullOrEmpty(base64Image) ? $"data:image/jpg;base64,{base64Image}" : "";
+                    } *@
+                    @{
+                        string imagePath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "invoice", "asig-invoice-logo.png");
+                        string imageUrl = new Uri(imagePath).AbsoluteUri;
+                    }
+
+                    <td>
+                        <img src="@imageUrl" alt="Logo" width="200" />
+                    </td>
+
+                </tr>
+                <tr>
+                    <td height="20"></td>
+                </tr>
+                <tr>
+                    <td style="font-size: 24px; font-weight: normal;font-size:18px">INVOICE</td>
+                </tr>
+                <tr>
+                    <td>
+                        <!--main table-->
+                        <table style="width: 100%; " cellspacing="0" cellpadding="0">
+                            <tbody>
+                                <tr>
+                                    <td width="20"></td>
+                                    <td>
+                                        <table style="width: 100%; " cellspacing="0" cellpadding="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td colspan="2" width="60%"></td>
+                                                    <td style="text-align: left;font-size: 14px;">
+                                                        INVOICE #: @{
+                                                        string InvoiceNumber = Model.Invoices.InvoiceNo.Substring(3);
+                                                                                                                }
+                                                        @InvoiceNumber
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="3" height="10"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="2"></td>
+                                                    <td style="text-align: left;font-size: 14px;">Email: <strong> @Clients?.Email</strong></td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="3" height="10"></td>
+                                                </tr>
+
+                                            </tbody>
+                                        </table>
+
+                                        <table style="width: 100%;" cellspacing="0" cellpadding="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="text-align: left;font-size: 14px;width: 25%;">Date of Invoice Generation : </td>
+                                                    <td style="text-align: left;font-size: 14px;padding:0 0 0 25px" colspan="2">@Model?.Invoices?.CreatedOn.ToString("MMMM dd, yyyy")</td>
+                                                </tr>
+                                                
+                                                <tr>
+                                                    <td colspan="3" height="10"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="text-align: left;font-size: 14px; vertical-align:top">Producer Name : </td>
+                                                    <td style="text-align: left;font-size: 14px; vertical-align:top" colspan="2">@AgentDetails?.Name<br />@AgentDetails?.Address1<br />@AgentDetails?.City<br />@AgentDetails?.State<br />@AgentDetails?.ZipCode</td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="3" height="10"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="text-align: left;font-size: 14px;vertical-align: top;">Transaction Type : </td>
+                                                    <td style="text-align: left;font-size: 14px;padding:0 0 0 25px">@Model?.TransactionType</td>
+                                                    <td>
+                                                        <table style="width: 100%; " cellspacing="0" cellpadding="0">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td style="text-align: right;font-size: 14px;width:45%">Line of Business : </td>
+                                                                    <td style="text-align: left;font-size: 14px;padding:0 0 0 25px">
+                                                                        @{
+                                                                            string lineOfBusiness = "";
+
+                                                                            if (Model?.PolicyDetailsLineItemsList?.Any() == true)
+                                                                            {
+                                                                                var coverages = Model.PolicyDetailsLineItemsList
+                                                                                .Where(x => !string.IsNullOrWhiteSpace(x.Coverage))
+                                                                                .Select(x => x.Coverage.Trim())
+                                                                                .Distinct(StringComparer.OrdinalIgnoreCase)
+                                                                                .ToList();
+
+                                                                                if (coverages.Any(x => x.Equals("Common", StringComparison.OrdinalIgnoreCase)))
+                                                                                {
+                                                                                    lineOfBusiness = "Common";
+                                                                                }
+                                                                                else
+                                                                                {
+                                                                                    lineOfBusiness = string.Join(", ", coverages);
+                                                                                }
+                                                                            }
+                                                                        }
+                                                                        @lineOfBusiness
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3" height="10"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="text-align: left;font-size: 14px;width: 25%;">Invoice Due Date : </td>
+                                                    <td style="text-align: left;font-size: 14px;vertical-align:top" colspan="2">@Model?.Invoices?.DueDate.ToString("MMMM dd, yyyy")</td>
+                                                </tr>
+                                                <tr>
+                                                    <td colspan="3" height="10"></td>
+                                                </tr>
+                                                <tr>
+                                                    <td style="text-align: left;font-size: 14px;vertical-align: top;">Effective Date : </td>
+                                                    <td style="text-align: left;font-size: 14px;padding:0 0 0 25px">@Model?.EffectiveDate.ToString("MMMM dd, yyyy")</td>
+                                                    <td>
+                                                        <table style="width: 100%; " cellspacing="0" cellpadding="0">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td style="text-align: right;font-size: 14px;width:45%">State : </td>
+                                                                    <td style="text-align: left;font-size: 14px;padding:0 0 0 25px">@Model?.RiskState</td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3" height="10"></td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td style="text-align: left;font-size: 14px;vertical-align: top;">Insured Name : </td>
+                                                    <td style="text-align: left;font-size: 14px;padding:0 0 0 25px">@InsuredDetails.Name</td>
+                                                    <td>
+                                                        <table style="width: 100%; " cellspacing="0" cellpadding="0">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td style="text-align: right;font-size: 14px;width:45%">Policy Number : </td>
+                                                                    <td style="text-align: left;font-size: 14px;padding:0 0 0 25px">@Model.PolicyNumber</td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3" height="10"></td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td style="text-align: left;font-size: 14px;vertical-align: top;">Carrier Name : </td>
+                                                    <td style="text-align: left;font-size: 14px;padding:0 0 0 25px">@CarrierDetails.Name</td>
+                                                    <td>
+                                                        <table style="width: 100%;" cellspacing="0" cellpadding="0">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td style="text-align: right;font-size: 14px;width:45%">Endorsement : </td>
+                                                                    <td style="text-align: left;font-size: 14px;width:55%">
+                                                                        @(Model?.TransactionType == MasterLookup._EITransactionTypes.END && !string.IsNullOrEmpty(Model?.EndorsementNumber?.ToString()) ? $"{Model?.TransactionType} #{Model?.EndorsementNumber}" : "")<br />
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3" height="30"></td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td style="text-align: center;font-size: 14px;vertical-align: top;color:#000;font-weight:600" colspan="3">Total Premium Due Upon Receipt </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3" height="15"></td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3">
+
+                                                        <table style="width:100%;border-collapse:collapse;font-size:14px;" cellpadding="8" cellspacing="0">
+                                                            <!-- HEADER -->
+                                                            <tr>
+                                                                <td colspan="2" style="border:1px solid #333;text-align:center;font-weight:bold; background-color:#d3d3d3; ">
+                                                                    PREMIUM SUMMARY
+                                                                </td>
+
+                                                            </tr>
+
+                                                            @{
+                                                                double totalAmountDue = 0;
+                                                            }
+
+                                                            @if (Model?.PolicyDetailsLineItemsList?.Count > 0)
+                                                            {
+                                                                foreach (var item in Model.PolicyDetailsLineItemsList)
+                                                                {
+                                                                    // PREMIUM
+                                                                    if (item.LineType != null
+                                                                    && item.LineType.Equals("PREMIUM",
+                                                                    StringComparison.OrdinalIgnoreCase))
+                                                                    {
+                                                                        <tr>
+                                                                            <td style="border-left:1px solid #333;border-right:1px solid #333; text-align:left">
+                                                                                Premium - @Model.TransactionType - @item.Coverage
+                                                                            </td>
+                                                                            <td style="border-right:1px solid #333;text-align:right;padding: 8px;">
+                                                                                @CommonUtility.ConvertToCurrencyFormat(item.Premium, false, 2)
+                                                                            </td>
+                                                                        </tr>
+
+                                                                        // COMMISSION
+                                                                        if (item.BrokerCommissionAmount != 0)
+                                                                        {
+                                                                            <tr>
+                                                                                <td style="border-left:1px solid #333;border-right:1px solid #333; text-align:left">
+                                                                                    Commission Credit
+                                                                                    @item.AgentCommission% -
+                                                                                    @item.Coverage
+                                                                                </td>
+
+                                                                                <td style="border-right:1px solid #333;text-align:right;">
+                                                                                    @(item.BrokerCommissionAmount > 0 ? "-" + CommonUtility.ConvertToCurrencyFormat(item.BrokerCommissionAmount, false, 2)
+                                                                                                                                                        : CommonUtility.ConvertToCurrencyFormat(item.BrokerCommissionAmount, false, 2))
+                                                                </td>
+                                                            </tr>
+                                                                                                                        }
+                                                                        totalAmountDue += Convert.ToDouble(item.Premium) - Convert.ToDouble(item.BrokerCommissionAmount);
+                                                                    }
+
+                                                                    // TAX
+                                                                    if (item.FeeTaxAmount != 0)
+                                                                    {
+                                                                        <tr>
+                                                                            <td style="border-left:1px solid #333;border-right:1px solid #333; text-align:left">
+                                                                                @item.PolicyDetailDescription
+                                                                            </td>
+
+                                                                            <td style="border-right:1px solid #333;text-align:right;">
+                                                                                @CommonUtility.ConvertToCurrencyFormat(item.FeeTaxAmount, false, 2)
+                                                                            </td>
+                                                                        </tr>
+
+                                                                        totalAmountDue += Convert.ToDouble(item.FeeTaxAmount);
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            <!-- TOTAL -->
+                                                            <tr>
+                                                                <td style="border-left:1px solid #333;border-right:1px solid #333;border-bottom:1px solid #333;text-align:right;font-weight:bold;border-top:1px solid #333">
+                                                                    TOTAL AMOUNT DUE
+                                                                </td>
+                                                                <td style="border-right:1px solid #333;border-bottom:1px solid #333;text-align:right;font-weight:bold;border-top:1px solid #333">
+                                                                    @CommonUtility.ConvertToCurrencyFormat(totalAmountDue, false, 2)
+                                                                </td>
+                                                            </tr>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3" height="50"></td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td style="text-align: center;font-size: 14px;vertical-align: top;color:#000;font-weight:600" colspan="3">All fees are Fully Earned</td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3" height="10"></td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td style="text-align: center;font-size: 14px;vertical-align: top;color:#000;font-weight:600" colspan="3">No Flat Cancellations</td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3" height="15"></td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td colspan="3">
+                                                        <table style="width: 100%; font-size:14px;" cellspacing="0" cellpadding="5">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td style="background-color:#d3d3d3;text-align: left;" width="49%">MAKE CHECKS PAYABLE TO:</td>
+                                                                    <td></td>
+                                                                    <td style="background-color:#d3d3d3;text-align: left;" width="49%">Wiring/ACH Instructions:</td>
+                                                                </tr>
+
+
+                                                                <tr>
+                                                                    <td style="text-align: left;vertical-align: top;" width="49%">@Clients.CompanyName</td>
+                                                                    <td></td>
+                                                                    <td style="text-align: left;vertical-align: top;" width="49%">
+                                                                        First State Bank - Louise<br />
+                                                                        Routing #:113123065<br />
+                                                                        Account #: 2453108
+                                                                    </td>
+                                                                </tr>
+
+                                                                <tr>
+                                                                    <td style="text-align: left;" width="49%">Mail Check to: <br /> @Clients?.Address,&nbsp; @Clients?.City,&nbsp; @Clients.State &nbsp;@Clients.ZipCode</td>
+                                                                    <td></td>
+                                                                    <td style="text-align: left;" width="49%">Email Remittance Advice to: <br /> <strong> @Clients?.Email</strong></td>
+                                                                </tr>
+
+                                                                <tr>
+                                                                    <td colspan="3" height="50"></td>
+                                                                </tr>
+
+                                                                <tr>
+                                                                    <td colspan="3">For questions regarding this invoice, please contact:&nbsp; <strong> @Clients?.Email</strong></td>
+                                                                </tr>
+
+                                                                <tr>
+                                                                    <td colspan="3" height="30"></td>
+                                                                </tr>
+
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+
+                                            </tbody>
+                                        </table>
+
+                                    </td>
+                                    <td width="20"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+
+</body>
+</html>
+
+

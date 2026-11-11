@@ -1,0 +1,1045 @@
+----added Retained Fees column  
+--alter PROCEDURE [dbo].[USP_Accounting_Tax_FeePassthroughReport]                      
+--(                      
+--    @Client_Id                  BIGINT = NULL,                      
+--    @InvoiceDate                VARCHAR(100) = NULL,                      
+--    @InvoiceCreatedFromDate     VARCHAR(200) = NULL,                      
+--    @InvoiceCreatedToDate       VARCHAR(200) = NULL,                      
+--    @InvoiceEffectiveFromDate   VARCHAR(200) = NULL,                      
+--    @InvoiceEffectiveToDate     VARCHAR(200) = NULL,                      
+--    @Range                      VARCHAR(200) = NULL,                      
+--    @PageIndex                  INT = NULL,                      
+--    @PageSize                   INT = NULL,                      
+--   -- @AgentDetail_Id             BIGINT = NULL,            
+--    @AgentDetail_Id NVARCHAR(MAX) = NULL,           
+--    @ParentAgentDetail_Id BIGINT = NULL,           
+--    @WholesalerDetail_Id        BIGINT = NULL,                      
+--    @InvoiceNumber              VARCHAR(200) = NULL,                      
+--    @CarrierDetail_Id           BIGINT = NULL,                      
+--    @LOB_Id                     INT = NULL,                     
+--    @State                      VARCHAR(50) = NULL,    
+--    @LOB_Carrier_Grouping_Id int = null,    
+--    @TotalRecords               INT OUT                     
+--)                      
+--AS                      
+--BEGIN                      
+--    SET NOCOUNT ON;                      
+--    -- added EndorsementNumber, Insured(risk) Address, Insured(risk) City, Insured(risk) State, Insured(risk) Zip, Insured(risk) County, InsuredBusinessDescription and state filter                   
+--    ----------------------------------------------------------------                      
+--    -- Normalize / derive variables                      
+--    ----------------------------------------------------------------                      
+--    DECLARE @CurrentDate      DATETIME2(0) = GETDATE();                      
+--    DECLARE @CompareDateFrom  DATETIME2(0);                      
+--    DECLARE @CompareDateTo    DATETIME2(0);                      
+--    DECLARE @Offset           INT = 0;                      
+--    DECLARE @NextFetch        INT = 10000;                      
+                      
+--    DECLARE @InvoiceNumberTrim VARCHAR(200) = NULLIF(LTRIM(RTRIM(@InvoiceNumber)), '');                     
+-- DECLARE @StateTrim         VARCHAR(50)  = UPPER(NULLIF(LTRIM(RTRIM(@State)), ''));                    
+                                
+--    IF @InvoiceDate = 'InvoiceCreatedDate'                      
+--       AND @InvoiceCreatedFromDate IS NOT NULL                      
+--       AND @InvoiceCreatedToDate   IS NOT NULL                      
+--    BEGIN                      
+--        SET @CompareDateFrom = TRY_CONVERT(DATETIME2(0), @InvoiceCreatedFromDate);                      
+--        SET @CompareDateTo   = DATEADD(DAY, 1, TRY_CONVERT(DATETIME2(0), @InvoiceCreatedToDate));                      
+--    END                      
+--    ELSE IF @InvoiceDate = 'InvoiceEffectiveDate'                      
+--            AND @InvoiceEffectiveFromDate IS NOT NULL                      
+--            AND @InvoiceEffectiveToDate   IS NOT NULL                      
+--    BEGIN                      
+--        SET @CompareDateFrom = TRY_CONVERT(DATETIME2(0), @InvoiceEffectiveFromDate);                      
+--        SET @CompareDateTo   = DATEADD(DAY, 1, TRY_CONVERT(DATETIME2(0), @InvoiceEffectiveToDate));                      
+--    END                      
+                      
+--    IF @PageSize IS NULL OR @PageSize <= 0 SET @PageSize = 10000;                      
+--    IF @PageIndex IS NULL OR @PageIndex < 0 SET @PageIndex = 0;                      
+                      
+--    SET @Offset    = @PageSize * @PageIndex;                      
+--    SET @NextFetch = @PageSize;                      
+                      
+             
+--    IF OBJECT_ID('tempdb..#FilteredInvoices') IS NOT NULL DROP TABLE #FilteredInvoices;                      
+--    CREATE TABLE #FilteredInvoices                      
+--    (                      
+--        ID        INT IDENTITY(1,1) PRIMARY KEY,                      
+--     PolicyId  BIGINT,                      
+--        InvoiceId BIGINT NOT NULL,                      
+--        SortDate  DATETIME2(0),                      
+--        INDEX IX_InvoiceId (InvoiceId)                      
+--  );                      
+          
+--   SELECT @TotalRecords = COUNT(*)                    
+--FROM Accounting_PolicyDetails PD                   
+--INNER JOIN Accounting_Invoices I                    
+--    ON I.PolicyDetails_Id = PD.Id AND I.Status = 1                    
+--LEFT JOIN Accounting_InsuredDetails IDIns                                       
+--    ON IDIns.InsuredDetail_Id = PD.InsuredDetail_Id                             
+--WHERE PD.Status = 1                    
+--  AND PD.Client_Id = @Client_Id                    
+-- -- AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)            
+--    AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id IN (SELECT TRY_CAST(value AS BIGINT) FROM STRING_SPLIT(@AgentDetail_Id, ',')            
+--              WHERE TRY_CAST(value AS BIGINT) IS NOT NULL ))          
+--     AND (@ParentAgentDetail_Id IS NULL OR PD.AgentDetail_Id IN (         SELECT AgentDetail_Id          FROM dbo.GetAgencyHierarchy(@ParentAgentDetail_Id)  ))          
+--  AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)                    
+--  AND (@InvoiceNumberTrim IS NULL OR I.InvoiceNo LIKE '%' + @InvoiceNumberTrim + '%')                    
+--  AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)
+--  AND (
+--    @LOB_Carrier_Grouping_Id IS NULL
+--    OR EXISTS (
+--        SELECT 1
+--        FROM Accounting_LOB_Carrier_Grouping LCG
+--        JOIN Accounting_Carrier_GroupingDetails CG   
+--            ON LCG.LOB_Carrier_Grouping_Id = CG.LOB_Carrier_Grouping_Id   
+--            AND CG.Status = 1
+--        LEFT JOIN Accounting_LOB_GroupingDetails LG   
+--            ON LG.LOB_Carrier_Grouping_Id = LCG.LOB_Carrier_Grouping_Id   
+--            AND LG.Status = 1
+--        INNER JOIN Accounting_InvoiceDetails AID_LCG   
+--            ON AID_LCG.Invoice_Id = I.Id   
+--            AND AID_LCG.LOB_Id = LG.LOB_Id
+--        WHERE LCG.Status = 1
+--          AND LCG.Client_Id = @Client_Id
+--          AND LCG.LOB_Carrier_Grouping_Id = @LOB_Carrier_Grouping_Id
+--    )
+--)
+--  AND (                    
+--        @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                    
+--        OR (@InvoiceDate = 'InvoiceEffectiveDate' AND PD.EffectiveDate >= @CompareDateFrom AND PD.EffectiveDate < @CompareDateTo)                    
+--        OR (@InvoiceDate = 'InvoiceCreatedDate'   AND I.CreatedOn     >= @CompareDateFrom AND I.CreatedOn     < @CompareDateTo)                    
+--      )                    
+--  AND (@LOB_Id IS NULL OR EXISTS (                    
+--        SELECT 1                    
+--        FROM Accounting_InvoiceDetails AID                    
+--        WHERE AID.Invoice_Id = I.Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id                    
+--  ))                    
+--  AND (                    
+--        @StateTrim IS NULL                    
+--        OR UPPER(PD.RiskState) = @StateTrim                    
+--  --      OR UPPER(IDIns.State)  = @StateTrim                    
+--      );                    
+                                        
+--     INSERT INTO #FilteredInvoices (PolicyId, InvoiceId, SortDate)                    
+--SELECT                    
+--    PD.Id,                    
+--    I.Id,                    
+--    PD.EffectiveDate                    
+--FROM Accounting_PolicyDetails PD                    
+--INNER JOIN Accounting_Invoices I                    
+--    ON I.PolicyDetails_Id = PD.Id AND I.Status = 1                    
+--LEFT JOIN Accounting_InsuredDetails IDIns                                       
+--    ON IDIns.InsuredDetail_Id = PD.InsuredDetail_Id                            
+--WHERE PD.Status = 1                    
+--  AND PD.Client_Id = @Client_Id                    
+----  AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)            
+--    AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id IN (SELECT TRY_CAST(value AS BIGINT) FROM STRING_SPLIT(@AgentDetail_Id, ',')            
+--              WHERE TRY_CAST(value AS BIGINT) IS NOT NULL ))            
+--     AND (@ParentAgentDetail_Id IS NULL OR PD.AgentDetail_Id IN (         SELECT AgentDetail_Id          FROM dbo.GetAgencyHierarchy(@ParentAgentDetail_Id)  ))          
+--  AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)                    
+--  AND (@InvoiceNumberTrim IS NULL OR I.InvoiceNo LIKE '%' + @InvoiceNumberTrim + '%')                    
+--  AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)
+--  AND (
+--    @LOB_Carrier_Grouping_Id IS NULL
+--    OR EXISTS (
+--        SELECT 1
+--        FROM Accounting_LOB_Carrier_Grouping LCG
+--        JOIN Accounting_Carrier_GroupingDetails CG   
+--            ON LCG.LOB_Carrier_Grouping_Id = CG.LOB_Carrier_Grouping_Id   
+--            AND CG.Status = 1
+--        LEFT JOIN Accounting_LOB_GroupingDetails LG   
+--            ON LG.LOB_Carrier_Grouping_Id = LCG.LOB_Carrier_Grouping_Id   
+--            AND LG.Status = 1
+--        INNER JOIN Accounting_InvoiceDetails AID_LCG   
+--            ON AID_LCG.Invoice_Id = I.Id   
+--            AND AID_LCG.LOB_Id = LG.LOB_Id
+--        WHERE LCG.Status = 1
+--          AND LCG.Client_Id = @Client_Id
+--          AND LCG.LOB_Carrier_Grouping_Id = @LOB_Carrier_Grouping_Id
+--    )
+--)
+--  AND (                    
+--        @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                    
+--        OR (@InvoiceDate = 'InvoiceEffectiveDate' AND PD.EffectiveDate >= @CompareDateFrom AND PD.EffectiveDate < @CompareDateTo)                          OR (@InvoiceDate = 'InvoiceCreatedDate'   AND I.CreatedOn     >= @CompareDateFrom AND I.CreatedOn   
+  
+--  < @CompareDateTo)                    
+--      )                    
+--  AND (@LOB_Id IS NULL OR EXISTS (                    
+--        SELECT 1                    
+--        FROM Accounting_InvoiceDetails AID                    
+--        WHERE AID.Invoice_Id = I.Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id                    
+--  ))                    
+--  AND (                    
+--        @StateTrim IS NULL                    
+--        OR UPPER(PD.RiskState) = @StateTrim              
+-- --       OR UPPER(IDIns.State)  = @StateTrim                    
+--      )                    
+--ORDER BY PD.EffectiveDate DESC                    
+--OFFSET @Offset ROWS FETCH NEXT @NextFetch ROWS ONLY                    
+--OPTION (RECOMPILE);                    
+                                  
+--    IF OBJECT_ID('tempdb..#PDL_Agg') IS NOT NULL DROP TABLE #PDL_Agg;                      
+--    SELECT                      
+--        PolicyDetails_Id,                      
+--        CAST(MAX(HouseCommission - AgentCommission) AS DECIMAL(18,2)) AS HouseCommissionPct,                      
+--        CAST(MAX(AgentCommission) AS DECIMAL(18,2)) AS AgentCommissionPct,                      
+--        CAST(MAX(HouseCommission) AS DECIMAL(18,2)) AS TotalCommissionPct                      
+--    INTO #PDL_Agg                      
+--    FROM Accounting_PolicyDetailsLineItems PDL                      
+--    INNER JOIN #FilteredInvoices FI ON PDL.PolicyDetails_Id = FI.PolicyId                      
+--    GROUP BY PolicyDetails_Id          
+--  OPTION (RECOMPILE);     
+    
+  
+      
+--IF OBJECT_ID('tempdb..#TempBasePolicyDetails_Inv') IS NOT NULL  
+--    DROP TABLE #TempBasePolicyDetails_Inv;  
+--   -- #TempBasePolicyDetails_Inv Start                                 
+-- SELECT IES.PolicyDetails_Id,IES.InvoiceNo,IES.Id AS Invoice_Id,IES.Amount AS InvoicesAmount,IES.RemainingBalance AS InvoicesRemainingBalance,    
+-- IES.DueDate AS InvoicesDueDate,IES.CreatedOn AS InvoicesCreatedOn,    
+-- APD.Client_Id,APD.PolicyNumber,APD.AgentDetail_Id,APD.BillType,APD.CarrierDetail_Id,APD.InsuredDetail_Id,APD.EffectiveDate,APD.ExpirationDate,APD.WholesalerDetail_Id,APD.TransactionType,    
+-- APD.EndorsementNumber,APD.CreatedOn AS PolicyDetailsCreatedOn,    
+-- CD.Name AS CarrierName,APD.UnderWriterDetail_Id,APD.RiskState,APD.Submission_Id,APD.PaymentPlan,APD.EndorsementEffectiveDate,APD.CancelDate    
+-- INTO #TempBasePolicyDetails_Inv    
+-- FROM Accounting_PolicyDetails APD    
+-- INNER JOIN Accounting_Invoices IES ON APD.Id = IES.PolicyDetails_Id AND IES.Status = 1    
+-- LEFT JOIN Accounting_CarrierDetails CD ON APD.CarrierDetail_Id = CD.CarrierDetail_Id AND CD.Status = 1    
+-- WHERE APD.Status = 1 AND APD.Client_Id = @Client_Id    
+  
+  
+   
+-- IF OBJECT_ID('tempdb..#TempLookup_Inv') IS NOT NULL  
+--    DROP TABLE #TempLookup_Inv;  
+  
+--  --#TempLookup_Inv Start    
+-- SELECT     
+--    BLD.BillingType_LineItems_Directions_Id,    
+-- BLD.BillingType_Id,    
+--    LI.Code        AS LineItemCode,    
+--    LI.Name        AS LineItemName,    
+--    LI.LineItem_Id,    
+-- LI.LineItemType_Id,    
+--    LIT.Code       AS LineItemTypeCode,    
+-- LIT.Name AS LineItemTypeName,    
+--    LUD.Code       AS DirectionCode,    
+-- LUD.Name AS DirectionName,    
+--    LUD.Direction_Id,    
+-- LIC.Is_Passthrough    
+-- INTO #TempLookup_Inv    
+-- FROM Accounting_LU_BillingType_LineItems_Directions BLD    
+-- JOIN Accounting_LU_LineItems_Directions LD  ON LD.LineItems_Directions_Id = BLD.LineItems_Directions_Id  AND LD.Status  = 1    
+-- JOIN Accounting_LU_LineItems_Clients LIC ON LIC.LineItems_Clients_Id = LD.LineItems_Clients_Id AND LIC.Status = 1 AND LIC.Client_Id = @Client_Id    
+-- JOIN Accounting_LU_LineItems LI  ON LI.LineItem_Id  = LIC.LineItem_Id AND LI.Status = 1    
+-- JOIN Accounting_LU_LineItemTypes LIT ON LIT.LineItemType_Id  = LI.LineItemType_Id  AND LIT.Status = 1    
+-- JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id AND LUD.Status = 1    
+-- WHERE BLD.Status = 1;    
+  
+  
+   
+-- IF OBJECT_ID('tempdb..#TempAccounting_InvoiceDetails_Inv') IS NOT NULL  
+--    DROP TABLE #TempAccounting_InvoiceDetails_Inv;  
+--  -- #TempAccounting_InvoiceDetails_InvProd Start                                 
+-- SELECT AID.* INTO #TempAccounting_InvoiceDetails_Inv    
+-- FROM Accounting_InvoiceDetails AID    
+-- INNER JOIN #TempBasePolicyDetails_Inv TBPD ON AID.Invoice_Id = TBPD.Invoice_Id AND AID.Status = 1    
+  
+  
+-- IF OBJECT_ID('tempdb..#TempRetainedFees') IS NOT NULL  
+--    DROP TABLE #TempRetainedFees;  
+  
+-- SELECT  
+--    ID.Invoice_Id,  
+--    CAST(SUM(ID.Amount) AS DECIMAL(18,2)) AS RetainedFees  
+--INTO #TempRetainedFees  
+--FROM #TempAccounting_InvoiceDetails_Inv ID  
+--INNER JOIN #TempLookup_Inv TL  
+--    ON TL.BillingType_LineItems_Directions_Id = ID.BillingType_LineItems_Directions_Id  
+--WHERE  
+--    TL.LineItemType_Id = 4       -- FEE  
+--    AND TL.Is_Passthrough = 0    -- Retained  
+--GROUP BY  
+--    ID.Invoice_Id;  
+                    
+--    ----------------------------------------------------------------                      
+--    -- Build pivot column universes: TAX and FEE (configured for this client)                      
+--    ----------------------------------------------------------------                      
+--    IF OBJECT_ID('tempdb..#LIs_Tax') IS NOT NULL DROP TABLE #LIs_Tax;                      
+--    IF OBJECT_ID('tempdb..#LIs_Fee') IS NOT NULL DROP TABLE #LIs_Fee;                      
+                      
+--    CREATE TABLE #LIs_Tax (Name NVARCHAR(256) NOT NULL);                      
+--    CREATE TABLE #LIs_Fee (Name NVARCHAR(256) NOT NULL);                      
+                      
+--    -- TAX configured names                      
+--    INSERT INTO #LIs_Tax(Name)                      
+--    SELECT DISTINCT LI.Name                      
+--    FROM Accounting_LU_LineItems_Clients LIC                      
+--    INNER JOIN Accounting_LU_LineItems LI                      
+--      ON LI.LineItem_Id = LIC.LineItem_Id AND LI.Status = 1                      
+--    INNER JOIN Accounting_LU_LineItemTypes LIT                      
+--      ON LIT.LineItemType_Id = LI.LineItemType_Id AND LIT.Status = 1                      
+--    INNER JOIN Accounting_LU_LineItems_Directions LID                      
+--      ON LID.LineItems_Clients_Id = LIC.LineItems_Clients_Id AND LID.Status = 1                      
+--    INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD                      
+--      ON BLD.LineItems_Directions_Id = LID.LineItems_Directions_Id AND BLD.Status = 1                      
+--    INNER JOIN Accounting_LU_Directions LD                      
+--      ON LD.Direction_Id = LID.Direction_Id AND LD.Status = 1                      
+--    INNER JOIN Accounting_LU_BillingTypes BT                      
+--      ON BT.BillingType_Id = BLD.BillingType_Id AND BT.Status = 1                      
+--    WHERE LIC.Client_Id = @Client_Id                      
+--      AND LIC.Status    = 1                      
+--      AND LIT.LineItemType_Id = 3 AND LIC.Is_Passthrough = 1;  -- TAX                      
+                      
+--    -- FEE configured names                      
+--    INSERT INTO #LIs_Fee(Name)                      
+--    SELECT DISTINCT LI.Name                      
+--    FROM Accounting_LU_LineItems_Clients LIC                      
+--    INNER JOIN Accounting_LU_LineItems LI                      
+--      ON LI.LineItem_Id = LIC.LineItem_Id AND LI.Status = 1                      
+--    INNER JOIN Accounting_LU_LineItemTypes LIT                      
+--      ON LIT.LineItemType_Id = LI.LineItemType_Id AND LIT.Status = 1                      
+--    INNER JOIN Accounting_LU_LineItems_Directions LID                      
+--      ON LID.LineItems_Clients_Id = LIC.LineItems_Clients_Id AND LID.Status = 1                      
+--    INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD             
+--      ON BLD.LineItems_Directions_Id = LID.LineItems_Directions_Id AND BLD.Status = 1                      
+--    INNER JOIN Accounting_LU_Directions LD                      
+--      ON LD.Direction_Id = LID.Direction_Id AND LD.Status = 1                      
+--    INNER JOIN Accounting_LU_BillingTypes BT                      
+--      ON BT.BillingType_Id = BLD.BillingType_Id AND BT.Status = 1                      
+--    WHERE LIC.Client_Id = @Client_Id                      
+--      AND LIC.Status    = 1                      
+-- AND LIT.LineItemType_Id = 4 AND LIC.Is_Passthrough = 1;  -- FEE                      
+                      
+--    ----------------------------------------------------------------                      
+--    -- Build dynamic column lists for TAX: Invoiced / Collected / Paid                      
+--    ----------------------------------------------------------------                      
+--    DECLARE @cols_in_tax      NVARCHAR(MAX) = N'';                      
+--    DECLARE @cols_select_tax  NVARCHAR(MAX) = N'';                      
+                      
+--    SELECT @cols_in_tax =                      
+--        STUFF((                      
+--            SELECT                      
+--                ',' + QUOTENAME(L.Name + ' - ' + S.Status)                      
+--            FROM #LIs_Tax AS L                      
+--            CROSS APPLY (VALUES                      
+--                ('Invoiced', 1),                      
+--                ('Collected', 2),                      
+--                ('Paid', 3)                      
+--            ) AS S(Status, Seq)                    
+--            ORDER BY L.Name, S.Seq                      
+--            FOR XML PATH(''), TYPE                      
+--        ).value('.', 'nvarchar(max)'), 1, 1, '');                      
+                      
+--    ;WITH XTax AS                      
+--    (                      
+--        SELECT                      
+--            L.Name AS BaseName,                      
+--            S.Status,                      
+--            S.Seq,                      
+--            L.Name + N' - ' + S.Status AS ColName                      
+--        FROM #LIs_Tax AS L                      
+--        CROSS APPLY (VALUES (N'Invoiced',1),                      
+--                            (N'Collected',2),                      
+--                            (N'Paid',3)) AS S(Status, Seq)                      
+--    )                      
+--    SELECT @cols_select_tax =                      
+--        STUFF((                      
+--            SELECT                      
+--                N',' +                      
+--                N'COALESCE(CAST(pvt.' + QUOTENAME(ColName) +                      
+--                N' AS DECIMAL(18,2)),0.00) AS ' + QUOTENAME(ColName)                      
+--            FROM XTax                      
+--            ORDER BY BaseName, Seq                      
+--            FOR XML PATH(''), TYPE ).value('.','nvarchar(max)'),1,1,N'');                      
+                      
+--    ----------------------------------------------------------------                      
+--    -- Build dynamic column lists for FEE: Invoiced / Collected / Paid                      
+--    -- (same labels as TAX)                      
+--    ----------------------------------------------------------------                      
+--    DECLARE @cols_in_fee      NVARCHAR(MAX) = N'';                      
+--    DECLARE @cols_select_fee  NVARCHAR(MAX) = N'';                      
+                      
+--    SELECT @cols_in_fee =                      
+--        STUFF((                      
+--            SELECT                      
+--                ',' + QUOTENAME(L.Name + ' - ' + S.Status)                      
+--            FROM #LIs_Fee AS L                      
+--            CROSS APPLY (VALUES                      
+--                ('Invoiced', 1),        
+--                ('Collected', 2),                      
+--                ('Paid', 3)                      
+--            ) AS S(Status, Seq)                      
+--            ORDER BY L.Name, S.Seq                                  FOR XML PATH(''), TYPE                      
+--        ).value('.', 'nvarchar(max)'), 1, 1, '');                      
+                      
+--    ;WITH XFee AS                      
+--    (                      
+--        SELECT                      
+--            L.Name AS BaseName,                    
+--            S.Status,                      
+--            S.Seq,              
+--            L.Name + N' - ' + S.Status AS ColName                      
+--        FROM #LIs_Fee AS L                      
+--        CROSS APPLY (VALUES (N'Invoiced',1),                      
+--                            (N'Collected',2),                      
+--                            (N'Paid',3)) AS S(Status, Seq)                      
+--    )                      
+--    SELECT @cols_select_fee =                      
+--        STUFF((                      
+--            SELECT                      
+--                N',' +                      
+--                N'COALESCE(CAST(pvt.' + QUOTENAME(ColName) +                      
+--                N' AS DECIMAL(18,2)),0.00) AS ' + QUOTENAME(ColName)                      
+--            FROM XFee                      
+--            ORDER BY BaseName, Seq                      
+--            FOR XML PATH(''), TYPE ).value('.','nvarchar(max)'),1,1,N'');                      
+                      
+--   ----------------------------------------------------------------               
+--    -- Combine TAX + FEE column lists                      
+--    ----------------------------------------------------------------                      
+--    DECLARE @cols_in_all      NVARCHAR(MAX) = NULL;                      
+--    DECLARE @cols_select_all  NVARCHAR(MAX) = NULL;                      
+                      
+--    SET @cols_in_all =                      
+--        CASE                      
+--            WHEN ISNULL(@cols_in_tax,'') = '' AND ISNULL(@cols_in_fee,'') = '' THEN ''                      
+--            WHEN ISNULL(@cols_in_tax,'') = '' THEN @cols_in_fee                      
+--            WHEN ISNULL(@cols_in_fee,'') = '' THEN @cols_in_tax                      
+--            ELSE @cols_in_tax + ',' + @cols_in_fee                      
+--        END;                      
+                      
+--    SET @cols_select_all =                      
+--        STUFF(                      
+--            ISNULL(',' + NULLIF(@cols_select_tax,''), '') +                      
+--            ISNULL(',' + NULLIF(@cols_select_fee,''), ''),                      
+--        1, 1, '');                      
+                      
+--    ----------------------------------------------------------------                      
+--    -- Fallback when there are no configured TAX nor FEE line items                      
+--    ----------------------------------------------------------------                      
+--    IF (@cols_in_all IS NULL OR LTRIM(RTRIM(@cols_in_all)) = '')                      
+--    BEGIN                      
+--        SELECT                      
+--            AC.CompanyName AS Company,                      
+--            AC.CompanyName AS Branch,                      
+--            IDIns.Name     AS [Insured Name],                     
+--   IDIns.BusinessDescription AS [Insured Business Description],                    
+--            IDIns.Address1 AS [Insured (risk) Address],                      
+--            IDIns.City     AS [Insured (risk) City],                      
+--            IDIns.State    AS [Insured (risk) State],                      
+--      IDIns.ZipCode  AS [Insured (risk) ZipCode],                      
+--            NULLIF(LTRIM(RTRIM(IDIns.County)), '') AS [Insured (risk) County],                      
+--            AD.Name AS [Agent Broker Name],                      
+--            PD.RiskState AS [Primary State],                      
+--            CD.Name AS [Issuing Company],                      
+--            CASE WHEN PD.WholesalerDetail_Id IS NULL THEN CD.Name ELSE WD.Name END AS [Billing Company],                      
+--            PD.PolicyNumber AS [Policy Number],                      
+--            PD.EndorsementNumber AS [Endorsement Number],                      
+--            PD.TransactionType AS [Transaction Type],                      
+--            CASE                      
+--                WHEN PD.TransactionType = 'CAN' THEN 'Cancelled'                      
+--                WHEN GETDATE() < PD.ExpirationDate THEN 'Active'                      
+--                ELSE 'Expired'                      
+--            END AS [Policy Status],                      
+--            CD.CarrierStatus AS [Carrier Status],                      
+--            LOB.LOBName AS [LOB Name],                      
+--            PD.Submission_Id AS [SID #],                      
+--        I.InvoiceNo AS [Invoice No #],                      
+--            CONVERT(VARCHAR(10), I.CreatedOn, 101)        AS [Invoice Created],                      
+--            CONVERT(VARCHAR(10), AJE.CreatedOn, 101)      AS [Invoice Booked],                      
+--            CONVERT(VARCHAR(10), PD.EffectiveDate, 101)   AS [Policy Effective],                      
+--            CONVERT(VARCHAR(10), PD.ExpirationDate, 101)  AS [Policy Expiration],                      
+--            CONVERT(VARCHAR(10),                      
+--                CASE                      
+--                  WHEN PD.TransactionType IN ('NEW','REN') THEN PD.EffectiveDate                      
+--     WHEN PD.TransactionType = 'END' THEN PD.EndorsementEffectiveDate                      
+--                    WHEN PD.TransactionType = 'CAN' THEN PD.CancelDate                      
+--                END, 101) AS [Transaction Effective Date],                      
+--            CASE WHEN ISNULL(LTRIM(RTRIM(PD.PaymentPlan)), '') = '' THEN 'Term Policy' ELSE PD.PaymentPlan END AS [Payment Plan],                      
+--            PD.BillType AS [Bill Type],                      
+--            TP.TotalPremium AS [Total Premium],   
+--   COALESCE(CAST(RF.RetainedFees AS DECIMAL(18,2)), 0.00) AS [Retained Fees],  
+--            UW.Name AS Underwriter,                      
+                      
+--            -- TAX totals                      
+--            COALESCE(CAST(ARInv.ARInvoiced AS DECIMAL(18,2)), 0.00) AS ARInvoiced,                      
+--            COALESCE(CAST(ARCol.ARCollected AS DECIMAL(18,2)), 0.00) AS ARCollected,                      
+--            COALESCE(CAST(APPd.APPaid AS DECIMAL(18,2)), 0.00)       AS APPaid,                      
+                      
+--            -- FEE totals                      
+--            COALESCE(CAST(ARFEEInv.ARFEEInvoiced AS DECIMAL(18,2)), 0.00) AS ARFEEInvoiced,                      
+--            COALESCE(CAST(ARFEECol.ARFEECollected AS DECIMAL(18,2)), 0.00) AS ARFEECollected,                      
+--            COALESCE(CAST(APFEEPd.APFEEPaid AS DECIMAL(18,2)), 0.00)       AS APFEEPaid                      
+                      
+--        FROM #FilteredInvoices AS FI                      
+--        INNER JOIN Accounting_PolicyDetails PD ON PD.Id = FI.PolicyId        
+--        INNER JOIN Accounting_Invoices I ON I.Id = FI.InvoiceId                      
+--        INNER JOIN Accounting_Clients AC ON AC.Client_Id = PD.Client_Id                      
+--        INNER JOIN Accounting_CarrierDetails CD ON CD.CarrierDetail_Id = PD.CarrierDetail_Id                      
+--        INNER JOIN Accounting_InsuredDetails IDIns ON IDIns.InsuredDetail_Id = PD.InsuredDetail_Id                      
+--        INNER JOIN Accounting_AgentDetails AD ON AD.AgentDetail_Id = PD.AgentDetail_Id                      
+--        INNER JOIN Accounting_UnderWriterDetails UW ON UW.UnderWriterDetail_Id = PD.UnderWriterDetail_Id AND UW.Status = 1                      
+--        LEFT JOIN Accounting_JournalEntries AJE ON AJE.Source_Id = I.Id AND AJE.Status = 1 AND AJE.SourceType_Id = 2                      
+--        LEFT JOIN #PDL_Agg PDL on PDL.PolicyDetails_Id = FI.PolicyId                      
+--        LEFT JOIN Accounting_WholesalerDetails WD ON WD.WholesalerDetail_Id = PD.WholesalerDetail_Id                      
+--        INNER JOIN #TempRetainedFees  RF ON   RF.Invoice_Id = I.Id  
+    
+--        OUTER APPLY (                      
+--            SELECT TOP 1 AL.Name AS LOBName                      
+--            FROM Accounting_InvoiceDetails AID                      
+--            INNER JOIN Accounting_LU_LOBs AL ON AL.LOB_Id = AID.LOB_Id                      
+--            WHERE AID.Invoice_Id = I.Id AND AID.Status = 1                      
+--            ORDER BY AID.Id                      
+--        ) AS LOB         
+        
+--  OUTER APPLY (      
+--    SELECT       
+--        SUM(PDLI.Premium) AS TotalPremium      
+--    FROM Accounting_PolicyDetailsLineItems PDLI      
+--    WHERE PDLI.PolicyDetails_Id = PD.Id        
+--      AND PDLI.Status = 1      
+--      AND PDLI.LineType = 'PREMIUM'      
+--    ) AS TP      
+      
+                      
+--     /*      
+--  OUTER APPLY (                      
+--            SELECT                      
+--                CAST(SUM(CASE WHEN LIT_Name = 'PREMIUM'                      
+--                               AND ((LUD_Name = 'Accounts Receivable') OR (BillingType = 'Direct Bill' AND LUD_Name = 'Internal'))                      
+--                              THEN Amount ELSE 0 END) AS DECIMAL(18,2)) AS TotalPremium,                      
+--                CAST(SUM(CASE WHEN IsHouseFee = 1 THEN Amount ELSE 0 END) AS DECIMAL(18,2)) AS TotalHouseFee,                      
+--                CAST(SUM(CASE WHEN LIT_Name = 'FEE' AND LUD_Name = 'Accounts Payable' THEN Amount ELSE 0 END) AS DECIMAL(18,2)) AS TotalPayableFee,                      
+--                CAST(SUM(CASE WHEN LIT_Name = 'FEE' AND LUD_Name = 'Accounts Payable' THEN Amount ELSE 0 END) AS DECIMAL(18,2)) AS TotalCarrierFees                      
+--           FROM (                      
+--                SELECT                      
+--                    ID.Amount,                      
+--                    ID.RemainingBalance,                      
+--                    I.DueDate AS DueDateLocal,                      
+--                    LIT.Name AS LIT_Name,                      
+--                    LI.Code AS LI_Code,                      
+--                    LI.Name AS LI_Name,                      
+--                    LUD.Name AS LUD_Name,                      
+--                    BT.Name AS BillingType,                      
+--                    CASE WHEN LIT.Name = 'FEE'                      
+--                          AND LUD.Name = 'Accounts Receivable'                      
+--                          AND NOT EXISTS (                      
+--                                SELECT 1                      
+--                                FROM Accounting_InvoiceDetails ID_AP                      
+--                                INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD_AP                      
+--                             ON BLD_AP.BillingType_LineItems_Directions_Id = ID_AP.BillingType_LineItems_Directions_Id AND BLD_AP.Status = 1                      
+--                                INNER JOIN Accounting_LU_LineItems_Directions LD_AP                 
+--                                  ON LD_AP.LineItems_Directions_Id = BLD_AP.LineItems_Directions_Id AND LD_AP.Status = 1                      
+--                                INNER JOIN Accounting_LU_LineItems_Clients LIC_AP                      
+--                                  ON LIC_AP.LineItems_Clients_Id = LD_AP.LineItems_Clients_Id AND LIC_AP.Status = 1                      
+--                                INNER JOIN Accounting_LU_LineItems LI_AP                      
+--                                  ON LI_AP.LineItem_Id = LIC_AP.LineItem_Id AND LI_AP.Status = 1                      
+--                                INNER JOIN Accounting_LU_LineItemTypes LIT_AP                      
+--                                  ON LIT_AP.LineItemType_Id = LI_AP.LineItemType_Id AND LIT_AP.Status = 1                      
+--                                INNER JOIN Accounting_LU_Directions LUD_AP                      
+--                                  ON LUD_AP.Direction_Id = LD_AP.Direction_Id AND LUD_AP.Status = 1                      
+--        WHERE ID_AP.Invoice_Id = I.Id AND ID_AP.Status = 1                      
+--                                  AND LIT_AP.Name = 'FEE' AND LUD_AP.Name = 'Accounts Payable'                      
+--                                  AND LI_AP.LineItem_Id = LI.LineItem_Id                   
+--          AND LIC_AP.Is_Passthrough = 1                  
+--                      )                      
+--                         THEN 1 ELSE 0 END AS IsHouseFee                      
+--                FROM Accounting_InvoiceDetails ID                      
+--                INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD ON BLD.BillingType_LineItems_Directions_Id = ID.BillingType_LineItems_Directions_Id AND BLD.Status = 1                      
+--                INNER JOIN Accounting_LU_LineItems_Directions LD ON LD.LineItems_Directions_Id = BLD.LineItems_Directions_Id AND LD.Status = 1                      
+--                INNER JOIN Accounting_LU_LineItems_Clients LIC ON LIC.LineItems_Clients_Id = LD.LineItems_Clients_Id AND LIC.Status = 1                      
+--                INNER JOIN Accounting_LU_LineItems LI ON LI.LineItem_Id = LIC.LineItem_Id AND LI.Status = 1                      
+--                INNER JOIN Accounting_LU_LineItemTypes LIT ON LIT.LineItemType_Id = LI.LineItemType_Id AND LIT.Status = 1                      
+--                INNER JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id AND LUD.Status = 1                      
+--                INNER JOIN Accounting_LU_BillingTypes BT ON BT.BillingType_Id = BLD.BillingType_Id AND BT.Status = 1                      
+--                WHERE ID.Invoice_Id = I.Id AND ID.Status = 1  AND   LIC.Is_Passthrough = 1                  
+--            ) AS DetailView                      
+--        ) AS Details                      
+--         */             
+--        -- TAX totals                      
+--        OUTER APPLY (                      
+--            SELECT CAST(SUM(IDT.Amount) AS DECIMAL(18,2)) AS ARInvoiced                 
+--            FROM Accounting_InvoiceDetails IDT                      
+--            INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD2                      
+--                ON BLD2.BillingType_LineItems_Directions_Id = IDT.BillingType_LineItems_Directions_Id AND BLD2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Directions LD2                      
+--                ON LD2.LineItems_Directions_Id = BLD2.LineItems_Directions_Id AND LD2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Clients LIC2                      
+--                ON LIC2.LineItems_Clients_Id = LD2.LineItems_Clients_Id AND LIC2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems LI2                      
+--                ON LI2.LineItem_Id = LIC2.LineItem_Id AND LI2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItemTypes LIT2                      
+--                ON LIT2.LineItemType_Id = LI2.LineItemType_Id AND LIT2.Status = 1                      
+--            WHERE IDT.Invoice_Id = I.Id                      
+--              AND IDT.Status = 1                      
+--              AND LIT2.LineItemType_Id = 3                      
+--              AND LD2.Direction_Id = 1                   
+--     AND LIC2.Is_Passthrough = 1 -- AR                      
+--        ) ARInv                      
+--        OUTER APPLY (                      
+--            SELECT CAST(SUM(ISNULL(PALI2.AppliedAmount,0)) AS DECIMAL(18,2)) AS ARCollected                      
+--            FROM Accounting_InvoiceDetails IDT                      
+--            INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD2                      
+--      ON BLD2.BillingType_LineItems_Directions_Id = IDT.BillingType_LineItems_Directions_Id AND BLD2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Directions LD2                      
+--                ON LD2.LineItems_Directions_Id = BLD2.LineItems_Directions_Id AND LD2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Clients LIC2                      
+--                ON LIC2.LineItems_Clients_Id = LD2.LineItems_Clients_Id AND LIC2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems LI2                      
+--                ON LI2.LineItem_Id = LIC2.LineItem_Id AND LI2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItemTypes LIT2                      
+--                ON LIT2.LineItemType_Id = LI2.LineItemType_Id AND LIT2.Status = 1                      
+--            LEFT JOIN Accounting_PaymentApplicationLineItems PALI2                      
+--                ON PALI2.InvoiceLineItem_Id = IDT.Id AND PALI2.Status = 1                      
+--            WHERE IDT.Invoice_Id = I.Id                      
+--              AND IDT.Status = 1                      
+--              AND LIT2.LineItemType_Id = 3                      
+--              AND LD2.Direction_Id = 1                  
+--     AND LIC2.Is_Passthrough = 1 -- AR                      
+--        ) ARCol                      
+--        OUTER APPLY (                      
+--            SELECT CAST(SUM(ISNULL(PALI3.AppliedAmount,0)) AS DECIMAL(18,2)) AS APPaid                      
+--            FROM Accounting_InvoiceDetails IDT                      
+--            INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD3                      
+--                ON BLD3.BillingType_LineItems_Directions_Id = IDT.BillingType_LineItems_Directions_Id AND BLD3.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Directions LD3                      
+--                ON LD3.LineItems_Directions_Id = BLD3.LineItems_Directions_Id AND LD3.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Clients LIC3                      
+--                ON LIC3.LineItems_Clients_Id = LD3.LineItems_Clients_Id AND LIC3.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems LI3                      
+--                ON LI3.LineItem_Id = LIC3.LineItem_Id AND LI3.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItemTypes LIT3                      
+--                ON LIT3.LineItemType_Id = LI3.LineItemType_Id AND LIT3.Status = 1                      
+--            LEFT JOIN Accounting_PaymentApplicationLineItems PALI3                      
+--                ON PALI3.InvoiceLineItem_Id = IDT.Id AND PALI3.Status = 1                      
+--            WHERE IDT.Invoice_Id = I.Id                      
+--              AND IDT.Status = 1                      
+--              AND LIT3.LineItemType_Id = 3                      
+--              AND LD3.Direction_Id = 2                   
+--     AND LIC3.Is_Passthrough = 1 -- AP                      
+--        ) APPd                      
+                      
+--        -- FEE totals (only used in fallback)                      
+--        OUTER APPLY (                      
+--            SELECT CAST(SUM(IDT.Amount) AS DECIMAL(18,2)) AS ARFEEInvoiced                      
+--            FROM Accounting_InvoiceDetails IDT                      
+--            INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD2                      
+--                ON BLD2.BillingType_LineItems_Directions_Id = IDT.BillingType_LineItems_Directions_Id AND BLD2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Directions LD2                      
+--                ON LD2.LineItems_Directions_Id = BLD2.LineItems_Directions_Id AND LD2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Clients LIC2                      
+--                ON LIC2.LineItems_Clients_Id = LD2.LineItems_Clients_Id AND LIC2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems LI2                      
+--                ON LI2.LineItem_Id = LIC2.LineItem_Id AND LI2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItemTypes LIT2                      
+--                ON LIT2.LineItemType_Id = LI2.LineItemType_Id AND LIT2.Status = 1                      
+--            WHERE IDT.Invoice_Id = I.Id                      
+--              AND IDT.Status = 1                      
+--              AND LIT2.LineItemType_Id = 4                      
+--              AND LD2.Direction_Id = 1                   
+--     AND LIC2.Is_Passthrough = 1 -- AR                      
+--        ) ARFEEInv                      
+--        OUTER APPLY (                      
+--            SELECT CAST(SUM(ISNULL(PALI2.AppliedAmount,0)) AS DECIMAL(18,2)) AS ARFEECollected                      
+--            FROM Accounting_InvoiceDetails IDT                      
+--            INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD2                      
+--                ON BLD2.BillingType_LineItems_Directions_Id = IDT.BillingType_LineItems_Directions_Id AND BLD2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Directions LD2                      
+--               ON LD2.LineItems_Directions_Id = BLD2.LineItems_Directions_Id AND LD2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Clients LIC2                      
+--                ON LIC2.LineItems_Clients_Id = LD2.LineItems_Clients_Id AND LIC2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems LI2                      
+--                ON LI2.LineItem_Id = LIC2.LineItem_Id AND LI2.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItemTypes LIT2                      
+--                ON LIT2.LineItemType_Id = LI2.LineItemType_Id AND LIT2.Status = 1                      
+--            LEFT JOIN Accounting_PaymentApplicationLineItems PALI2                      
+--                ON PALI2.InvoiceLineItem_Id = IDT.Id AND PALI2.Status = 1                      
+--            WHERE IDT.Invoice_Id = I.Id                      
+--              AND IDT.Status = 1                      
+--              AND LIT2.LineItemType_Id = 4                      
+--              AND LD2.Direction_Id = 1                   
+--     AND LIC2.Is_Passthrough = 1 -- AR                      
+--        ) ARFEECol                      
+--        OUTER APPLY (                      
+--            SELECT CAST(SUM(ISNULL(PALI3.AppliedAmount,0)) AS DECIMAL(18,2)) AS APFEEPaid                      
+--            FROM Accounting_InvoiceDetails IDT                      
+--            INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD3                      
+--                ON BLD3.BillingType_LineItems_Directions_Id = IDT.BillingType_LineItems_Directions_Id AND BLD3.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Directions LD3                      
+--                ON LD3.LineItems_Directions_Id = BLD3.LineItems_Directions_Id AND LD3.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Clients LIC3                      
+--                ON LIC3.LineItems_Clients_Id = LD3.LineItems_Clients_Id AND LIC3.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems LI3                      
+--                ON LI3.LineItem_Id = LIC3.LineItem_Id AND LI3.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItemTypes LIT3                      
+--                ON LIT3.LineItemType_Id = LI3.LineItemType_Id AND LIT3.Status = 1                      
+--            LEFT JOIN Accounting_PaymentApplicationLineItems PALI3                      
+--                ON PALI3.InvoiceLineItem_Id = IDT.Id AND PALI3.Status = 1                      
+--            WHERE IDT.Invoice_Id = I.Id                      
+--              AND IDT.Status = 1                      
+--              AND LIT3.LineItemType_Id = 4        -- FEE                      
+--              AND LD3.Direction_Id = 2                      
+--     AND LIC3.Is_Passthrough = 1 -- AP                      
+--        ) APFEEPd                      
+                      
+--        ORDER BY FI.SortDate DESC;                      
+                      
+--        DROP TABLE #PDL_Agg;                      
+--        DROP TABLE #FilteredInvoices;                      
+--        IF OBJECT_ID('tempdb..#LIs_Tax') IS NOT NULL DROP TABLE #LIs_Tax;                      
+--        IF OBJECT_ID('tempdb..#LIs_Fee') IS NOT NULL DROP TABLE #LIs_Fee;                      
+                      
+--        RETURN;                      
+--    END                      
+                      
+--    ------------------------------------------------------------------                      
+--    -- Main dynamic SELECT with base grid                      
+-- -- Includes both TAX and FEE using the SAME labels: Invoiced/Collected/Paid                      
+--    ------------------------------------------------------------------                      
+--    DECLARE @sql NVARCHAR(MAX) = N'                      
+--    SELECT                      
+--        AC.CompanyName AS Company,                      
+--        AC.CompanyName AS Branch,                      
+--        IDIns.Name     AS [Insured Name],                    
+--  IDIns.BusinessDescription AS [Insured Business Description],                    
+--        IDIns.Address1 AS [Insured (risk) Address],                      
+--        IDIns.City     AS [Insured (risk) City],                      
+--        IDIns.State    AS [Insured (risk) State],                      
+--        IDIns.ZipCode  AS [Insured (risk) ZipCode],                      
+--        NULLIF(LTRIM(RTRIM(IDIns.County)), '''') AS [Insured (risk) County],                      
+--        AD.Name AS [Agent Broker Name],                      
+--        PD.RiskState AS [Primary State],                      
+--        CD.Name AS [Issuing Company],                      
+--        CASE WHEN PD.WholesalerDetail_Id IS NULL THEN CD.Name ELSE WD.Name END AS [Billing Company],                      
+--        PD.PolicyNumber AS [Policy Number],                      
+--        PD.EndorsementNumber AS [Endorsement Number],                      
+--        PD.TransactionType AS [Transaction Type],                      
+--        CASE                      
+--            WHEN PD.TransactionType = ''CAN'' THEN ''Cancelled''                      
+--            WHEN GETDATE() < PD.ExpirationDate THEN ''Active''                      
+--            ELSE ''Expired''                      
+--        END AS [Policy Status],                      
+--        CD.CarrierStatus AS [Carrier Status],                      
+--        LOB.LOBName AS [LOB Name],                      
+--        PD.Submission_Id AS [SID #],                      
+--        I.InvoiceNo AS [Invoice No #],                      
+--        CONVERT(VARCHAR(10), I.CreatedOn, 101)       AS [Invoice Created],                      
+--        CONVERT(VARCHAR(10), AJE.CreatedOn, 101)     AS [Invoice Booked],                      
+--        CONVERT(VARCHAR(10), PD.EffectiveDate, 101)  AS [Policy Effective],                      
+--        CONVERT(VARCHAR(10), PD.ExpirationDate, 101) AS [Policy Expiration],                      
+--        CONVERT(VARCHAR(10),                      
+--            CASE                      
+--                WHEN PD.TransactionType IN (''NEW'',''REN'') THEN PD.EffectiveDate                      
+--                WHEN PD.TransactionType = ''END'' THEN PD.EndorsementEffectiveDate                      
+--                WHEN PD.TransactionType = ''CAN'' THEN PD.CancelDate                      
+--            END, 101) AS [Transaction Effective Date],                      
+--        CASE WHEN ISNULL(LTRIM(RTRIM(PD.PaymentPlan)), '''') = '''' THEN ''Term Policy'' ELSE PD.PaymentPlan END AS [Payment Plan],                      
+--        PD.BillType AS [Bill Type],                      
+--        TP.TotalPremium AS [Total Premium],  
+--  COALESCE(CAST(RF.RetainedFees AS DECIMAL(18,2)), 0.00) AS [Retained Fees],  
+--        UW.Name AS Underwriter' +                      
+--        CASE WHEN @cols_select_all <> N'' THEN N',' + @cols_select_all ELSE N'' END + N'                      
+                      
+--    FROM #FilteredInvoices AS FI                      
+--    INNER JOIN Accounting_PolicyDetails PD ON PD.Id = FI.PolicyId       
+--    INNER JOIN Accounting_Invoices I ON I.Id = FI.InvoiceId                      
+--    INNER JOIN Accounting_Clients AC ON AC.Client_Id = PD.Client_Id                      
+--    INNER JOIN Accounting_CarrierDetails CD ON CD.CarrierDetail_Id = PD.CarrierDetail_Id                      
+--    INNER JOIN Accounting_InsuredDetails IDIns ON IDIns.InsuredDetail_Id = PD.InsuredDetail_Id                      
+--    INNER JOIN Accounting_AgentDetails AD ON AD.AgentDetail_Id = PD.AgentDetail_Id                      
+--    INNER JOIN Accounting_UnderWriterDetails UW ON UW.UnderWriterDetail_Id = PD.UnderWriterDetail_Id AND UW.Status = 1                      
+--    LEFT JOIN Accounting_JournalEntries AJE ON AJE.Source_Id = I.Id AND AJE.Status = 1 AND AJE.SourceType_Id = 2                      
+--    LEFT JOIN #PDL_Agg PDL ON PDL.PolicyDetails_Id = FI.PolicyId                      
+--    LEFT JOIN Accounting_WholesalerDetails WD ON WD.WholesalerDetail_Id = PD.WholesalerDetail_Id    
+-- INNER JOIN #TempRetainedFees  RF ON   RF.Invoice_Id = I.Id  
+                      
+--    OUTER APPLY (                      
+--        SELECT TOP 1 AL.Name AS LOBName                      
+--        FROM Accounting_InvoiceDetails AID                      
+--        INNER JOIN Accounting_LU_LOBs AL ON AL.LOB_Id = AID.LOB_Id                      
+--        WHERE AID.Invoice_Id = I.Id AND AID.Status = 1                      
+--        ORDER BY AID.Id                      
+--    ) AS LOB        
+       
+-- OUTER APPLY (      
+--    SELECT       
+--        SUM(PDLI.Premium) AS TotalPremium      
+--    FROM Accounting_PolicyDetailsLineItems PDLI      
+--    WHERE PDLI.PolicyDetails_Id = PD.Id        
+--      AND PDLI.Status = 1      
+--      AND PDLI.LineType = ''PREMIUM''      
+--    ) AS TP      
+               
+-- /*        
+--    OUTER APPLY (                      
+--        SELECT                      
+--            CAST(SUM(CASE WHEN LIT_Name = ''PREMIUM'' AND ((LUD_Name = ''Accounts Receivable'') OR (BillingType = ''Direct Bill'' AND LUD_Name = ''Internal'')) THEN Amount ELSE 0 END) AS DECIMAL(18,2)) AS TotalPremium,                      
+--            CAST(SUM(CASE WHEN IsHouseFee = 1 THEN Amount ELSE 0 END) AS DECIMAL(18,2)) AS TotalHouseFee,                      
+--            CAST(SUM(CASE WHEN LIT_Name = ''FEE'' AND LUD_Name = ''Accounts Payable'' THEN Amount ELSE 0 END) AS DECIMAL(18,2)) AS TotalPayableFee,                      
+--            CAST(SUM(CASE WHEN LIT_Name = ''FEE'' AND LUD_Name = ''Accounts Payable'' THEN Amount ELSE 0 END) AS DECIMAL(18,2)) AS TotalCarrierFees                      
+--        FROM (                      
+--            SELECT                      
+--                ID.Amount,                      
+--                ID.RemainingBalance,                      
+--                I.DueDate AS DueDateLocal,                      
+--                LIT.Name AS LIT_Name,                      
+--                LI.Code AS LI_Code,                      
+--                LI.Name AS LI_Name,                      
+--                LUD.Name AS LUD_Name,                      
+--                BT.Name AS BillingType,                      
+--                CASE WHEN LIT.Name = ''FEE''                      
+--                      AND LUD.Name = ''Accounts Receivable''                      
+--                      AND NOT EXISTS (                      
+--                            SELECT 1                      
+--                            FROM Accounting_InvoiceDetails ID_AP                      
+--                            INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD_AP                      
+--                   ON BLD_AP.BillingType_LineItems_Directions_Id = ID_AP.BillingType_LineItems_Directions_Id AND BLD_AP.Status = 1                      
+--                            INNER JOIN Accounting_LU_LineItems_Directions LD_AP                      
+--                              ON LD_AP.LineItems_Directions_Id = BLD_AP.LineItems_Directions_Id AND LD_AP.Status = 1              
+--                            INNER JOIN Accounting_LU_LineItems_Clients LIC_AP                      
+--                              ON LIC_AP.LineItems_Clients_Id = LD_AP.LineItems_Clients_Id AND LIC_AP.Status = 1                    
+--                            INNER JOIN Accounting_LU_LineItems LI_AP                      
+--                              ON LI_AP.LineItem_Id = LIC_AP.LineItem_Id AND LI_AP.Status = 1                      
+--                            INNER JOIN Accounting_LU_LineItemTypes LIT_AP                      
+--                              ON LIT_AP.LineItemType_Id = LI_AP.LineItemType_Id AND LIT_AP.Status = 1                      
+--                            INNER JOIN Accounting_LU_Directions LUD_AP                      
+--                              ON LUD_AP.Direction_Id = LD_AP.Direction_Id AND LUD_AP.Status = 1                      
+--                            WHERE ID_AP.Invoice_Id = I.Id AND ID_AP.Status = 1                      
+--                              AND LIT_AP.Name = ''FEE'' AND LUD_AP.Name = ''Accounts Payable''                      
+--         AND LI_AP.LineItem_Id = LI.LineItem_Id                   
+--         AND LIC_AP.Is_Passthrough = 1                  
+--                      )                      
+--                     THEN 1 ELSE 0 END AS IsHouseFee                      
+--            FROM Accounting_InvoiceDetails ID                      
+--            INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD ON BLD.BillingType_LineItems_Directions_Id = ID.BillingType_LineItems_Directions_Id AND BLD.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Directions LD ON LD.LineItems_Directions_Id = BLD.LineItems_Directions_Id AND LD.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems_Clients LIC ON LIC.LineItems_Clients_Id = LD.LineItems_Clients_Id AND LIC.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItems LI ON LI.LineItem_Id = LIC.LineItem_Id AND LI.Status = 1                      
+--            INNER JOIN Accounting_LU_LineItemTypes LIT ON LIT.LineItemType_Id = LI.LineItemType_Id AND LIT.Status = 1                      
+--            INNER JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id AND LUD.Status = 1                      
+--            INNER JOIN Accounting_LU_BillingTypes BT ON BT.BillingType_Id = BLD.BillingType_Id AND BT.Status = 1                      
+--            WHERE ID.Invoice_Id = I.Id AND ID.Status = 1  AND LIC.Is_Passthrough = 1                  
+--        ) AS DetailView                      
+--    ) AS Details                      
+--    */                  
+--    LEFT JOIN (                      
+--        SELECT InvoiceId, ' + @cols_in_all + N'                      
+--        FROM (                      
+--            -- ===== TAX =====                      
+                      
+--            -- Invoiced (AR, TAX)                      
+--            SELECT                      
+--                I2.Id AS InvoiceId,                      
+--                CONCAT(TNames.Name, '' - '', ''Invoiced'') AS ColName,                      
+--                CAST(SUM(ISNULL(ID2.Amount,0)) AS DECIMAL(18,2)) AS Value                      
+--            FROM #FilteredInvoices FI2                      
+--            INNER JOIN Accounting_Invoices I2                      
+--                ON I2.Id = FI2.InvoiceId AND I2.Status = 1                      
+--            INNER JOIN Accounting_PolicyDetails PD2                      
+--                ON PD2.Id = I2.PolicyDetails_Id AND PD2.Status = 1 AND PD2.Client_Id = @Client_Id                      
+--            CROSS JOIN #LIs_Tax TNames                      
+--            LEFT JOIN Accounting_InvoiceDetails ID2                      
+--                ON ID2.Invoice_Id = I2.Id                      
+--               AND ID2.Status = 1                      
+--            LEFT JOIN Accounting_LU_BillingType_LineItems_Directions BLD2                      
+--                ON BLD2.BillingType_LineItems_Directions_Id = ID2.BillingType_LineItems_Directions_Id AND BLD2.Status = 1        
+--            LEFT JOIN Accounting_LU_LineItems_Directions LD2                      
+--                ON LD2.LineItems_Directions_Id = BLD2.LineItems_Directions_Id AND LD2.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Clients LIC2                      
+--                ON LIC2.LineItems_Clients_Id = LD2.LineItems_Clients_Id AND LIC2.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems LI2                      
+--                ON LI2.LineItem_Id = LIC2.LineItem_Id AND LI2.Status = 1              
+--            LEFT JOIN Accounting_LU_LineItemTypes LIT2                      
+--                ON LIT2.LineItemType_Id = LI2.LineItemType_Id AND LIT2.Status = 1                      
+--            WHERE (@InvoiceNumberTrim IS NULL OR I2.InvoiceNo LIKE ''%'' + @InvoiceNumberTrim + ''%'')                      
+--              AND LIT2.LineItemType_Id = 3        -- TAX                      
+--              AND LD2.Direction_Id   = 1   AND  LIC2.Is_Passthrough = 1      -- AR                      
+--              AND LI2.Name = TNames.Name                      
+--            GROUP BY I2.Id, TNames.Name                      
+                      
+--            UNION ALL                      
+                      
+--            -- Collected (AR, TAX) via PALI                      
+--            SELECT                      
+--                I3.Id AS InvoiceId,                      
+--                CONCAT(TNames.Name, '' - '', ''Collected'') AS ColName,                      
+--                CAST(SUM(ISNULL(PALI3.AppliedAmount,0)) AS DECIMAL(18,2)) AS Value                      
+--            FROM #FilteredInvoices FI3                      
+--            INNER JOIN Accounting_Invoices I3                      
+--                ON I3.Id = FI3.InvoiceId AND I3.Status = 1                      
+--            INNER JOIN Accounting_PolicyDetails PD3                      
+--                ON PD3.Id = I3.PolicyDetails_Id AND PD3.Status = 1 AND PD3.Client_Id = @Client_Id                      
+--            CROSS JOIN #LIs_Tax TNames                      
+--            LEFT JOIN Accounting_InvoiceDetails ID3                      
+--                ON ID3.Invoice_Id = I3.Id                      
+--               AND ID3.Status = 1                      
+--            LEFT JOIN Accounting_LU_BillingType_LineItems_Directions BLD3                      
+--                ON BLD3.BillingType_LineItems_Directions_Id = ID3.BillingType_LineItems_Directions_Id AND BLD3.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Directions LD3                      
+--                ON LD3.LineItems_Directions_Id = BLD3.LineItems_Directions_Id AND LD3.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Clients LIC3                      
+--                ON LIC3.LineItems_Clients_Id = LD3.LineItems_Clients_Id AND LIC3.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems LI3                      
+--                ON LI3.LineItem_Id = LIC3.LineItem_Id AND LI3.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItemTypes LIT3                      
+--                ON LIT3.LineItemType_Id = LI3.LineItemType_Id AND LIT3.Status = 1                      
+--            LEFT JOIN Accounting_PaymentApplicationLineItems PALI3                      
+--                ON PALI3.InvoiceLineItem_Id = ID3.Id AND PALI3.Status = 1                      
+--            WHERE (@InvoiceNumberTrim IS NULL OR I3.InvoiceNo LIKE ''%'' + @InvoiceNumberTrim + ''%'')                      
+--              AND LIT3.LineItemType_Id = 3        -- TAX                      
+--              AND LD3.Direction_Id   = 1 AND  LIC3.Is_Passthrough = 1        -- AR                      
+--              AND LI3.Name = TNames.Name                      
+--            GROUP BY I3.Id, TNames.Name                      
+                      
+--            UNION ALL                      
+                      
+--            -- Paid (AP, TAX) via PALI                      
+--       SELECT                      
+--                I4.Id AS InvoiceId,                      
+--                CONCAT(TNames.Name, '' - '', ''Paid'') AS ColName,                      
+--                CAST(SUM(ISNULL(PALI4.AppliedAmount,0)) AS DECIMAL(18,2)) AS Value                      
+--            FROM #FilteredInvoices FI4                      
+--            INNER JOIN Accounting_Invoices I4                      
+--                ON I4.Id = FI4.InvoiceId AND I4.Status = 1                      
+--            INNER JOIN Accounting_PolicyDetails PD4         
+--                ON PD4.Id = I4.PolicyDetails_Id AND PD4.Status = 1 AND PD4.Client_Id = @Client_Id                      
+--            CROSS JOIN #LIs_Tax TNames                      
+--            LEFT JOIN Accounting_InvoiceDetails ID4                      
+--                ON ID4.Invoice_Id = I4.Id                      
+--      AND ID4.Status = 1                      
+--            LEFT JOIN Accounting_LU_BillingType_LineItems_Directions BLD4                      
+--            ON BLD4.BillingType_LineItems_Directions_Id = ID4.BillingType_LineItems_Directions_Id AND BLD4.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Directions LD4                      
+--                ON LD4.LineItems_Directions_Id = BLD4.LineItems_Directions_Id AND LD4.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Clients LIC4                      
+--                ON LIC4.LineItems_Clients_Id = LD4.LineItems_Clients_Id AND LIC4.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems LI4                      
+--                ON LI4.LineItem_Id = LIC4.LineItem_Id AND LI4.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItemTypes LIT4                      
+--                ON LIT4.LineItemType_Id = LI4.LineItemType_Id AND LIT4.Status = 1                      
+--            LEFT JOIN Accounting_PaymentApplicationLineItems PALI4                      
+--                ON PALI4.InvoiceLineItem_Id = ID4.Id AND PALI4.Status = 1                      
+--            WHERE (@InvoiceNumberTrim IS NULL OR I4.InvoiceNo LIKE ''%'' + @InvoiceNumberTrim + ''%'')                      
+--              AND LIT4.LineItemType_Id = 3        -- TAX                      
+--              AND LD4.Direction_Id   = 2  AND  LIC4.Is_Passthrough = 1       -- AP                      
+--              AND LI4.Name = TNames.Name                      
+--            GROUP BY I4.Id, TNames.Name                      
+                      
+--            UNION ALL                      
+                      
+--            -- ===== FEE (same column labels) =====                      
+                      
+--            -- Invoiced (AR, FEE)                      
+--            SELECT        
+--                I5.Id AS InvoiceId,                      
+--                CONCAT(FNames.Name, '' - '', ''Invoiced'') AS ColName,                      
+--                CAST(SUM(ISNULL(ID5.Amount,0)) AS DECIMAL(18,2)) AS Value                      
+--            FROM #FilteredInvoices FI5                      
+--            INNER JOIN Accounting_Invoices I5                      
+--                ON I5.Id = FI5.InvoiceId AND I5.Status = 1                      
+--            INNER JOIN Accounting_PolicyDetails PD5                      
+--                ON PD5.Id = I5.PolicyDetails_Id AND PD5.Status = 1 AND PD5.Client_Id = @Client_Id                      
+--            CROSS JOIN #LIs_Fee FNames                      
+--            LEFT JOIN Accounting_InvoiceDetails ID5                      
+--                ON ID5.Invoice_Id = I5.Id                      
+--               AND ID5.Status = 1                      
+--            LEFT JOIN Accounting_LU_BillingType_LineItems_Directions BLD5                      
+--                ON BLD5.BillingType_LineItems_Directions_Id = ID5.BillingType_LineItems_Directions_Id AND BLD5.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Directions LD5                      
+--                ON LD5.LineItems_Directions_Id = BLD5.LineItems_Directions_Id AND LD5.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Clients LIC5                      
+--                ON LIC5.LineItems_Clients_Id = LD5.LineItems_Clients_Id AND LIC5.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems LI5                      
+--                ON LI5.LineItem_Id = LIC5.LineItem_Id AND LI5.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItemTypes LIT5                      
+--                ON LIT5.LineItemType_Id = LI5.LineItemType_Id AND LIT5.Status = 1                      
+--            WHERE (@InvoiceNumberTrim IS NULL OR I5.InvoiceNo LIKE ''%'' + @InvoiceNumberTrim + ''%'')                      
+--              AND LIT5.LineItemType_Id = 4           -- FEE                      
+--              AND LD5.Direction_Id   = 1 AND  LIC5.Is_Passthrough = 1           -- AR                      
+--              AND LI5.Name = FNames.Name                      
+--            GROUP BY I5.Id, FNames.Name                      
+                      
+--            UNION ALL                      
+                      
+--            -- Collected (AR, FEE) via PALI                      
+--            SELECT                      
+--  I6.Id AS InvoiceId,                      
+--                CONCAT(FNames.Name, '' - '', ''Collected'') AS ColName,                      
+--                CAST(SUM(ISNULL(PALI6.AppliedAmount,0)) AS DECIMAL(18,2)) AS Value                      
+--            FROM #FilteredInvoices FI6                      
+--            INNER JOIN Accounting_Invoices I6                      
+--                ON I6.Id = FI6.InvoiceId AND I6.Status = 1                      
+--            INNER JOIN Accounting_PolicyDetails PD6                      
+--                ON PD6.Id = I6.PolicyDetails_Id AND PD6.Status = 1 AND PD6.Client_Id = @Client_Id                      
+--            CROSS JOIN #LIs_Fee FNames                      
+--            LEFT JOIN Accounting_InvoiceDetails ID6                      
+--                ON ID6.Invoice_Id = I6.Id                      
+--               AND ID6.Status = 1                      
+--            LEFT JOIN Accounting_LU_BillingType_LineItems_Directions BLD6                      
+--                ON BLD6.BillingType_LineItems_Directions_Id = ID6.BillingType_LineItems_Directions_Id AND BLD6.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Directions LD6                      
+--                ON LD6.LineItems_Directions_Id = BLD6.LineItems_Directions_Id AND LD6.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Clients LIC6                      
+--                ON LIC6.LineItems_Clients_Id = LD6.LineItems_Clients_Id AND LIC6.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems LI6                      
+--                ON LI6.LineItem_Id = LIC6.LineItem_Id AND LI6.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItemTypes LIT6                      
+--                ON LIT6.LineItemType_Id = LI6.LineItemType_Id AND LIT6.Status = 1                      
+--            LEFT JOIN Accounting_PaymentApplicationLineItems PALI6                      
+--                ON PALI6.InvoiceLineItem_Id = ID6.Id AND PALI6.Status = 1                      
+--            WHERE (@InvoiceNumberTrim IS NULL OR I6.InvoiceNo LIKE ''%'' + @InvoiceNumberTrim + ''%'')                      
+--              AND LIT6.LineItemType_Id = 4           -- FEE                      
+--              AND LD6.Direction_Id   = 1 AND  LIC6.Is_Passthrough = 1           -- AR                      
+--              AND LI6.Name = FNames.Name                      
+--            GROUP BY I6.Id, FNames.Name                      
+                
+--            UNION ALL                      
+                      
+--            -- Paid (AP, FEE) via PALI                      
+--            SELECT                      
+--                I7.Id AS InvoiceId,                      
+--                CONCAT(FNames.Name, '' - '', ''Paid'') AS ColName,                      
+--                CAST(SUM(ISNULL(PALI7.AppliedAmount,0)) AS DECIMAL(18,2)) AS Value                      
+--            FROM #FilteredInvoices FI7                      
+--            INNER JOIN Accounting_Invoices I7                      
+--                ON I7.Id = FI7.InvoiceId AND I7.Status = 1                      
+--            INNER JOIN Accounting_PolicyDetails PD7                      
+--                ON PD7.Id = I7.PolicyDetails_Id AND PD7.Status = 1 AND PD7.Client_Id = @Client_Id                      
+--            CROSS JOIN #LIs_Fee FNames                      
+--            LEFT JOIN Accounting_InvoiceDetails ID7                      
+--                ON ID7.Invoice_Id = I7.Id                      
+--               AND ID7.Status = 1                      
+--            LEFT JOIN Accounting_LU_BillingType_LineItems_Directions BLD7                      
+--                ON BLD7.BillingType_LineItems_Directions_Id = ID7.BillingType_LineItems_Directions_Id AND BLD7.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Directions LD7                      
+--                ON LD7.LineItems_Directions_Id = BLD7.LineItems_Directions_Id AND LD7.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems_Clients LIC7                      
+--                ON LIC7.LineItems_Clients_Id = LD7.LineItems_Clients_Id AND LIC7.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItems LI7                      
+--                ON LI7.LineItem_Id = LIC7.LineItem_Id AND LI7.Status = 1                      
+--            LEFT JOIN Accounting_LU_LineItemTypes LIT7                      
+--                ON LIT7.LineItemType_Id = LI7.LineItemType_Id AND LIT7.Status = 1                      
+--            LEFT JOIN Accounting_PaymentApplicationLineItems PALI7                      
+--       ON PALI7.InvoiceLineItem_Id = ID7.Id AND PALI7.Status = 1                      
+--            WHERE (@InvoiceNumberTrim IS NULL OR I7.InvoiceNo LIKE ''%'' + @InvoiceNumberTrim + ''%'')                      
+--              AND LIT7.LineItemType_Id = 4           -- FEE                      
+--              AND LD7.Direction_Id   = 2 AND   LIC7.Is_Passthrough = 1          -- AP                      
+--              AND LI7.Name = FNames.Name                      
+--            GROUP BY I7.Id, FNames.Name                      
+--        ) src                      
+--        PIVOT (SUM(Value) FOR ColName IN (' + @cols_in_all + N')) AS pvt                      
+--    ) AS pvt ON pvt.InvoiceId = I.Id                      
+                      
+--    ORDER BY FI.SortDate DESC;';                      
+                      
+--    EXEC sp_executesql                      
+--        @sql,                      
+--        N'@CurrentDate DATETIME2(0), @InvoiceNumberTrim VARCHAR(200), @Client_Id BIGINT',                      
+--        @CurrentDate = @CurrentDate, @InvoiceNumberTrim = @InvoiceNumberTrim, @Client_Id = @Client_Id;                      
+                      
+--    ----------------------------------------------------------------                      
+--    -- Cleanup                      
+--    ----------------------------------------------------------------                      
+--    DROP TABLE #PDL_Agg;                      
+--    DROP TABLE #FilteredInvoices;                      
+--    IF OBJECT_ID('tempdb..#LIs_Tax') IS NOT NULL DROP TABLE #LIs_Tax;                      
+--    IF OBJECT_ID('tempdb..#LIs_Fee') IS NOT NULL DROP TABLE #LIs_Fee;                      
+--END 

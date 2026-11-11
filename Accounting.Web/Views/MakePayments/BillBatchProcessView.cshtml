@@ -1,0 +1,147 @@
+﻿@model List<BillProcessQueueEventsWeb>
+@{
+	var PageSize = ViewBag.PageSize;
+	var PageIndex = ViewBag.PageIndex;
+	var TotalRecords = ViewBag.TotalRecords;
+	var isSuperAdmin = ViewBag.IsSuperAdmin;
+}
+
+<div class="position-relative" style="margin-bottom:30px;">
+	<div class="border">
+		<div class="table-responsive table-scroll mb-2" style="max-height:340px; overflow-y:auto;">
+			<table class="table ei-table mb-3 no-wrap ei-ac-db-table trns-db-table billprocessview-valign">
+				<thead>
+					<tr>
+						<th style="text-align:center;">Transaction Date</th>
+						<th>WorkFlow Step</th>
+						<th>Status</th>
+						<th style="text-align:center;">Retry Count</th>
+						<th style="text-align:center;">Max Retries</th>
+						@if (isSuperAdmin)
+						{
+							<th style="text-align:center;">Action</th>
+						}
+					</tr>
+				</thead>
+				<tbody id="line-items-body">
+					@if (Model?.Count > 0)
+					{
+						foreach (var item in Model)
+						{
+							<tr>
+								<td style="text-align:center;">@item.TransactionDate.ToShortDateString()</td>
+								<td>@item.WorkFlowEvent</td>
+								<td>
+									@if (item.WorkFlowStatus.ToUpper() == "PENDING")
+									{
+										@item.WorkFlowStatus
+										<span class="text-warning"><i class="fas fa-clock ms-1"></i></span>
+									}
+									else if (item.WorkFlowStatus.ToUpper() == "RUNNING")
+									{
+										@item.WorkFlowStatus
+										<span class="text-primary"><i class="fas fa-spinner fa-spin ms-1"></i></span>
+									}
+									else if (item.WorkFlowStatus.ToUpper() == "COMPLETED")
+									{
+										@item.WorkFlowStatus
+										<span class="text-success"> <i class="fas fa-circle-check ms-1"></i></span>
+									}
+									else if (item.WorkFlowStatus.ToUpper() == "FAILED")
+									{
+										@item.WorkFlowStatus
+										<span class="text-danger"> <i class="fas fa-circle-xmark ms-1"></i></span>
+									}
+									else if (item.WorkFlowStatus.ToUpper() == "RETRY")
+									{
+										@item.WorkFlowStatus
+										<span class="text-info" style="margin-left:5px"><i class="fas fa-arrows-rotate fa-spin me-1"></i></span>
+									}
+									else if (item.WorkFlowStatus.ToUpper() == "CANCELLED")
+									{
+										@item.WorkFlowStatus
+										<span class="text-muted" style="margin-left:5px"><i class="fas fa-ban me-1"></i></span>
+									}
+									else if (item.WorkFlowStatus.ToUpper() == "DELETED")
+									{
+										@item.WorkFlowStatus
+										<span class="text-muted" style="margin-left:5px"><i class="fas fa-trash-alt me-1"></i></span>
+									}
+									else
+									{
+										@item.WorkFlowStatus
+										<span class="text-warning"><i class="fas fa-triangle-exclamation ms-1"></i></span>
+									}
+								</td>
+								<td style="text-align:center;">@item.RetryCount</td>
+								<td style="text-align:center;">@item.MaxRetryCount</td>
+								@if (isSuperAdmin)
+								{
+									<td style="text-align:center;">
+										<a href="javascript:void(0)" data-service-response-msg="@item.ServiceResponseMessage" data-name="btnViewServiceResponseMsg" title="View Response Message"><i class="ri-eye-line save-btn"></i></a>
+									</td>
+								}
+							</tr>
+						}
+					}
+					else
+					{
+						<tr><td colspan="12">No records found!</td></tr>
+					}
+				</tbody>
+
+
+			</table>
+		</div>
+	</div>
+
+</div>
+
+<div class="modal fade" id="responseMessageModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header d-flex justify-content-between">
+                <h5 class="modal-title" id="ReqResTitle">Service Response Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="d-flex align-items-center justify-content-end gap-3 me-3" style="margin-bottom: -30px; position: relative; z-index: 2;">
+                    <span class="text-muted" style="display: none;" data-name="CopyRequestResponse">Copied!</span>
+                    <a class="btn btn-primary d-inline-flex align-items-center justify-content-end gap-1 py-0 px-2 copy-button" data-name="CopyButton">
+                        <i class="ri-file-copy-2-fill" style="font-size:20px;"></i>
+                        <small style="font-size:10px;">Copy</small>
+                    </a>
+                </p>
+
+                <pre style="margin-top: 0px; margin-bottom: 0px; height: 250px;" id="preContent"></pre>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+	.th-content {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.billprocessview-valign tr th {
+		vertical-align: middle;
+		max-width: unset;
+		white-space: nowrap;
+		padding-bottom: 8px;
+		padding-top: 8px;
+	}
+
+	.table-scroll {
+		height: calc(100vh - 375px) !important;
+	}
+
+	.text-bg-primary {
+		background-color: #eaffeb !important;
+		color: #333 !important
+	}
+</style>

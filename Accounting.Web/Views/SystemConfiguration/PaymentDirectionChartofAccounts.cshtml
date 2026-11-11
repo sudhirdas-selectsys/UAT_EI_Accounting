@@ -1,0 +1,173 @@
+﻿@model List<LU_PaymentDirections_ChartOfAccounts>
+@{
+	var ChartOfAccountList = ViewBag.ChartOfAccountList != null ? (List<ChartofAccounts>)ViewBag.ChartOfAccountList : new List<ChartofAccounts>();
+}
+<style>
+	.qv-dropdown .qv-dropdown-label {
+		padding: 2px 12px;
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		cursor: pointer;
+		background-color: #fff;
+		color: #333;
+		border: 1px solid rgba(0, 0, 0, 0.175) !important;
+		border-radius: 0.25rem;
+		height: 30px;
+		line-height: 30px;
+	}
+
+	.qv-items-height {
+		height: 120px;
+		padding-right: 5px;
+		margin-top: 5px;
+		margin-bottom: 5px;
+		overflow: auto;
+	}
+
+
+
+	.qv-item {
+		cursor: pointer;
+		font-size: 12px
+	}
+
+	.qv-items-height .qv-item {
+		margin: 0px;
+		padding: 5px 10px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 6px;
+	}
+
+		.qv-items-height .qv-item:hover {
+			background-color: #f8f9fa;
+			color: #5F2EE5;
+		}
+
+	[data-name="ConfigurationTabContainer"] {
+		min-height: 545px !important;
+	}
+
+	.table-scroll {
+		height: calc(100vh - 200px);
+		overflow-y: auto;
+	}
+</style>
+<table class="table table-bordered table-striped table-hover ei-table">
+	<thead class="table-light">
+		<tr>
+			<th style="width:50px;">S.No</th>
+			<th>Direction</th>
+			<th>Standard COA</th>
+			<th>Write off COA</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			if (Model?.Count() > 0)
+			{
+				int index = 1;
+				foreach (var item in Model)
+				{
+					var chartList = LookupUtility.GetAllChartofAccounts()?.Where(c => c.ChartOfAccounts_Id == item?.ChartOfAccounts_Id)?.FirstOrDefault()?.Name;
+					<tr data-name="trPaymentDirectionsCOA" data-index="@index">
+						<input type="hidden" name="Client_Id" value="@item.Client_Id" />
+						<input type="hidden" name="Service_Id" value="@item.Service_Id" />
+						<input type="hidden" name="PaymentDirection_Id" value="@item.PaymentDirection_Id" />
+						<td style="width: 50px;">@index </td>
+						<td>@item.Direction</td>
+						<td style="width: 350px;">
+							<div class="dropdown qv-dropdown disabled-link" style="border-color: #5F2EE5">
+								<div type="button" class="qv-dropdown-label show" id="qvDropdownId" data-bs-toggle="dropdown" aria-expanded="true" data-bs-auto-close="false">
+									<span data-name="SelectedCOA" class="text-truncate" title="@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.StandardCOA_Id)?.Name" style="max-width:200px">@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.StandardCOA_Id)?.Name</span> <i class="ri-arrow-down-s-line"></i>
+								</div>
+								<div class="dropdown-menu pt-1" data-identifier="Standard" data-name="DropDownContainer" style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(0px, 42.4px, 0px);width: 295px" data-popper-placement="bottom-start">
+									<input type="hidden" name="StandardCOA_Id" data-name="ChartOfAccounts_Id" value="@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.StandardCOA_Id)?.ChartOfAccounts_Id" />
+									<div class="text-end mb-1" id="qv-dropdown-close" type="button">
+										<i class="ri-close-large-line"></i>
+									</div>
+									<div class="input-group input-group-sm mb-1 custom-input-group">
+										<input type="text" data-name="COASearchText" class="form-control" placeholder="Search..." autocomplete="off" aria-label="Search..." aria-describedby="basic-addon2">
+										<button class="input-group-text" id="qv-search-btn" type="button" data-name="btnCOASearch">
+											<i class="ri-search-2-line" style="position:inherit;"></i>
+										</button>
+										<button class="input-group-text" data-name="btnCOASearchClear" type="button" style="display:none;">
+											<i class="ri-close-large-line" style="position:inherit;"></i>
+										</button>
+									</div>
+
+
+									<div class="qv-items-height" data-name="COAListContainer">
+										@{
+											if (ChartOfAccountList?.Count() > 0)
+											{
+												foreach (var Coa in ChartOfAccountList)
+												{
+													<div class="qv-item" data-name="COAItem" data-coa-id="@Coa.ChartOfAccounts_Id">
+														<span>@Coa.Name</span>
+													</div>
+												}
+											}
+										}
+									</div>
+								</div>
+							</div>
+						</td>
+						<td style="width: 350px;">
+							<div class="dropdown qv-dropdown disabled-link" style="border-color: #5F2EE5">
+								<div type="button" class="qv-dropdown-label show" id="qvDropdownId" data-bs-toggle="dropdown" aria-expanded="true" data-bs-auto-close="false">
+									<span data-name="SelectedCOA" class="text-truncate" title="@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.WriteoffCOA_Id)?.Name" style="max-width:200px">@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.WriteoffCOA_Id)?.Name</span> <i class="ri-arrow-down-s-line"></i>
+								</div>
+								<div class="dropdown-menu pt-1" data-identifier="Writeoff" data-name="DropDownContainer" style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(0px, 42.4px, 0px);width: 295px" data-popper-placement="bottom-start">
+									<input type="hidden" name="WriteoffCOA_Id" data-name="ChartOfAccounts_Id" value="@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.WriteoffCOA_Id)?.ChartOfAccounts_Id" />
+									<div class="text-end mb-1" id="qv-dropdown-close" type="button">
+										<i class="ri-close-large-line"></i>
+									</div>
+									<div class="input-group input-group-sm mb-1 custom-input-group">
+										<input type="text" data-name="COASearchText" class="form-control" placeholder="Search..." autocomplete="off" aria-label="Search..." aria-describedby="basic-addon2">
+										<button class="input-group-text" id="qv-search-btn" type="button" data-name="btnCOASearch">
+											<i class="ri-search-2-line" style="position:inherit;"></i>
+										</button>
+										<button class="input-group-text" data-name="btnCOASearchClear" type="button" style="display:none;">
+											<i class="ri-close-large-line" style="position:inherit;"></i>
+										</button>
+									</div>
+
+
+									<div class="qv-items-height" data-name="COAListContainer">
+										@{
+											if (ChartOfAccountList?.Count() > 0)
+											{
+												foreach (var Coa in ChartOfAccountList)
+												{
+													<div class="qv-item" data-name="COAItem" data-coa-id="@Coa.ChartOfAccounts_Id">
+														<span>@Coa.Name</span>
+													</div>
+												}
+											}
+										}
+									</div>
+								</div>
+							</div>
+						</td>
+						<td valign="middle" style="width: 120px;">
+							<div class="action-btns">
+								<a href="javascript:void(0)" data-name="btnEditPDCOA" data-table-name="PaymentDirectionsCOA" title="Edit Chart of Account"><i class="ri-pencil-line save-btn"></i></a>
+								<a href="javascript:void(0)" data-name="btnSavePDCOA" style="display: none;" data-table-name="PaymentDirectionsCOA" title="Update Chart of Account"><i class="ri-save-3-line save-btn"></i></a>
+								<a href="javascript:void(0)" data-name="btnCancelPDCOA" style="display: none;" data-table-name="PaymentDirectionsCOA" title="Cancel"><i class="ri-close-line delete-btn"></i></a>
+							</div>
+						</td>
+					</tr>
+					index++;
+				}
+			}
+		}
+
+	</tbody>
+</table>
+
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

@@ -1,0 +1,144 @@
+﻿@model List<LOBMapping>
+
+<div class="position-relative">
+	<form data-name="frmLOBMappingForm">
+		<div class="row align-items-center search-filters lob-cg mb-2">
+			<div class="col-md-11">
+				<div class="row">
+					<div class="col-md-6">
+						<div class="row mx-0 my-1 g-0">
+							<label class="col-12 col-xl-3 col-form-label col-form-label-sm text-end">LOB:</label>
+							<div class="col-12 col-xl-9">
+								<div class="position-relative custom-multi-selection" data-name="lob-mapping-container">
+									<button class="form-select select-lob text-start d-flex align-items-center flex-wrap gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+										<span class="default-text">Select</span>
+										<div class="selected-chips d-flex flex-wrap gap-1"></div>
+									</button>
+									<ul class="dropdown-menu" style="height:320px;overflow-y:auto;width:405px;">
+										<li class="dropdown-item">
+											<input class="form-check-label" type="checkbox" id="selectAllLobs" data-name="lob-mapping-option" name="LOBNames" data-lob-id="0" onchange="toggleAllLobs(this,'lob-mapping-container','lob-mapping-option')">
+											<label class="form-check-label ms-2" for="selectAllLobs">Select All</label>
+										</li>
+										@{
+											var LobsList = LookupUtility.GetAllLOBs();
+											foreach (var lobs in LobsList)
+											{
+												<li class="dropdown-item">
+													<input class="form-check-label" type="checkbox" data-name="lob-mapping-option" name="LOBNames" data-lob-id="@lobs.LOB_Id" id="lob_.@lobs.LOB_Id" value="@lobs.Name">
+													<label title="@lobs.Name" style="text-overflow:ellipsis;width:350px;overflow:hidden;" class="form-check-label ms-2" for="lob_.@lobs.LOB_Id">@lobs.Name</label>
+												</li>
+											}
+										}
+									</ul>
+								</div>
+							</div>
+						</div>
+					</div>
+					<div class="col-md-1">
+						<button class="btn btn-primary  btn-sm" data-name="btnAddLobMapping">Save</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
+	<div class="table-responsive table-scroll">
+		<table class="table table-bordered table-striped table-hover ei-table">
+			<thead class="table-light">
+				<tr>
+					<th>S.No</th>
+					<th>Line of Business</th>
+					<th>Code</th>
+					<th>Actions</th>
+				</tr>
+			</thead>
+			<tbody>
+				@{
+					if (Model?.Count > 0)
+					{
+						int Index = 1;
+						@foreach (var item in Model)
+						{
+							<tr>
+								<td>@Index</td>
+								<td><div class="text-truncate" title="@item.Name" style="width:200px;">@item.Name</div></td>
+								<td>@item.Code</td>
+								<td valign="middle">
+									<div class="action-btns">
+										<a href="javascript:void(0)" data-lob-mapping-Id="@item?.LOB_Mapping_Id" data-name="btnDeleteLOBMapping" title="Delete LOB-Mapping"><i class="ri-delete-bin-6-line text-danger delete-btn mx-0"></i></a>
+									</div>
+								</td>
+							</tr>
+							Index++;
+						}
+					}
+					else
+					{
+						<tr><td colspan="4">No records found!</td></tr>
+					}
+				}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<script>
+	function toggleAllLobs(source, containerDataName, checkboxDataName) {
+		const container = $(source).closest(`[data-name="${containerDataName}"]`);
+		const isChecked = source.checked;
+		container.find(`[data-name="${checkboxDataName}"]`).prop('checked', isChecked).trigger('change');
+	}
+
+	$(document).ready(function () {
+		$('.custom-multi-selection').each(function () {
+			const container = $(this);
+			const chips = container.find('.selected-chips');
+			const defaultText = container.find('.default-text');
+			const checkboxes = container.find('.dropdown-item input[type="checkbox"]');
+
+			function updateChips() {
+				const checked = checkboxes.filter(':checked');
+				chips.empty();
+
+				if (checked.length === 0) {
+					defaultText.show();
+				} else if (checked.length === checkboxes.length) {
+					defaultText.hide();
+					chips.append(
+						'<div class="chip d-flex align-items-center gap-1 all-chip" data-value="all">' +
+						'<span>All</span>' +
+						'<span class="remove-chip" style="cursor:pointer;">&times;</span>' +
+						'</div>'
+					);
+				} else {
+					defaultText.hide();
+					checked.each(function () {
+						const value = $(this).val();
+						chips.append(
+							'<div class="chip d-flex align-items-center gap-1" data-value="' + value + '">' +
+							'<span>' + value + '</span>' +
+							'<span class="remove-chip" style="cursor:pointer;">&times;</span>' +
+							'</div>'
+						);
+					});
+				}
+			}
+
+			checkboxes.on('change', updateChips);
+			updateChips();
+		});
+
+		$(document).on('click', '.remove-chip', function (e) {
+			e.stopPropagation();
+			const chip = $(this).closest('.chip');
+			const value = chip.data('value');
+			const container = chip.closest('.custom-multi-selection');
+
+			if (value === 'all') {
+				container.find('.dropdown-item input[type="checkbox"]').prop('checked', false).trigger('change');
+			} else {
+				container.find('input[type="checkbox"][value="' + value + '"]').prop('checked', false).trigger('change');
+			}
+		});
+	});
+</script>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

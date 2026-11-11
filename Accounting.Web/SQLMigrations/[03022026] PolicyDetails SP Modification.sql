@@ -1,0 +1,169 @@
+select * from Accounting_PolicyDetails PD join Accounting_Invoices INV on PD.Id = INV.PolicyDetails_Id where PD.Client_Id=1 and inv.Status=1 and PD.TransactionType='END'
+--alter table Accounting_PolicyDetails add EndorsementNumber int null
+-- select * from Accounting_users
+--alter  Proc USP_Accounting_InsertUpdatePolicyDetails                            
+--(                                
+--@Id bigint output                                
+--,@Client_Id bigint                                 
+--,@Submission_Id bigint                                
+--,@Quote_Id bigint = null                              
+--,@PolicyNumber varchar(100) = null                                
+--,@PolicyInstallmentCode varchar(100) = null                                
+--,@Corporation varchar(100) = null                                
+--,@Location varchar(100) = null                                
+--,@RiskState varchar(10) = null                                
+--,@PaymentPlan varchar(100) = null                                
+--,@BillType varchar(100) = null                                
+--,@EffectiveDate date = null                                
+--,@ExpirationDate date = null                                
+--,@CancelDate date = null              
+--,@EndorsementEffectiveDate date = null              
+--,@PolicyAction varchar(100) = null                                
+--,@LOBOverride varchar(100) = null                                
+--,@PolicyType varchar(100) = null                                
+--,@TransactionType varchar(100) = null                                
+--,@PolicyDescription varchar(500) = null                                
+--,@InvoiceNote varchar(max) = null                                
+--,@MasterPolicy varchar(100) = null                                
+--,@LoanNum varchar(500) = null                                
+--,@PostAsShell bit = null      
+--,@CustomerType varchar(100) = null
+--,@EndorsementNumber int = null
+--,@WholesalerDetail_Id bigint = null                             
+--,@UnderWriterDetail_Id bigint = null                             
+--,@InterestDetail_Id bigint = null                             
+--,@InsuredDetail_Id bigint = null                             
+--,@FinanceDetail_Id bigint = null                             
+--,@CarrierDetail_Id  bigint = null                             
+--,@AgentDetail_Id  bigint = null                      
+--,@Source_Id tinyint = null        
+--,@OriginalSubmission_Id bigint = null        
+--,@PreviousSubmission_Id bigint = null        
+----,@LivePolicy bit = null                  
+--)                                
+--as                                 
+--begin                                 
+                                
+--if exists ( select 1 from Accounting_PolicyDetails where Submission_Id = @Submission_Id and Client_Id = @Client_Id and Status = 1 )                                
+--begin                                
+--update Accounting_PolicyDetails set                                 
+--PolicyNumber              = ISNULL(@PolicyNumber, PolicyNumber),          
+--PolicyInstallmentCode     = ISNULL(@PolicyInstallmentCode, PolicyInstallmentCode),          
+--Corporation               = ISNULL(@Corporation, Corporation),          
+--Location                  = ISNULL(@Location, Location),          
+--RiskState                 = ISNULL(@RiskState, RiskState),          
+--PaymentPlan               = ISNULL(@PaymentPlan, PaymentPlan),          
+--BillType                  = ISNULL(@BillType, BillType),          
+--EffectiveDate             = ISNULL(@EffectiveDate, EffectiveDate),          
+--ExpirationDate            = ISNULL(@ExpirationDate, ExpirationDate),          
+--CancelDate                = ISNULL(@CancelDate, CancelDate),          
+--EndorsementEffectiveDate  = ISNULL(@EndorsementEffectiveDate, EndorsementEffectiveDate),          
+--PolicyAction              = ISNULL(@PolicyAction, PolicyAction),          
+--LOBOverride               = ISNULL(@LOBOverride, LOBOverride),          
+--PolicyType                = ISNULL(@PolicyType, PolicyType),          
+--TransactionType           = ISNULL(@TransactionType, TransactionType),          
+--PolicyDescription         = ISNULL(@PolicyDescription, PolicyDescription),          
+--InvoiceNote               = ISNULL(@InvoiceNote, InvoiceNote),          
+--MasterPolicy              = ISNULL(@MasterPolicy, MasterPolicy),          
+--LoanNum                   = ISNULL(@LoanNum, LoanNum),     
+--PostAsShell               = ISNULL(@PostAsShell, PostAsShell),    
+--CustomerType              = ISNULL(@CustomerType, CustomerType),
+--EndorsementNumber         = ISNULL(@EndorsementNumber, EndorsementNumber),
+--WholesalerDetail_Id       = ISNULL(@WholesalerDetail_Id, WholesalerDetail_Id),          
+--UnderWriterDetail_Id      = ISNULL(@UnderWriterDetail_Id, UnderWriterDetail_Id),          
+--InterestDetail_Id         = ISNULL(@InterestDetail_Id, InterestDetail_Id),          
+--InsuredDetail_Id          = ISNULL(@InsuredDetail_Id, InsuredDetail_Id),          
+--FinanceDetail_Id          = ISNULL(@FinanceDetail_Id, FinanceDetail_Id),          
+--CarrierDetail_Id          = ISNULL(@CarrierDetail_Id, CarrierDetail_Id),          
+--AgentDetail_Id            = ISNULL(@AgentDetail_Id, AgentDetail_Id),          
+--Source_Id                 = ISNULL(@Source_Id, Source_Id),          
+--Quote_Id                  = ISNULL(@Quote_Id, Quote_Id),         
+--PreviousSubmission_Id     = ISNULL(@PreviousSubmission_Id, PreviousSubmission_Id),        
+--OriginalSubmission_Id     = ISNULL(@OriginalSubmission_Id, OriginalSubmission_Id),        
+--UpdatedOn                 = GETDATE() WHERE Submission_Id = @Submission_Id AND Client_Id = @Client_Id AND Status = 1                               
+--end                                
+--else                                
+--begin                                
+--insert into Accounting_PolicyDetails                                
+--(                                
+--Client_Id                                
+--,Submission_Id                               
+--,Quote_Id                              
+--,PolicyNumber                                
+--,PolicyInstallmentCode                         
+--,Corporation                                
+--,Location                                
+--,RiskState                                
+--,PaymentPlan                                
+--,BillType                                
+--,EffectiveDate                                
+--,ExpirationDate                                
+--,CancelDate              
+--,EndorsementEffectiveDate              
+--,PolicyAction                                
+--,LOBOverride                                
+--,PolicyType                                
+--,TransactionType                                
+--,PolicyDescription                                
+--,InvoiceNote                                
+--,MasterPolicy                                
+--,LoanNum                                
+--,PostAsShell   
+--,CustomerType
+--,EndorsementNumber
+--,WholesalerDetail_Id                            
+--,UnderWriterDetail_Id                            
+--,InterestDetail_Id                            
+--,InsuredDetail_Id                            
+--,FinanceDetail_Id                            
+--,CarrierDetail_Id                            
+--,AgentDetail_Id                      
+--,Source_Id         
+--,OriginalSubmission_Id        
+--,PreviousSubmission_Id        
+----,LivePolicy                  
+--)                                
+--Values                                
+--(                                
+--@Client_Id                                
+--,@Submission_Id                                
+--,@Quote_Id                              
+--,@PolicyNumber                                
+--,@PolicyInstallmentCode                                
+--,@Corporation                                
+--,@Location                                
+--,@RiskState                                
+--,@PaymentPlan                                
+--,@BillType                                
+--,@EffectiveDate                          
+--,@ExpirationDate                                
+--,@CancelDate              
+--,@EndorsementEffectiveDate              
+--,@PolicyAction                                
+--,@LOBOverride                                
+--,@PolicyType                                
+--,@TransactionType                                
+--,@PolicyDescription                                
+--,@InvoiceNote                                
+--,@MasterPolicy                                
+--,@LoanNum                                
+--,@PostAsShell    
+--,@CustomerType
+--,@EndorsementNumber
+--,@WholesalerDetail_Id                            
+--,@UnderWriterDetail_Id                            
+--,@InterestDetail_Id                            
+--,@InsuredDetail_Id                            
+--,@FinanceDetail_Id                            
+--,@CarrierDetail_Id                            
+--,@AgentDetail_Id                      
+--,@Source_Id         
+--,@OriginalSubmission_Id        
+--,@PreviousSubmission_Id        
+        
+----,@LivePolicy                  
+--)                                
+--set @Id = SCOPE_IDENTITY()          
+--end                                
+--end    
+  

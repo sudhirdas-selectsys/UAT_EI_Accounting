@@ -1,0 +1,273 @@
+--alter PROC USP_Accounting_AccountsReceivableReport                        
+--(                                   
+--    @Client_Id BIGINT = NULL,                                  
+--    @InvoiceDate VARCHAR(100) = NULL,                                  
+--    @InvoiceCreatedFromDate VARCHAR(200) = NULL,                                  
+--    @InvoiceCreatedToDate VARCHAR(200) = NULL,                                  
+--    @InvoiceEffectiveFromDate VARCHAR(200) = NULL,                                  
+--    @InvoiceEffectiveToDate VARCHAR(200) = NULL,                                  
+--    @Range VARCHAR(200) = NULL,                                  
+--    @PageIndex INT = NULL,                                  
+--    @PageSize INT = NULL,                                  
+--  --@AgentDetail_Id BIGINT = NULL,          
+--    @AgentDetail_Id NVARCHAR(MAX) = NULL,          
+--    @WholesalerDetail_Id BIGINT = NULL,                              
+--    @InvoiceNumber VARCHAR(200) = NULL,                            
+--    @InsuredName VARCHAR(200) = NULL,                        
+--    @As_Of_Date VARCHAR(200) = NULL,                         
+--    @CarrierDetail_Id BIGINT = NULL,                                  
+--    @LOB_Id INT = NULL,         
+--    @ParentAgentDetail_Id BIGINT = NULL,    
+-- @LOB_Carrier_Grouping_Id int = NULL,    
+--    @TotalRecords INT OUT                                    
+--)                                  
+--AS                                  
+--BEGIN                                  
+--    SET NOCOUNT ON                                  
+                                       
+--    DECLARE @CompareDateFrom DATETIME                                  
+--    DECLARE @CompareDateTo DATETIME                                  
+--    DECLARE @CurrentDate DATETIME = GETDATE()                                   
+--    DECLARE @AsOfDate DATE = NULL                        
+                                 
+--  IF @As_Of_Date IS NOT NULL                        
+--        SET @AsOfDate = TRY_CAST(@As_Of_Date AS DATETIME);                        
+                        
+--    IF @InvoiceDate = 'InvoiceCreatedDate'                                  
+--    BEGIN                                  
+--        SET @CompareDateFrom = TRY_CAST(@InvoiceCreatedFromDate AS DATETIME)                                  
+--        SET @CompareDateTo = DATEADD(DAY, 1, TRY_CAST(@InvoiceCreatedToDate AS DATETIME))                                  
+--    END                                  
+--    ELSE IF @InvoiceDate = 'InvoiceEffectiveDate'                                  
+--    BEGIN                                  
+--        SET @CompareDateFrom = TRY_CAST(@InvoiceEffectiveFromDate AS DATETIME)                                   
+--        SET @CompareDateTo = DATEADD(DAY, 1, TRY_CAST(@InvoiceEffectiveToDate AS DATETIME))                                  
+--    END                                  
+                                    
+--    DECLARE @Offset INT = 0                                  
+--    DECLARE @NextFetch INT = 100                                   
+                                  
+--    IF @PageSize IS NOT NULL AND @PageIndex IS NOT NULL AND @PageSize > 0 AND @PageIndex > 0                                  
+--    BEGIN                                  
+--        SET @Offset = @PageSize * (@PageIndex - 1)                                  
+--        SET @NextFetch = @PageSize                                  
+--    END                                  
+                                    
+--    CREATE TABLE #PagedDetails (                                  
+--        RowID INT IDENTITY(1,1) PRIMARY KEY,                                    
+--        InvoiceDetail_Id BIGINT NOT NULL,                                  
+--        SortDate DATETIME,                                  
+--        SortInvoiceId BIGINT                                  
+--    )                                   
+-- --SELECT @TotalRecords = COUNT(*)                                  
+-- --   FROM Accounting_InvoiceDetails ID                                  
+-- --   INNER JOIN Accounting_Invoices INV ON ID.Invoice_Id = INV.Id AND INV.Status = 1                                   
+-- --   INNER JOIN Accounting_PolicyDetails PD ON INV.PolicyDetails_Id = PD.Id AND PD.Status = 1                                   
+-- --   INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD ON ID.BillingType_LineItems_Directions_Id = BLD.BillingType_LineItems_Directions_Id                                  
+-- --   INNER JOIN Accounting_LU_LineItems_Directions LD ON BLD.LineItems_Directions_Id = LD.LineItems_Directions_Id AND LD.Status = 1 AND LD.Direction_Id = 1                                  
+-- --   INNER JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id AND LUD.Status = 1 AND LUD.Name = 'Accounts Receivable'                                   
+-- -- WHERE                                   
+-- --       ID.Status = 1                                  
+-- --       AND PD.Client_Id = @Client_Id                                  
+-- --       AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)                                  
+-- --       AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)                                  
+-- --       AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)                                  
+-- --       AND (@LOB_Id IS NULL OR EXISTS (                                    
+-- --           SELECT 1                                   
+-- --           FROM Accounting_InvoiceDetails AID                                   
+-- --           WHERE AID.Invoice_Id = INV.Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id                                  
+-- --       ))                                  
+-- --       AND (                                  
+-- --           @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                                  
+-- --           OR (@InvoiceDate = 'InvoiceEffectiveDate' AND PD.EffectiveDate >= @CompareDateFrom AND PD.EffectiveDate < @CompareDateTo)                                  
+-- --           OR (@InvoiceDate = 'InvoiceCreatedDate' AND INV.CreatedOn >= @CompareDateFrom AND INV.CreatedOn < @CompareDateTo)                                  
+-- --   )                                   
+----    OPTION (RECOMPILE)                                  
+                                  
+--  SELECT @TotalRecords = COUNT(*)                                  
+--  FROM Accounting_InvoiceDetails ID                                  
+--  INNER JOIN Accounting_Invoices INV ON ID.Invoice_Id = INV.Id AND INV.STATUS = 1                                  
+--  INNER JOIN Accounting_PolicyDetails PD ON INV.PolicyDetails_Id = PD.Id AND PD.STATUS = 1                            
+--  INNER JOIN Accounting_InsuredDetails AID ON AID.InsuredDetail_Id = PD.InsuredDetail_Id AND AID.Status=1                            
+--  INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD ON ID.BillingType_LineItems_Directions_Id = BLD.BillingType_LineItems_Directions_Id                                  
+--  INNER JOIN Accounting_LU_LineItems_Directions LD ON BLD.LineItems_Directions_Id = LD.LineItems_Directions_Id AND LD.STATUS = 1 AND LD.Direction_Id = 1                                  
+--  INNER JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = 1 AND LUD.STATUS = 1 AND LUD.Name = 'Accounts Receivable'                                  
+--  LEFT JOIN Accounting_InvoiceDetails AID_LOB ON AID_LOB.Invoice_Id = INV.Id AND AID_LOB.STATUS = 1 AND AID_LOB.LOB_Id = @LOB_Id AND @LOB_Id IS NOT NULL                                  
+--  WHERE ID.STATUS = 1 AND PD.Client_Id = @Client_Id             
+-- -- AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)          
+--    AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id IN (SELECT TRY_CAST(value AS BIGINT) FROM STRING_SPLIT(@AgentDetail_Id, ',')          
+--        WHERE TRY_CAST(value AS BIGINT) IS NOT NULL ))         
+-- AND (@ParentAgentDetail_Id IS NULL OR PD.AgentDetail_Id IN (         SELECT AgentDetail_Id          FROM dbo.GetAgencyHierarchy(@ParentAgentDetail_Id)  ))         
+--   AND(@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)                              
+--   --AND (@InvoiceNumber IS NULL OR INV.InvoiceNo=@InvoiceNumber)              
+--     AND (@InvoiceNumber IS NULL OR INV.InvoiceNo = @InvoiceNumber OR INV.InvoiceNo LIKE '%' + @InvoiceNumber + '%'              
+--    OR TRY_CAST(REPLACE(INV.InvoiceNo, 'INV', '') AS INT) = TRY_CAST(@InvoiceNumber AS INT))         
+--  AND (@InsuredName IS NULL OR AID.Name LIKE '%' + @InsuredName + '%')                          
+--   AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)                                    
+--AND (@LOB_Id IS NULL OR AID_LOB.Invoice_Id IS NOT NULL)  
+--AND (@LOB_Carrier_Grouping_Id IS NULL   
+--    OR EXISTS (  
+--        SELECT 1   
+--        FROM Accounting_LOB_Carrier_Grouping LCG  
+--        JOIN Accounting_Carrier_GroupingDetails CG   
+--            ON LCG.LOB_Carrier_Grouping_Id = CG.LOB_Carrier_Grouping_Id AND CG.Status = 1  
+--        LEFT JOIN Accounting_LOB_GroupingDetails LG   
+--            ON LG.LOB_Carrier_Grouping_Id = LCG.LOB_Carrier_Grouping_Id AND LG.Status = 1  
+--        INNER JOIN Accounting_InvoiceDetails AID_LCG   
+--            ON AID_LCG.Invoice_Id = INV.Id AND AID_LCG.LOB_Id = LG.LOB_Id  
+--        WHERE LCG.Status = 1   
+--            AND LCG.Client_Id = @Client_Id   
+--            AND LCG.LOB_Carrier_Grouping_Id = @LOB_Carrier_Grouping_Id  
+--    )  
+--)  
+--   AND (@CompareDateFrom IS NULL OR @CompareDateTo IS NULL                                   
+--   OR (@InvoiceDate = 'InvoiceEffectiveDate' AND PD.EffectiveDate >= @CompareDateFrom AND PD.EffectiveDate < @CompareDateTo)                                   
+--   OR (@InvoiceDate = 'InvoiceCreatedDate' AND INV.CreatedOn >= @CompareDateFrom AND INV.CreatedOn < @CompareDateTo))                                  
+--        OPTION (RECOMPILE)                                  
+                                     
+--    INSERT INTO #PagedDetails (InvoiceDetail_Id, SortDate, SortInvoiceId)                                  
+--    SELECT                                   
+--        ID.Id,                                  
+--        PD.EffectiveDate,                                  
+--        INV.Id                                  
+--    FROM Accounting_InvoiceDetails ID                              
+--    INNER JOIN Accounting_Invoices INV ON ID.Invoice_Id = INV.Id AND INV.Status = 1                                   
+--    INNER JOIN Accounting_PolicyDetails PD ON INV.PolicyDetails_Id = PD.Id AND PD.Status = 1                            
+-- INNER JOIN Accounting_InsuredDetails AID ON AID.InsuredDetail_Id = PD.InsuredDetail_Id AND AID.Status=1                            
+--    INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD ON ID.BillingType_LineItems_Directions_Id = BLD.BillingType_LineItems_Directions_Id                                  
+--    INNER JOIN Accounting_LU_LineItems_Directions LD ON BLD.LineItems_Directions_Id = LD.LineItems_Directions_Id AND LD.Status = 1                                  
+--    INNER JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id AND LUD.Status = 1 AND LUD.Name = 'Accounts Receivable'                                   
+--    WHERE                                   
+--        ID.Status = 1                                  
+--        AND LD.Direction_Id = 1                                   
+--        AND PD.Client_Id = @Client_Id                                  
+--       -- AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)          
+--       AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id IN (SELECT TRY_CAST(value AS BIGINT) FROM STRING_SPLIT(@AgentDetail_Id, ',')          
+--          WHERE TRY_CAST(value AS BIGINT) IS NOT NULL ))          
+--  AND (@ParentAgentDetail_Id IS NULL OR PD.AgentDetail_Id IN (         SELECT AgentDetail_Id          FROM dbo.GetAgencyHierarchy(@ParentAgentDetail_Id)  ))        
+--        AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)                              
+--        --AND (@InvoiceNumber IS NULL OR INV.InvoiceNo=@InvoiceNumber)              
+--    AND (@InvoiceNumber IS NULL OR INV.InvoiceNo = @InvoiceNumber OR INV.InvoiceNo LIKE '%' + @InvoiceNumber + '%'              
+--    OR TRY_CAST(REPLACE(INV.InvoiceNo, 'INV', '') AS INT) = TRY_CAST(@InvoiceNumber AS INT))              
+--     AND (@InsuredName IS NULL OR AID.Name LIKE '%' + @InsuredName + '%')                            
+--        AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)                                  
+--        AND (@LOB_Id IS NULL OR EXISTS (                                  
+--            SELECT 1                                   
+--            FROM Accounting_InvoiceDetails AID                                   
+--            WHERE AID.Invoice_Id = INV.Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id                                  
+--        ))  
+--  AND (@LOB_Carrier_Grouping_Id IS NULL   
+--    OR EXISTS (  
+--        SELECT 1   
+--        FROM Accounting_LOB_Carrier_Grouping LCG  
+--        JOIN Accounting_Carrier_GroupingDetails CG   
+--            ON LCG.LOB_Carrier_Grouping_Id = CG.LOB_Carrier_Grouping_Id AND CG.Status = 1  
+--        LEFT JOIN Accounting_LOB_GroupingDetails LG   
+--            ON LG.LOB_Carrier_Grouping_Id = LCG.LOB_Carrier_Grouping_Id AND LG.Status = 1  
+--        INNER JOIN Accounting_InvoiceDetails AID_LCG   
+--            ON AID_LCG.Invoice_Id = INV.Id AND AID_LCG.LOB_Id = LG.LOB_Id  
+--        WHERE LCG.Status = 1   
+--            AND LCG.Client_Id = @Client_Id   
+--            AND LCG.LOB_Carrier_Grouping_Id = @LOB_Carrier_Grouping_Id  
+--    )  
+--)  
+--        AND (                                  
+--            @CompareDateFrom IS NULL OR @CompareDateTo IS NULL                                  
+--            OR (@InvoiceDate = 'InvoiceEffectiveDate' AND PD.EffectiveDate >= @CompareDateFrom AND PD.EffectiveDate < @CompareDateTo)                                  
+--            OR (@InvoiceDate = 'InvoiceCreatedDate' AND INV.CreatedOn >= @CompareDateFrom AND INV.CreatedOn < @CompareDateTo)                                  
+--        )                                  
+--    ORDER BY PD.EffectiveDate DESC, INV.Id DESC, ID.Id ASC                                    
+--    OFFSET @Offset ROWS                                  
+--    FETCH NEXT @NextFetch ROWS ONLY                                  
+--    OPTION (RECOMPILE)                                  
+                                    
+--    SELECT                                   
+--        INV.InvoiceNo AS [Invoice Number],                                  
+--        agd.Name AS [Agency Name],                                  
+--        isd.Name AS [Insured Name],                                  
+--        PD.PolicyNumber AS [Policy Number],                                  
+--        PD.TransactionType AS [Transaction Type],                                  
+--        PD.BillType AS [Bill Type],                                  
+--        INV.CreatedOn AS [Invoice Created Date],                                  
+--        PD.EffectiveDate AS [Invoice Effective Date],                                  
+--        PD.EffectiveDate,                                   
+--  ID.Invoice_Id,                                  
+--        INV.DueDate AS [Invoice Due Date],                                  
+--        --LOB.LOBName + '-' + LI.Name AS [Line-Item Description],
+--		LOB.Name + '-' + LI.Name AS [Line-Item Description],
+--        LIT.Name AS [Line-Item Type],                                  
+--        CASE                                  
+--            WHEN ID.EntityType_Id = 1 THEN ag.Name                                  
+--            WHEN ID.EntityType_Id = 2 THEN Ins.Name                                  
+--            WHEN ID.EntityType_Id = 3 THEN ca.Name                                  
+--            WHEN ID.EntityType_Id = 6 THEN wsd.Name      
+--   WHEN ID.EntityType_Id = 7 THEN concat('State of ',PD.RiskState)      
+--            ELSE NULL                         
+--        END AS [Payor Name],                                  
+--        ET.Name AS [Payor Type],                                  
+--        CAST(ID.Amount AS DECIMAL(18,2)) AS Amount,                                  
+--        --CAST(ID.RemainingBalance AS DECIMAL(18,2)) AS [Remaining Balance],                         
+--  CAST(                        
+--            CASE                         
+--                WHEN @AsOfDate IS NULL THEN CAST(ID.RemainingBalance AS DECIMAL(18,2))                        
+--                ELSE                        
+--                    CASE                         
+--                        --WHEN ID.Amount - ISNULL(RemainingBalanceSummary.TotalPaidUpToAsOfDate,0) < 0 THEN 0                  
+--        WHEN ID.Amount >= 0 AND ID.Amount - ISNULL(RemainingBalanceSummary.TotalPaidUpToAsOfDate, 0) < 0 THEN 0                    
+--                         ELSE ID.Amount - ISNULL(RemainingBalanceSummary.TotalPaidUpToAsOfDate,0)                               
+--                    END                        
+--            END AS DECIMAL(18,2)                        
+--        ) AS [Remaining Balance],                            
+--        CAST(CASE WHEN ID.RemainingBalance > 0                                   
+--                  AND DATEDIFF(DAY, INV.DueDate, @CurrentDate) BETWEEN 1 AND 30                                  
+--                  THEN ID.RemainingBalance ELSE 0 END AS DECIMAL(18,2)) AS [1_30],                                  
+--       CAST(CASE WHEN ID.RemainingBalance > 0                                   
+--                  AND DATEDIFF(DAY, INV.DueDate, @CurrentDate) BETWEEN 31 AND 60                                  
+--                  THEN ID.RemainingBalance ELSE 0 END AS DECIMAL(18,2)) AS [31_60],                                  
+--        CAST(CASE WHEN ID.RemainingBalance > 0                                   
+--                  AND DATEDIFF(DAY, INV.DueDate, @CurrentDate) BETWEEN 61 AND 90                                  
+--                  THEN ID.RemainingBalance ELSE 0 END AS DECIMAL(18,2)) AS [61_90],                                  
+--        CAST(CASE WHEN ID.RemainingBalance > 0                                   
+--                  AND DATEDIFF(DAY, INV.DueDate, @CurrentDate) > 90                                  
+--                  THEN ID.RemainingBalance ELSE 0 END AS DECIMAL(18,2)) AS [Over90]                                  
+--    FROM #PagedDetails P                                  
+--    INNER JOIN Accounting_InvoiceDetails ID ON P.InvoiceDetail_Id = ID.Id                                  
+--    INNER JOIN Accounting_Invoices INV ON ID.Invoice_Id = INV.Id                          
+--    INNER JOIN Accounting_PolicyDetails PD ON INV.PolicyDetails_Id = PD.Id                                    
+--    INNER JOIN Accounting_LU_BillingType_LineItems_Directions BLD ON ID.BillingType_LineItems_Directions_Id = BLD.BillingType_LineItems_Directions_Id                                  
+--    INNER JOIN Accounting_LU_LineItems_Directions LD ON BLD.LineItems_Directions_Id = LD.LineItems_Directions_Id                                   
+--    INNER JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id                                   
+--    LEFT JOIN Accounting_AgentDetails agd ON agd.AgentDetail_Id = PD.AgentDetail_Id                                   
+--    LEFT JOIN Accounting_InsuredDetails isd ON isd.InsuredDetail_Id = PD.InsuredDetail_Id                                   
+--    LEFT JOIN Accounting_AgentDetails ag ON ag.AgentDetail_Id = ID.Entity_Id AND ID.EntityType_Id = 1                      
+--    LEFT JOIN Accounting_CarrierDetails ca ON ca.CarrierDetail_Id = ID.Entity_Id AND ID.EntityType_Id = 3                                   
+--    LEFT JOIN Accounting_InsuredDetails ins ON ins.InsuredDetail_Id = ID.Entity_Id AND ID.EntityType_Id = 2                                   
+--    LEFT JOIN Accounting_WholesalerDetails wsd ON wsd.WholesalerDetail_Id = ID.Entity_Id AND ID.EntityType_Id = 6                                   
+--    LEFT JOIN Accounting_LU_LineItems_Clients LIC ON LIC.LineItems_Clients_Id = LD.LineItems_Clients_Id                                   
+--    LEFT JOIN Accounting_LU_LineItems LI ON LI.LineItem_Id = LIC.LineItem_Id                                   
+--    LEFT JOIN Accounting_LU_LineItemTypes LIT ON LIT.LineItemType_Id = LI.LineItemType_Id                                   
+--    LEFT JOIN Accounting_LU_EntityTypes ET ON ID.EntityType_Id = ET.EntityType_Id                                   
+--    --OUTER APPLY (                                  
+--    --    SELECT TOP 1 AL.Name AS LOBName                                  
+--    --    FROM Accounting_InvoiceDetails AID                                  
+--    --    INNER JOIN Accounting_LU_LOBs AL ON AL.LOB_Id = AID.LOB_Id                                  
+--    --    WHERE AID.Invoice_Id = INV.Id                         
+--    --      AND AID.Status = 1                                  
+--    --    ORDER BY AID.Id                                  
+--    --) AS LOB   
+--	LEFT JOIN Accounting_LU_LOBs LOB ON LOB.LOB_Id = ID.LOB_Id
+                        
+-- OUTER APPLY (                        
+--         SELECT SUM(PALI.AppliedAmount) AS TotalPaidUpToAsOfDate                        
+--        FROM Accounting_PaymentApplicationLineItems PALI                 
+--  INNER JOIN Accounting_PaymentApplications PA ON PA.PaymentApplication_Id = PALI.PaymentApplication_Id AND PA.Status = 1                
+--        INNER JOIN Accounting_Payments P ON P.Payment_Id = PA.Payment_Id AND P.Status = 1                 
+--     WHERE PALI.InvoiceLineItem_Id = ID.Id AND PALI.Status = 1                            
+--          AND (@AsOfDate IS NULL OR P.PaymentDate < DATEADD(DAY, 1, @AsOfDate))                
+--    ) RemainingBalanceSummary                        
+                        
+                        
+--    ORDER BY P.RowID ASC                                   
+                                  
+--    DROP TABLE #PagedDetails                                  
+--END 

@@ -1,0 +1,573 @@
+﻿@model List<ReportOutputTables>
+@{
+	double TotalPolicyNetAmount = 0;
+	double TotalPolicyDueAmount = 0;
+	var IsSimplifiedView = (bool)ViewData["IsSimplifiedView"];
+}
+
+@if (Model?.Count > 0 && Model[0].DataTable.Rows.Count > 0)
+{
+	int counter = 1;
+	foreach (DataRow underwriter in Model[0].DataTable.Rows)
+	{
+		var agentExists = Model[2].DataTable.AsEnumerable().Any(r => r.Field<long>("UnderWriterDetail_Id") == Convert.ToInt64(underwriter["UnderWriterDetail_Id"]));
+
+
+		if (agentExists)
+		{
+			double UnderwriterCommsNetDueTotal = 0;
+			bool isInvoicesExist = false;
+			<table width="100%">
+				<tr>
+					<td style="background-color:#085284;padding:6px 12px;font-weight:normal; font-size:16px; color:white; ">
+						Underwriter Name: <strong>@underwriter["Name"]</strong>
+					</td>
+				</tr>
+				<tr><td height="12" class="p-0"></td></tr>
+			</table>
+			<div class="policy-block">
+				<table width="100%">
+					@{
+						var matchingAgents = Model[2].DataTable.AsEnumerable().Where(r => r.Field<long>("UnderWriterDetail_Id") == Convert.ToInt64(underwriter["UnderWriterDetail_Id"]));
+						if (matchingAgents.Any())
+						{
+
+							var PoliciesPerAgency = matchingAgents.CopyToDataTable();
+							foreach (DataRow agencyPolicy in PoliciesPerAgency.Rows)
+							{
+								TotalPolicyNetAmount = 0;
+								TotalPolicyDueAmount = 0;
+								double PolicyCommsNetDueTotal = 0;
+								double TotalCommsNetDue = 0;
+								string targetPolicyNumber = agencyPolicy["PolicyNumber"].ToString().Trim();
+
+								var invoicesDetails = Model[1].DataTable.AsEnumerable()
+								.Where(r => r.Field<string>("PolicyNumber").Trim() == agencyPolicy["PolicyNumber"].ToString().Trim())
+								.FirstOrDefault();
+								if (invoicesDetails != null)
+								{
+									string policyDetailId = invoicesDetails.Field<string>("PolicyNumber").Trim();
+									var invoices = Model[3].DataTable.AsEnumerable().Where(r => (r.Field<string>("PolicyNumber") ?? string.Empty).Trim() == policyDetailId);
+									var invoiceIdList = invoices.GroupBy(r => r.Field<string>("PolicyNumber")).Select(g => g.Key);
+									if (invoiceIdList.Count() > 0)
+									{
+										isInvoicesExist = true;
+										<tr class="invoiceIdList">
+											<td class="pc-left">
+												<p class="mt-0"><strong>Policy Number</strong><br>@agencyPolicy["PolicyNumber"]</p>
+
+												<p><strong>Policy Name</strong><br>@agencyPolicy["InsuredName"]</p>
+
+												<p><strong>Carrier</strong><br>@agencyPolicy["CarrierName"]</p>
+
+												<p class="mb-0"><strong>Line of Business</strong><br>@agencyPolicy["LOBNames"]</p>
+											</td>
+											<td class="pc-right" style="position:relative;padding-bottom:47px">
+												<table class="agency-billed-table fs-12 lh-18 pd-table" width="100%" cellpadding="0" border="0" cellspacing="0">
+													<thead class="t-head">
+														<tr>
+															<td class="border-bottom-1"></td>
+															<td class="border-bottom-1" style="text-align: left;color:#000" width="18%">Id #</td>
+															<td class="border-bottom-1" style="color:#000" width="12%">Eff. Date</td>
+															<!-- Column 4: Total Commission -->
+															<td class="border-bottom-1" style="text-align:right; color:#000;" width="15%">Total<br />Commission</td>
+
+															<!-- Column 5: Total Commission Collected -->
+															<td class="border-bottom-1" style="text-align:right; color:#000;" width="15%">Total<br />Commission Collected</td>
+
+															<!-- Column 6: UW Commission % -->
+															<td class="border-bottom-1" style="text-align:right; color:#000;" width="15%">UW Comm.<br />%</td>
+
+															<!-- Column 7: UW Commission -->
+															<td class="border-bottom-1" style="text-align:right; color:#000; padding-right:8px;" width="12%">UW Comm.</td>
+
+															<!-- Column 8: Comm. Paid to Date -->
+															<td class="border-bottom-1" style="text-align: right;color:#000; padding-right:8px;" width="12%">Comm. Paid to Date</td>
+
+															<!-- Column 9: Comm. Due (Net Due) -->
+															<td class="border-bottom-1" style="text-align: right;color:#000; padding-right:8px;" width="12%">Comm. Due</td>
+														</tr>
+
+
+													</thead>
+													<tbody>
+														@{
+															var invoiceDetails = Model[1].DataTable.AsEnumerable().Where(r => r.Field<string>("PolicyNumber").Trim() == agencyPolicy["PolicyNumber"].ToString().Trim());
+															if (invoiceDetails.Any())
+															{
+																foreach (var policyRow in invoiceDetails)
+																{
+																	long policyDetailsId = policyRow.Field<long>("Id");
+																	var invoiceList = Model[3].DataTable.AsEnumerable().Where(r => r.Field<long>("PolicyDetails_Id") == policyDetailsId);
+																	var invoiceIds = invoiceList.GroupBy(r => r.Field<long>("Invoice_Id")).Select(g => g.Key);
+																	var carrier = agencyPolicy["CarrierName"].ToString();
+																	var insuredName = agencyPolicy["InsuredName"].ToString();
+																	foreach (var invoiceId in invoiceIds)
+																	{
+																		try
+																		{
+
+																			var invoiceDetailsList = Model[3].DataTable.AsEnumerable()
+																			.Where(r => r.Field<long>("Invoice_Id") == invoiceId
+																			&& r.Field<string>("Carrier") == carrier
+																			&& r.Field<string>("Insured Name") == insuredName);
+
+																			DataTable tempinvoiceDetailsList = null;
+																			if (invoiceDetailsList.Any())
+																			{
+																				tempinvoiceDetailsList = invoiceDetailsList.CopyToDataTable();
+																			}
+																			else
+																			{
+																				tempinvoiceDetailsList = Model[3].DataTable.Clone(); // returns empty table with same schema
+																			}
+
+																			int rowCount = invoiceDetailsList.Count();
+
+																			int rowIndex = 0;
+																			PolicyCommsNetDueTotal += invoiceDetailsList.Sum(r => r.Field<double>("CommsNetDue"));
+																			foreach (DataRow invoiceDetail in invoiceDetailsList)
+																			{
+																				bool isLast = rowIndex == rowCount - 1;
+																				string borderClass = isLast ? "" : "border-bottom-1";
+
+																				double RemainingBalance = invoiceDetail.Field<double>("RemainingBalance");
+																				double net = invoiceDetail.Field<double>("NetAmount");
+																				double gross = invoiceDetail.Field<double>("GrossAmount");
+																				decimal premiumCollected = invoiceDetail.Field<decimal>("InferredPremiumCollected");
+																				//double commAmt = invoiceDetail.Field<double>("AgentCommission");
+																				double commPerc = invoiceDetail.Field<double>("UWCommPercentage");
+																				double CommissionAmt = invoiceDetail.Field<double>("Comm.");
+																				decimal CommPaidToDate = invoiceDetail.Field<decimal>("Comm. Paid to Date");
+																				//double CommsNetDue = CommissionAmt - Convert.ToDouble(CommPaidToDate);
+																				double CommsNetDue = invoiceDetail.Field<double>("CommsNetDue");
+																				//double CommsDue = invoiceDetail.Field<double>("Comm. Due");
+																				string? TransactionType = invoiceDetail.Field<string?>("Transaction Type");
+																				int? EndorsementNumber = invoiceDetail.Field<int?>("EndorsementNumber");
+																				double CommsDue = CommissionAmt - Convert.ToDouble(CommPaidToDate);
+																				TotalPolicyNetAmount += net;
+																				TotalPolicyDueAmount += RemainingBalance;
+
+																				<tr>
+																					<!-- Line Item Description -->
+																					<td class="border-bottom-1 fw-400" style="min-width: 115px;">
+																						@if (TransactionType == MasterLookup._EITransactionTypes.END && EndorsementNumber.HasValue && EndorsementNumber > 0 && IsSimplifiedView)
+																						{
+																							string Endorsement = invoiceDetail["LineItemDescription"]?.ToString();
+																							Endorsement = Endorsement.Replace("END Premium", $"END #{EndorsementNumber.Value} Premium");
+																							<div class="ps-35">@Endorsement</div>
+																						}
+																						else
+																						{
+																							<div class="ps-35">@invoiceDetail["LineItemDescription"]</div>
+																						}
+																					</td>
+
+																					<!-- Id # -->
+																					<td class="border-bottom-1">@invoiceDetail["IdNo"]</td>
+
+																					<!-- Eff. Date -->
+																					<td class="border-bottom-1">
+																						@Convert.ToDateTime(invoiceDetail["EffectiveDate"]).ToString(MasterLookup._ServerDateFormat)
+																					</td>
+
+																					<!-- Comm. Premium -->
+																					<td class="border-bottom-1" align="right">
+																						@if (invoiceDetail["LineItemDescription"]?.ToString() == "Comm. Paid")
+																						{
+																							@("-")
+																						}
+																						else
+																						{
+																							@(net < 0
+																															? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(net), false, 2)})"
+																															: CommonUtility.ConvertToCurrencyFormat(net, false, 2))
+																}
+																					</td>
+
+																					<!-- Premium Collected -->
+																					<td class="border-bottom-1" align="right">
+																						@if (invoiceDetail["LineItemDescription"]?.ToString() == "Comm. Paid")
+																						{
+																							@("-")
+																						}
+																						else
+																						{
+																							@(premiumCollected < 0
+																															? $"({CommonUtility.ConvertToCurrencyFormat((double)Math.Abs(premiumCollected), false, 2)})"
+																															: CommonUtility.ConvertToCurrencyFormat((double)premiumCollected, false, 2))
+																}
+																					</td>
+
+																					<!-- Comm. % -->
+																					<td class="border-bottom-1" align="right">
+																						@if (invoiceDetail["LineItemDescription"]?.ToString() == "Comm. Paid")
+																						{
+																							@("-")
+																						}
+																						else
+																						{
+																							@($"{commPerc:F2} %")
+																						}
+																					</td>
+
+																					<!-- Column 7: Comm. / Comms. / Comm. Net Due depending on view & row -->
+																					<td class="border-bottom-1" align="right">
+																						@if (IsSimplifiedView)
+																						{
+																							<!-- Simplified: Comm. Due / Net Due -->
+																							@(CommsNetDue < 0
+																															? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(CommsNetDue), false, 2)})"
+																															: CommonUtility.ConvertToCurrencyFormat(CommsNetDue, false, 2))
+																}
+																						else
+																						{
+																							<!-- Full view: if Comm. Paid row, still show CommsNetDue; else Comms (CommissionAmt) -->
+																							@if (invoiceDetail["LineItemDescription"]?.ToString() == "Comm. Paid")
+																							{
+																								@(CommsNetDue < 0
+																																? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(CommsNetDue), false, 2)})"
+																																: CommonUtility.ConvertToCurrencyFormat(CommsNetDue, false, 2))
+																}
+																							else
+																							{
+																								@(CommissionAmt < 0
+																																? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(CommissionAmt), false, 2)})"
+																																: CommonUtility.ConvertToCurrencyFormat(CommissionAmt, false, 2))
+																}
+																						}
+																					</td>
+
+																					<!-- Column 8: Comm. Paid to Date – ONLY Simplified View -->
+																					@if (IsSimplifiedView)
+																					{
+																						<td class="border-bottom-1" align="right">
+																							@if (invoiceDetail["LineItemDescription"]?.ToString() == "Comm. Paid")
+																							{
+																								@("-")
+																							}
+																							else
+																							{
+																								@(CommPaidToDate < 0
+																																? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(Convert.ToDouble(CommPaidToDate)), false, 2)})"
+																																: CommonUtility.ConvertToCurrencyFormat(Convert.ToDouble(CommPaidToDate), false, 2))
+																}
+																						</td>
+
+																						<td class="border-bottom-1" align="right">
+																							@if (invoiceDetail["LineItemDescription"]?.ToString() == "Comm. Paid")
+																							{
+																								@("-")
+																							}
+																							else
+																							{
+																								@(CommsDue < 0
+																																? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(Convert.ToDouble(CommsDue)), false, 2)})"
+																																: CommonUtility.ConvertToCurrencyFormat(Convert.ToDouble(CommsDue), false, 2))
+																}
+																						</td>
+																					}
+																				</tr>
+
+																			}
+
+																			var invoiceDueDate = invoiceDetailsList.FirstOrDefault()?.Field<DateTime>("DueDate") ?? DateTime.Now;
+																			if (rowCount > 0)
+																			{
+																				<tr class="simplified-block">
+																					<!-- Column 1: Inv. Balance -->
+																					<td align="left" class="border-right-1 border-top-1 border-bottom-1">
+																						<span class="fw-semibold">Inv. Balance</span>
+																					</td>
+
+																					<!-- Column 2: Id # - Empty -->
+																					<td class="border-top-1 border-bottom-1" width="18%"></td>
+
+																					<!-- Column 3: Eff. Date - Empty -->
+																					<td class="border-top-1 border-bottom-1"></td>
+
+																					<!-- Column 4: Comm. Premium - Empty -->
+																					<td class="border-top-1 border-bottom-1" align="right"></td>
+
+																					<!-- Column 5: Premium Collected - Empty -->
+																					<td class="border-top-1 border-bottom-1" align="right"></td>
+
+																					<!-- Column 6: Comm. % - Empty -->
+																					<td class="border-top-1 border-bottom-1" align="right"></td>
+
+																					<!-- Column 7: Comm. - Empty -->
+																					@if (!IsSimplifiedView)
+																					{
+																						<td class="border-top-1 border-bottom-1" align="right">
+																							<div class="fw-medium border-top-dark pt-8">
+																								@{
+																									TotalCommsNetDue = invoiceDetailsList.Sum(r => r.Field<double>("CommsNetDue"));
+																									double RoundedDue = Math.Round(TotalCommsNetDue, 2);
+																									string TotalDisplayCommsNetDue = (RoundedDue == 0.00)
+																									? "$0.00"
+																									: (RoundedDue < 0
+																									? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(RoundedDue), false, 2)})"
+																									: CommonUtility.ConvertToCurrencyFormat(RoundedDue, false, 2));
+																								}
+																								@TotalDisplayCommsNetDue
+																							</div>
+																						</td>
+																					}
+																					<!-- Column 8: Comm. Paid to Date - TOTAL (Simplified Only) -->
+																					<td class="border-top-1 border-bottom-1" align="right"></td>
+																					<!-- Column 9: Comm. Due - TOTAL (Your existing code) -->
+																					@if (IsSimplifiedView)
+																					{
+																						<td class="border-top-1 border-bottom-1" align="right">
+																							<div class="fw-medium border-top-dark pt-8">
+																								@{
+																									TotalCommsNetDue = invoiceDetailsList.Sum(r => r.Field<double>("Comm. Due"));
+																									double RoundedDue = Math.Round(TotalCommsNetDue, 2);
+																									string TotalDisplayCommsNetDue = (RoundedDue == 0.00)
+																									? "$0.00"
+																									: (RoundedDue < 0
+																									? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(RoundedDue), false, 2)})"
+																									: CommonUtility.ConvertToCurrencyFormat(RoundedDue, false, 2));
+																								}
+																								@TotalDisplayCommsNetDue
+																							</div>
+																						</td>
+																					}
+																				</tr>
+
+																			}
+																		}
+																		catch (Exception ex)
+																		{
+
+																			throw;
+																		}
+																	}
+
+																}
+
+															}
+														}
+
+													</tbody>
+												</table>
+												<table style="position:absolute;bottom:0;" width="97.5%">
+													<tbody>
+														@{
+															var invoiceDetailList = Model[1].DataTable.AsEnumerable().Where(r => r.Field<string>("PolicyNumber").Trim() == agencyPolicy["PolicyNumber"].ToString().Trim());
+
+															//agencyPolicy["CarrierName"].ToString();
+															//agencyPolicy["InsuredName"].ToString();
+															if (invoiceDetailList.Any())
+															{
+																var policyRow = invoiceDetailList.FirstOrDefault();
+																long policyDetailsId = policyRow.Field<long>("Id");
+																var invoiceList = Model[3].DataTable.AsEnumerable().Where(r => r.Field<long>("PolicyDetails_Id") == policyDetailsId);
+																var invoiceIds = invoiceList.GroupBy(r => r.Field<string>("PolicyNumber")).Select(g => g.Key);
+																foreach (var invoiceId in invoiceIds)
+																{
+																	//var invoiceDetailsList = Model[3].DataTable.AsEnumerable().Where(r => r.Field<string>("PolicyNumber") == invoiceId);
+
+																	var invoiceDetailsList = Model[3].DataTable.AsEnumerable()
+																	.Where(r => r.Field<string>("PolicyNumber") == invoiceId
+																	&& r.Field<string>("Carrier") == agencyPolicy["CarrierName"].ToString()
+																	&& r.Field<string>("Insured Name") == agencyPolicy["InsuredName"].ToString());
+
+																	DataTable tempinvoiceDetailsList = null;
+																	if (invoiceDetailsList.Any())
+																	{
+																		tempinvoiceDetailsList = invoiceDetailsList.CopyToDataTable();
+																	}
+																	else
+																	{
+																		tempinvoiceDetailsList = Model[3].DataTable.Clone(); // returns empty table with same schema
+																	}
+
+																	int rowCount = invoiceDetailsList.Count();
+																	if (rowCount > 0)
+																	{
+																		<tr>
+																			<td align="left" class="border-top-1">
+																				<span class="fw-semibold">Balance Due</span>
+																			</td>
+																			<td class="border-top-1" width="18%"></td>
+																			<td class="border-top-1" align="right" width="12%">
+																			</td>
+																			<td class="border-top-1" align="right" width="12%">
+																			</td>
+																			<td class="border-top-1" align="right" width="12%">
+																			</td>
+																			<td class="border-top-1" align="right" width="12%">
+																				<div class="fw-medium border-top-dark pt-8">
+																					@{
+
+
+																						@if (!IsSimplifiedView)
+																						{
+																							TotalCommsNetDue = invoiceDetailsList.Sum(r => r.Field<double>("CommsNetDue"));
+																						}
+																						else
+																						{
+																							TotalCommsNetDue = invoiceDetailsList.Sum(r => r.Field<double>("Comm.") - Convert.ToDouble(r.Field<decimal>("Comm. Paid to Date")));
+																						}
+
+																						double RoundedDue = Math.Round(TotalCommsNetDue, 2);
+																						var TotalDisplayCommsNetDue = (RoundedDue == 0.00)
+																						? "$0.00" // no parentheses if zero or negative zero
+																						: (RoundedDue < 0
+																						? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(RoundedDue), false, 2)})" // parentheses if negative and not zero
+																						: CommonUtility.ConvertToCurrencyFormat(RoundedDue, false, 2)); // normal display if positive
+																					}
+																					@TotalDisplayCommsNetDue
+																				</div>
+																			</td>
+																		</tr>
+																	}
+																}
+
+															}
+														}
+													</tbody>
+												</table>
+											</td>
+										</tr>
+										<tr><td height="12" class="p-0"></td></tr>
+									}
+								}
+								@if (!IsSimplifiedView)
+								{
+									UnderwriterCommsNetDueTotal += PolicyCommsNetDueTotal;
+								}
+								else
+								{
+									UnderwriterCommsNetDueTotal += TotalCommsNetDue;
+								}
+							}
+						}
+					}
+				</table>
+			</div>
+			if (isInvoicesExist)
+			{
+				<table width="100%" class="fs-12 lh-18 pd-table" cellpadding="0" border="0" cellspacing="0">
+					<tbody>
+						<tr>
+							<td rowspan="2" style="width:200px;">
+								<div><span class="fw-semibold fs-14">Comm. Net Due Total</span></div>
+							</td>
+							<td colspan="6"></td>
+							<td class="fw-semibold fs-14" align="right">NET DUE</td>
+							<td></td>
+						</tr>
+						<tr>
+							<td class="fw-400" colspan="6"></td>
+							<td class="fw-semibold fs-14 pt-0 pb-0" align="right">
+								<div class="pt-8 pb-8" style="border-top:4px solid #000; border-bottom:4px solid #000; width:100px;">
+									@{
+										var agencyNetDueDisplay = UnderwriterCommsNetDueTotal < 0
+										? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(UnderwriterCommsNetDueTotal), false, 2)})"
+										: CommonUtility.ConvertToCurrencyFormat(UnderwriterCommsNetDueTotal, false, 2);
+									}
+									@agencyNetDueDisplay
+									@* {{TotalNetDue}} *@
+								</div>
+							</td>
+							<td align="right"></td>
+						</tr>
+					</tbody>
+				</table>
+				<table width="100%">
+					<tr>
+						<td style="text-align:center; background-color:white;padding:3px 12px;font-weight:normal; font-size:18px; color:red; border:dashed 2px red">
+							<strong>Total Commission due to Underwriter this Month</strong>
+						</td>
+					</tr>
+					<tr><td height="12" class="p-0"></td></tr>
+				</table>
+				@if (counter < Model[0].DataTable.Rows.Count @* - 1 *@ )
+				{
+					<div class="page-break"></div>
+				}
+			}
+			counter++;
+		}
+
+
+	}
+
+
+	@* <table width="100%" class="fs-12 lh-18 pd-table" cellpadding="0" border="0" cellspacing="0">
+		<tbody>
+			<tr>
+				<td rowspan="2" style="width:200px;">
+					<div><span class="fw-semibold fs-14">Comm. Net Due Total</span></div>
+				</td>
+				<td colspan="6"></td>
+				<td class="fw-semibold fs-14" align="right">NET DUE</td>
+				<td></td>
+			</tr>
+			<tr>
+				<td class="fw-400" colspan="6"></td>
+				<td class="fw-semibold fs-14 pt-0 pb-0" align="right">
+					<div class="pt-8 pb-8" style="border-top:4px solid #000; border-bottom:4px solid #000; width:100px;">                                                  {{TotalNetDue}}                                              </div>
+				</td>
+				<td align="right"></td>
+			</tr>
+		</tbody>
+	</table>
+	<table width="100%">
+		<tr>
+			<td style="text-align:center; background-color:white;padding:16px 12px;font-weight:normal; font-size:18px; color:red; border:dashed 2px red">
+				<strong>Total Commission due to Agency this Month</strong>
+			</td>
+		</tr>
+		<tr><td height="12" class="p-0"></td></tr>
+	</table> *@
+}
+<!-- ... report markup ... -->
+<script>
+	function processInvoiceRows() {
+		$(".policy-block").each(function (blockIndex, block) {
+			var invoiceRows = $(block).find("tr.invoiceIdList");
+			if (invoiceRows.length === 0) {
+				$(block).hide();
+				$(block).prev("table").hide();
+			} else {
+				$(block).show();
+				$(block).prev("table").show();
+			}
+		});
+	}
+
+	$(document).ready(function () {
+		processInvoiceRows();
+
+		$(document).on("click", "[data-name='btnLoadReport']", function () {
+			processInvoiceRows();
+		});
+	});
+</script>
+
+
+
+
+
+<style>
+	[data-name="ReportView"] {
+		overflow: auto;
+		min-height: 541.2px;
+		max-height: 390px !important;
+	}
+
+	.policy-block tr,
+	.policy-block tbody {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	.policy-block {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+		display: block;
+	}
+</style>

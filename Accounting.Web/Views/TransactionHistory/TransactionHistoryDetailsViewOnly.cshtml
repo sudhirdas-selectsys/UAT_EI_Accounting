@@ -1,0 +1,90 @@
+﻿@model TransactionHistory
+<div class="row">
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Transaction ID</label>
+			<span>@Model?.PaymentApplicationLineItem_Id</span>
+		</div>
+	</div>
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Policy Number</label>
+			<span>@Model?.PolicyNumber</span>
+		</div>
+	</div>
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Invoice #</label>
+			<span>@Model?.InvoiceNo</span>
+		</div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Transaction Date</label>
+			<span>@Model?.TransactionDate?.ToShortDateString()</span>
+		</div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Payor/Payee Name</label>
+			<span>@Model?.EntityName</span>
+		</div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Agency Name</label>
+			<span>@Model?.AgentName</span>
+		</div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Transaction Type</label>
+			<td>@LookupUtility.GetAllDirections().FirstOrDefault(x => x.Direction_Id == Model?.Direction_Id)?.Name</td>
+		</div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Payment Method</label>
+			<span>@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == Model?.PaymentType_Id)?.Name</span>
+		</div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Reference Number</label>
+			<span>@Model?.ReferenceNumber</span>
+		</div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Amount Paid/Received</label>
+			<span>@CommonUtility.ConvertToCurrencyFormat(Model?.AppliedAmount, false, 2)</span>
+		</div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Bank Account</label>
+			<span>@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == Model?.OperatingBank_Id)?.Name</span>
+		</div>
+	</div>
+
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Status</label>
+			<span>@LookupUtility.GetAllPaymentStatus().FirstOrDefault(x => x.PaymentStatus_Id == Model?.PaymentStatus_Id)?.Name</span>
+		</div>
+	</div>
+	<div class="col-sm-6">
+		<div class="data-item">
+			<label>Payment Direction</label>
+			<span>@LookupUtility.GetAllPaymentDirections().FirstOrDefault(x => x.PaymentDirection_Id == Model?.PaymentDirection_Id)?.Name</span>
+		</div>
+	</div>
+</div>

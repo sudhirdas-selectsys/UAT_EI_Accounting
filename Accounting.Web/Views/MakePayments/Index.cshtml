@@ -1,0 +1,864 @@
+﻿@{
+    var EntityTypes = LookupUtility.GetAllEntityTypes();
+    var ClientLineItemIds = ViewBag.ClientLineItemIds != null ? (List<long>)ViewBag.ClientLineItemIds : new List<long>();
+    var Report_Id = ViewBag.Report_Id;
+    var FileType_Id = ViewBag.FileType_Id;
+    var Directions = ViewBag.ClientDirections;
+    var isSuperAdmin = ViewBag.IsSuperAdmin;
+}
+
+<div data-name="MakePaymentsContainer">
+    <div class="search-filters mb-2 position-relative">
+        <div class="row position-relative">
+            <div>
+                <form data-name="frmAdditionalFilters">
+                    <input type="hidden"
+                           id="InvoiceDate"
+                           name="InvoiceDate"
+                           value="InvoiceCreatedDate" />
+                    <div class="row align-items-start" data-name="FilterSection">
+
+                        <div class="col-md-12">
+                            <div class="d-flex gap-3">
+                                <div class="form-check mb-0">
+                                    <input type="radio" name="DateType" data-date-type="CreatedDate" value="Created" class="form-check-input" checked />
+                                    <label class="form-check-label">
+                                        Created Date
+                                    </label>
+                                </div>
+                                <div class="form-check mb-0">
+                                    <input type="radio" name="DateType" data-date-type="EffectiveDate" value="Effective" class="form-check-input" />
+                                    <label class="form-check-label">
+                                        Effective Date
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row col-md-12">
+
+
+                            <div class="col-md-3">
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payee Type:</label>
+                                    <div class="col-12 col-xl-7">
+                                        <select class="form-select" name="EntityType_Id" data-name="EntityType_Id">
+                                            <option value="">Select</option>
+                                            @{
+                                                foreach (var item in EntityTypes)
+                                                {
+                                                    <option value="@item.EntityType_Id">@item.Name</option>
+                                                }
+                                            }
+                                        </select>
+
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payee Name:</label>
+                                    <div class="col-12 col-xl-7">
+                                        <input type="text" class="form-control ui-autocomplete-input" data-name="EntityName" placeholder="EntityName" name="EntityName" maxlength="100">
+                                        <input type="hidden" name="Entity_Id" data-name="Entity_Id" value="" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-6 col-form-label col-form-label-sm text-end">Amount Due Based on:</label>
+                                    <div class="col-xl-6">
+                                        <select class="form-select" name="AmountDueBasedOnType_Id" data-name="AmountDueBasedOnType_Id">
+                                            @* <option value="">Select</option>  *@
+                                            @{
+                                                var amountdue = LookupUtility.GetAmountDueBasedOnTypes();
+                                                if (amountdue?.Count() > 0)
+                                                {
+                                                    foreach (var item in amountdue)
+                                                    {
+                                                        <option value="@item.AmountDueBasedOnType_Id">@item.Name</option>
+                                                    }
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Line Items:</label>
+                                    <div class="col-12 col-xl-7">
+
+
+                                        <div class="position-relative custom-multi-selection line-items-dropdown">
+                                            <button class="form-select text-start d-flex align-items-center flex-wrap gap-2 pd-r-28 show" type="button" data-bs-toggle="dropdown" aria-expanded="true" data-bs-auto-close="outside" title=""> <span class="default-text">Select</span> </button>
+                                            <ul class="dropdown-menu w-100"
+                                                style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate(0px, 29px);"
+                                                data-popper-placement="bottom-start">
+                                                <input type="hidden" name="LineItemList" value="@Model?.LineItemList" />
+                                                @{
+                                                    var lineItems = LookupUtility.GetAllLineItems().Where(x => ClientLineItemIds.Contains(x.LineItem_Id)).ToList();
+
+                                                    string LineItemList = Convert.ToString(Model?.LineItemList) ?? "";
+
+                                                    var selectedLineItemIds = LineItemList.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList();
+                                                    if (lineItems?.Count() > 0)
+                                                    {
+                                                        foreach (var item in lineItems)
+                                                        {
+                                                            bool isChecked = selectedLineItemIds.Contains(item.LineItem_Id.ToString());
+
+                                                            <li class="dropdown-item">
+                                                                <input class="form-check-input"
+                                                                       type="checkbox"
+                                                                       data-name="lineitem-options"
+                                                                       name="LineItemIds"
+                                                                       data-lineitem-id="@item.LineItem_Id"
+                                                                       id="lineItem_@item.LineItem_Id"
+                                                                       value="@item.Name"
+                                                                @(isChecked ? "checked" : "") />
+
+                                                                <label class="form-check-label ms-2" title="@item.Name"
+                                                                       for="lineItem_@item.LineItem_Id">
+                                                                    @item.Name
+                                                                </label>
+                                                            </li>
+                                                        }
+                                                    }
+                                                }
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        </div>
+
+
+                        <div class="row col-md-12">
+
+                            <div class="col-md-3">
+                                <div class="row mx-0 my-1">
+                                    <label id="fromDateLabel"
+                                           class="col-12 col-xl-5 col-form-label col-form-label-sm">
+                                        Created From Date:
+                                    </label>
+
+                                    <div class="col-12 col-xl-7">
+                                        <div style="position: relative;">
+
+                                            <input type="text"
+                                                   class="form-control form-control-sm date-picker"
+                                                   id="fromDate"
+                                                   name="InvoiceCreatedFromDate"
+                                                   placeholder="Created From Date"
+                                                   style="padding-right: 40px; cursor: pointer;">
+
+                                            <span class="calendarIcon" style="
+                        position: absolute;
+                        right: 10px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        cursor: pointer;
+                        color: #6c757d;">
+                                                <i class="fa fa-calendar"></i>
+                                            </span>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <div class="row mx-0 my-1">
+                                    <label id="toDateLabel"
+                                           class="col-12 col-xl-5 col-form-label col-form-label-sm">
+                                        Created To Date:
+                                    </label>
+
+                                    <div class="col-12 col-xl-7">
+                                        <div style="position: relative;">
+
+                                            <input type="text"
+                                                   class="form-control form-control-sm date-picker"
+                                                   id="toDate"
+                                                   name="InvoiceCreatedToDate"
+                                                   placeholder="Created To Date"
+                                                   style="padding-right: 40px; cursor: pointer;">
+
+                                            <span class="calendarIcon" style="
+                        position: absolute;
+                        right: 10px;
+                        top: 50%;
+                        transform: translateY(-50%);
+                        cursor: pointer;
+                        color: #6c757d;">
+                                                <i class="fa fa-calendar"></i>
+                                            </span>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-6 col-form-label col-form-label-sm text-end">Direction :</label>
+                                    <div class="col-12 col-xl-6">
+                                        <select class="form-select" name="Direction_Id" data-name="Direction_Id">
+                                            <option value="">Select</option>
+                                            @{
+                                                foreach (var item in Directions)
+                                                {
+                                                    <option value="@item.Direction_Id" selected="@(item.Direction_Id == MasterLookup._Directions.AP)">@item.Name</option>
+                                                }
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                           
+                            
+
+                            <div class="col-md-3">
+                                <div class="row mx-0 my-1">
+                                    <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Agency Name:</label>
+                                    <div class="col-12 col-xl-7">
+                                        <div class="custom-input-group w-100">
+                                            <input type="text" class="form-control ui-autocomplete-input" data-name="AgencyName" placeholder="Agency Name" autocomplete="off" name="AgencyName" maxlength="100">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+
+
+
+
+
+
+                    <div class="row col-md-12">
+                        <div class="col-md-3">
+                            <div class="row mx-0 my-1">
+                                <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Policy Number:</label>
+                                <div class="col-12 col-xl-7">
+                                    <input type="text" class="form-control ui-autocomplete-input" data-name="PolicyNumber" placeholder="Policy Number" autocomplete="off" name="PolicyNumber" maxlength="100">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            @* <div class="col-md-3"> *@
+
+                            <div class="row mx-0 my-1">
+                                <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Insured Name:</label>
+                                <div class="col-12 col-xl-7">
+                                    <input type="text" class="form-control ui-autocomplete-input" data-name="InsuredName" placeholder="Insured name" autocomplete="off" name="InsuredName" maxlength="100">
+                                </div>
+                            </div>
+
+
+                        </div>
+
+                        <div class="col-md-3">
+                            <div class="row mx-0 my-1">
+                                <label class="col-12 col-xl-6 col-form-label col-form-label-sm">
+                                    Payment Booked Date:
+                                </label>
+
+                                <div class="col-12 col-xl-6">
+                                    <div style="position: relative;">
+
+                                        <input type="text"
+                                               class="form-control form-control-sm"
+                                               id="PaymentBookedDate"
+                                               name="PaymentBookedDate"
+                                               placeholder="Payment Booked Date"
+                                               style="padding-right: 40px; cursor: pointer;">
+
+                                        <!-- Calendar icon -->
+                                        <span class="paymentBookedDateIcon" style="
+                                            position: absolute;
+                                            right: 10px;
+                                            top: 50%;
+                                            transform: translateY(-50%);
+                                            cursor: pointer;
+                                            color: #6c757d;">
+                                            <i class="fa fa-calendar"></i>
+                                        </span>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            @*  <div class="col-md-3"> *@
+
+                            <div class="row mx-0 my-1">
+                                <label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Invoices #:</label>
+                                <div class="col-12 col-xl-7">
+                                    <input type="text" class="form-control ui-autocomplete-input" data-name="InvoiceNo" placeholder="Invoice" autocomplete="off" name="InvoiceNo" maxlength="100">
+
+                                </div>
+                            </div>
+
+                            @*  </div> *@
+                        </div>
+
+
+
+
+
+                    </div>
+
+
+
+
+
+
+
+
+
+
+                    <div class="row px-4">
+
+                        <div class="col-sm-6 px-0">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="OutstandingBalances" id="OutstandingBalances" value="true" checked="checked" />
+                                <label for="OutstandingBalances">Outstanding Balances</label>
+                            </div>
+                        </div>
+
+
+                        <div class="col-sm-6 text-end px-0">
+                            <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnClearSelections"><i class="ri-loop-left-line me-1"></i>Clear Selection</button>
+                            @* @if (isSuperAdmin)
+                            { *@
+                                <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnBatchBill">Batch Status</button>
+                            @* }    *@                         
+                            <button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnReset"><i class="ri-loop-left-line me-1"></i>Reset</button>
+                            <button type="button" class="btn btn-primary btn-sm fw-medium" data-name="btnApplyFilters"><i class="ri-search-2-line me-1"></i>Search</button>
+                        </div>
+
+                    </div>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="text-primary expandall" data-name="btnExpandAll"><i class="ri-arrow-down-double-line"></i> <span class="text-decoration-underline">Expand All</span></div>
+                        <div class="text-primary collapseall" data-name="btnCollapseall"><i class="ri-arrow-up-double-line"></i> <span class="text-decoration-underline">Collapse All</span></div>
+                    </div>
+                    <input type="hidden" name="pageIndex" value="1" />
+                    <input type="hidden" name="pageSize" value="20" />
+                </form>
+                <form data-name="frmSearch">
+                    <input type="hidden" name="Direction_Id" data-name="Direction_Id" value="@MasterLookup._Directions.AP" />
+                </form>
+            </div>
+            <div class="position-relative table-scroll" id="payment-container">
+                <div class="position-absolute animate transaction-table-skeleton"
+                     style="overflow: hidden; inset: 0; z-index: 9999; background: #fff; display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-loading ei-table mb-0 no-wrap">
+                            <thead>
+                                <tr>
+                                    <th class="loading" style="width: 120px;"></th>
+                                    <th class="loading" style="width: 140px;"></th>
+                                    <th class="loading" style="width: 150px;"></th>
+                                    <th class="loading" style="width: 180px;"></th>
+                                    <th class="loading" style="width: 160px;"></th>
+                                    <th class="loading" style="width: 130px;"></th>
+                                    <th class="loading" style="width: 150px;"></th>
+                                    <th class="loading" style="width: 160px;"></th>
+                                    <th class="loading" style="width: 150px;"></th>
+                                    <th class="loading" style="width: 80px;"></th>
+                                </tr>
+                                <tr>
+                                    <td class="loading" style="height: 30px;"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="loading" style="height: 58px;"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                </tr>
+                                <tr>
+                                    <td class="loading" style="height: 58px;"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                </tr>
+                                <tr>
+                                    <td class="loading" style="height: 58px;"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                </tr>
+                                <tr>
+                                    <td class="loading" style="height: 58px;"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                </tr>
+                                <tr>
+                                    <td class="loading" style="height: 58px;"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                    <td class="loading"></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="d-flex justify-content-between tbl-pagination mt-3">
+                        <div class="loading" style="width: 160px; height: 32px; border-radius: 4px;"></div>
+                        <div class="pagination loading" style="width: 220px; height: 32px; border-radius: 4px;"></div>
+                    </div>
+                </div>
+
+                <div data-name="LoadAgencyContainer">
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+    <div data-name="divAccountsMakePaymentsGrid"></div>
+</div>
+
+<link href="~/css/accountspayable.css" rel="stylesheet" asp-append-version="true" />
+<link href="/css/dashboard.css" rel="stylesheet" type="text/css" asp-append-version="true" />
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flat
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+<style>
+
+    .flex-1 {
+        flex: 1
+    }
+
+    .agency {
+        background: RGB(238, 238, 255, 1);
+        padding: 10px;
+    }
+
+        .agency .table-responsive {
+            padding-left: 2rem
+        }
+
+    .payee-form .form-control,
+    .payee-form .form-select {
+        min-width: 175px;
+        width: 175px
+    }
+
+    .payee-form label {
+        max-width: 150px;
+        height: 30px;
+        line-height: inherit !important;
+    }
+
+    .text-primary {
+        color: rgba(108, 87, 217, 1) !important;
+        cursor: pointer;
+    }
+
+    .fz-13 {
+        font-size: 13px;
+    }
+
+    .agency-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .agency-details {
+        cursor: pointer;
+    }
+
+        .agency-details[aria-expanded="false"] i {
+            transform: rotate(180deg);
+            display: inline-block;
+        }
+
+    .agency .chip {
+        background: #fff;
+        padding: 3px 10px;
+        color: #333
+    }
+
+    .btn-payment {
+        padding: 1px 10px;
+        border-radius: 25px;
+    }
+
+    .collapse-icon {
+        background: rgba(255, 255, 255, 0.5);
+        width: 24px;
+        height: 24px;
+        text-align: center;
+        border-radius: 100%;
+    }
+
+    .payment-table {
+        border-color: rgba(200, 199, 234, 1);
+    }
+
+        .payment-table th {
+            background: rgba(212, 212, 251, 1);
+        }
+
+        .payment-table td {
+            vertical-align: middle;
+        }
+
+            .payment-table td:first-child {
+                text-align: center;
+            }
+
+        .payment-table .small {
+            font-size: 12px;
+            color: rgba(51, 51, 51, 0.7);
+        }
+
+        .payment-table .form-check {
+            margin-bottom: 6px;
+            padding: 0;
+            text-align: center;
+        }
+
+        .payment-table .form-check-input {
+            margin: 0 !important;
+            float: none !important;
+            transform: scale(1.5);
+            margin-top: 3px !important;
+        }
+
+    .info span, .info label {
+        white-space: nowrap;
+    }
+
+    .btn-payment {
+        white-space: nowrap;
+        font-size: 12px;
+    }
+
+    .paymentModal .modal-content {
+        padding: 1.5rem;
+    }
+
+    .paymentModal .card-title {
+        font-weight: 600;
+        color: rgba(108, 87, 217, 1);
+        font-size: 1rem;
+        border-bottom: 1px solid rgba(236, 236, 236, 1);
+        padding-bottom: 8px;
+        margin: 0;
+    }
+
+    .paymentModal .modal-body {
+        padding: 1rem 0 0;
+    }
+
+    .paymentModal .card-body {
+        box-shadow: 0px 4px 4px 0px rgba(60, 45, 137, 0.15);
+        padding: 12px !important;
+        border-radius: 5px;
+    }
+
+    .alert-warning {
+        background: rgba(255, 246, 228, 1) !important;
+        font-size: 12px;
+        color: #333;
+        border: transparent;
+        padding: 10px;
+    }
+
+    .pay-btn-large {
+        background: rgba(108, 87, 217, 1) !important;
+        font-weight: 600;
+        padding: 10px;
+        width: 100%
+    }
+
+    .trailing-text {
+        color: rgba(51, 51, 51, 0.65);
+    }
+
+    .paymentModal .btn-outline-primary {
+        height: 42px;
+        border-radius: 5px !important;
+        width: 100%;
+    }
+
+    @@media(max-width:767px) {
+        .info {
+            flex-wrap: wrap;
+            /* flex-direction: column; */
+            align-items: start !important;
+            gap: 10px !important;
+            padding: 0 !important;
+        }
+
+        .agency .table-responsive {
+            padding-left: 0;
+        }
+
+        td:last-child {
+            width: 100px;
+        }
+
+            td:last-child .form-control {
+                width: 100%
+            }
+    }
+
+    @@media(max-width:1023px) {
+        .agency-details {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .info {
+            padding-left: 2rem
+        }
+
+            .info span, .info label {
+                white-space: nowrap;
+            }
+
+        .payment-table {
+            min-width: 992px;
+        }
+
+            .payment-table th:first-child {
+                width: 40px
+            }
+    }
+
+    @@media(min-width:1024px) and (max-width:1199px) {
+        .payee-form label {
+            font-size: 12px;
+        }
+    }
+
+    .disabled-row {
+        background-color: #eaffeb !important; /* Light green */
+    }
+
+        .disabled-row td {
+            background-color: #eaffeb !important;
+        }
+</style>
+<script>
+      function toggleCollapse(action){
+      $('.multi-collapse').each(function () {
+          let bsCollapse = bootstrap.Collapse.getOrCreateInstance(this,{toggle:false});
+          if(action === 'show'){$(this).removeAttr('data-bs-parent').addClass('show'); bsCollapse.show(); }
+          if(action === 'hide') bsCollapse.hide();
+      })
+    }
+    $('.expandall').on('click', () => toggleCollapse('show'));
+    $('.collapseall').on('click', () => toggleCollapse('hide'));
+    $(document).ready(function () {
+        $('.custom-multi-selection .dropdown-item input').on('change', function () {
+    const $dropdown = $(this).closest('.custom-multi-selection');
+    const $button = $dropdown.find('button.form-select');
+    const $defaultText = $button.find('.default-text');
+    const value = $(this).val();
+    const isChecked = $(this).prop('checked');
+    const $countChip = $button.find('.chip-count');
+
+    // Get checked values
+    const $checkedInputs = $dropdown.find('.dropdown-item input:checked');
+    const checkedValues = $checkedInputs.map(function () { return $(this).val(); }).get();
+
+    // Remove all chips before adding new ones (clean rebuild)
+    $button.find('.chip').remove();
+
+    if (checkedValues.length === 0) {
+    $defaultText.show();
+    $button.attr('title', 'Select');
+    return;
+    }
+
+    $defaultText.hide();
+
+    // Add the first selected chip with name
+    const firstValue = checkedValues[0];
+    $button.append(
+    '<div class="chip text-truncate d-inline-flex align-items-center me-1" ' +
+    'data-value="' + firstValue + '" style="max-width: 100px;" title="' + firstValue + '">' +
+    '<span class="chip-text text-truncate">' + firstValue + '</span>' +
+    '<span class="remove-chip ms-2" style="cursor:pointer;">&times;</span>' +
+    '</div>'
+    );
+
+    // Add count chip if more than one selected
+    if (checkedValues.length > 1) {
+    const count = checkedValues.length;
+    $button.append(
+    '<div class="chip pe-2 d-inline-flex align-items-center" ' +
+    'data-count="' + count + '" title="' + count + ' selected" style="cursor: default;">+' + count + '</div>'
+    );
+    }
+
+
+    //
+    // Update title attribute
+    $button.attr('title', 'Selected (' + checkedValues.length + '): ' + checkedValues.join(', '));
+    });
+
+            // On chip remove
+         $(document).on('click', '.remove-chip', function (e) {
+    e.stopPropagation();
+    const $chip = $(this).closest('.chip');
+    const value = $chip.data('value');
+    const $dropdown = $(this).closest('.custom-multi-selection');
+    const $button = $dropdown.find('button.form-select');
+    const $checkbox = $dropdown.find('.dropdown-item input[value="' + value + '"]');
+
+    $checkbox.prop('checked', false).trigger('change');
+    });
+    });
+</script>
+@* <script>LoadAPWithFilters();</script> *@
+<script src="~/js/makepayments.js" asp-append-version="true"></script>
+@* <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script> *@
+
+<script>
+    $(document).ready(function () {
+
+        const paymentPicker = flatpickr("#PaymentBookedDate", {
+            dateFormat: "m/d/Y",
+            maxDate: "today",
+            allowInput: false,
+            clickOpens: true
+        });
+
+        $(".paymentBookedDateIcon").on("click", function () {
+            paymentPicker.open();
+        });
+
+    });
+</script>
+<script>
+    $(document).ready(function () {
+
+        // Flatpickr for From Date
+        const fromPicker = flatpickr("#fromDate", {
+            dateFormat: "m/d/Y",
+            maxDate: "today",
+            allowInput: false,
+            clickOpens: true
+        });
+
+        // Flatpickr for To Date
+        const toPicker = flatpickr("#toDate", {
+            dateFormat: "m/d/Y",
+            maxDate: "today",
+            allowInput: false,
+            clickOpens: true
+        });
+
+        // Open calendar when icon clicked
+        $(".calendarIcon").on("click", function () {
+            $(this).siblings("input").focus();
+        });
+
+           $('input[name="DateType"]').on('change', function () {
+
+        const selectedValue = $(this).val();
+
+        if (selectedValue === "Created") {
+
+            // SP Value
+            $("#InvoiceDate").val("InvoiceCreatedDate");
+
+            // Labels
+            $("#fromDateLabel").text("Created From Date:");
+            $("#toDateLabel").text("Created To Date:");
+
+            // Placeholder
+            $("#fromDate").attr("placeholder", "Created From Date");
+            $("#toDate").attr("placeholder", "Created To Date");
+
+            // IMPORTANT
+            $("#fromDate").attr("name", "InvoiceCreatedFromDate");
+            $("#toDate").attr("name", "InvoiceCreatedToDate");
+
+            // Remove effective names if any
+            $("#fromDate").removeAttr("data-effective");
+            $("#toDate").removeAttr("data-effective");
+        }
+
+        else if (selectedValue === "Effective") {
+
+            // SP Value
+            $("#InvoiceDate").val("InvoiceEffectiveDate");
+
+            // Labels
+            $("#fromDateLabel").text("Effective From Date:");
+            $("#toDateLabel").text("Effective To Date:");
+
+            // Placeholder
+            $("#fromDate").attr("placeholder", "Effective From Date");
+            $("#toDate").attr("placeholder", "Effective To Date");
+
+            // IMPORTANT
+            $("#fromDate").attr("name", "InvoiceEffectiveFromDate");
+            $("#toDate").attr("name", "InvoiceEffectiveToDate");
+        }
+    });
+
+
+    // Initial trigger
+        $('input[name="DateType"]:checked').trigger('change');
+
+
+    });
+</script>

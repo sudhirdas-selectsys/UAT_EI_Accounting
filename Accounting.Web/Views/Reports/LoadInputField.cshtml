@@ -1,0 +1,359 @@
+﻿@model List<LU_SQLInputParameters>
+@{
+	LU_SQLInputParameters inputParameter = ViewBag.inputParameter;
+	string sequence = Convert.ToString(ViewBag.UniqueIdentifier);
+	bool IsParentInput = Model.Any(c => c.Dependency_SQLParameter_Id == inputParameter.SQLParameter_Id);
+	string parameterName = !string.IsNullOrEmpty(inputParameter.DisplayName) ? inputParameter.DisplayName : inputParameter.ParameterName;
+    UserSession userSession = Context.Session.GetObjectFromJson<UserSession>("UserSession");
+    long Report_Id = Convert.ToInt64(ViewBag.Report_Id);
+    // var transactionEffectiveDate = LookupUtility.GetClientSettings(userSession.Client_Id, MasterLookup._ClientSettings.EnableInvoiceProductionReportTransactionEffectiveDate);
+    // bool isTransactionEffectiveEnabled =!string.IsNullOrEmpty(transactionEffectiveDate) && Convert.ToBoolean(transactionEffectiveDate);
+    // bool isTransactionEffectiveParameter =  inputParameter.RangeGroupName == "TransactionEffective";
+    var EnableMultiDropDownForBDXReport = LookupUtility.GetClientSettings(userSession.Client_Id, MasterLookup._ClientSettings.EnableMultiDropdownListForBDXReportGuardian);
+    bool enableMultiDropdownForBDXReport = !string.IsNullOrEmpty(EnableMultiDropDownForBDXReport) && Convert.ToBoolean(EnableMultiDropDownForBDXReport);
+    bool isBDXReport = Report_Id == MasterLookup._Reports.BDXReport;
+    bool isBDXCarrier = inputParameter.DisplayName == "Carrier" && isBDXReport && enableMultiDropdownForBDXReport;
+    var EnableMultiDropDownForInvoiceProductionReport = LookupUtility.GetClientSettings(userSession.Client_Id, MasterLookup._ClientSettings.EnableMultiDropdownForCarrierInInvoiceProduction);
+    bool enableMultiDropdownForInvoiceProductionReport = !string.IsNullOrEmpty(EnableMultiDropDownForInvoiceProductionReport) && Convert.ToBoolean(EnableMultiDropDownForInvoiceProductionReport);
+    bool isInvoiceProductionReport = Report_Id == MasterLookup._Reports.InvoiceProduction;
+    bool isInvoiceProductionCarrier = inputParameter.DisplayName == "Carrier" && isInvoiceProductionReport && enableMultiDropdownForInvoiceProductionReport;
+}
+<div @(!inputParameter.ShowInputField ? "style=display:none;" : "")>
+    @* <input type="hidden" data-name="@(inputParameter.SQLParameter_Id)" name="SQLInputParameters[@sequence].SQLParameter_Id" value="@inputParameter.SQLParameter_Id"> *@
+    <input type="hidden" data-name="@(inputParameter.SQLParameter_Id)" name="SQLInputParameters[@sequence].SQLParameter_Id" value="@inputParameter.SQLParameter_Id">
+    <input type="hidden" name="SQLInputParameters[@sequence].ParameterName" value="@inputParameter.ParameterName" />
+    @{
+        if (inputParameter.HTMLControlType_Id == MasterLookup._LUHTMLControlTypes.Date)
+        {
+            <div class="row">
+                <div class="col-sm-4 pe-0">
+                    <label for="" class="col-form-label col-form-label-sm pe-0">@parameterName</label>
+                </div>
+                <div class="col-sm-8">
+                    <div class="custom-input-group w-100 position-relative">
+						<input class="form-control flatpickr flatpickr-input range-date" type="text" data-parent-group="@inputParameter.RangeGroupName" placeholder="@parameterName" readonly="readonly" data-name="@inputParameter.ParameterName" name="SQLInputParameters[@sequence].InputValue" value="@inputParameter.DefaultValue" @(inputParameter.IsRequired ? "data-val=true" : "") @(!string.IsNullOrEmpty(inputParameter.RangeGroupName) ? $"data-date-range-group={inputParameter.RangeGroupName}_{inputParameter.SQLQuery_Id}" : "") data-val-type="date" data-name="ReportInput_@inputParameter.SQLParameter_Id" data-val-required-dependency='{"Reference":"ReportInput_@inputParameter.Dependency_SQLParameter_IdForRequired","AttributeIdentifier":"data-name","Values":[]}'>
+                        <i class="ri-calendar-line"></i>
+                    </div>
+                    <p class="field-validation-error" data-valmsg-for="SQLInputParameters[@sequence].InputValue"></p>
+                </div>
+            </div>
+        }
+        else if (inputParameter.HTMLControlType_Id == MasterLookup._LUHTMLControlTypes.Select)
+        {
+            <div class="row">
+                <div class="col-sm-4">
+                    <label class="col-form-label col-form-label-sm">@inputParameter.DisplayName</label>
+                </div>
+                <div class="col-sm-8">
+                    @if (inputParameter.DisplayName == "Agent/Broker" || inputParameter.DisplayName == "Company Type" || inputParameter.DisplayName == "Underwriter" ||  isBDXCarrier|| isInvoiceProductionCarrier)
+                    {
+                        //               <select class="form-select form-select-sm" data-name="@inputParameter.ParameterName" name="SQLInputParameters[@sequence].InputValue" @(inputParameter.IsRequired ? "data-val=true" : "")>
+                        //                   @if (string.IsNullOrEmpty(inputParameter.DefaultValue))
+                        //                   {
+                        //                       <option value="@(inputParameter.DefaultValue == "" ? inputParameter.DefaultValue : DBNull.Value)">--Select--</option>
+                        //                   }
+                        //                   @if (inputParameter.DataDictionaryList != null && inputParameter.DataDictionaryList.Count > 0)
+                        //                   {
+                        //                       foreach (var DDItem in inputParameter.DataDictionaryList)
+                        //                       {
+                        //                           <option value="@DDItem.Value" selected="@(!string.IsNullOrEmpty(inputParameter.DefaultValue) && DDItem.Value == inputParameter.DefaultValue)">@DDItem.Name</option>
+                        //                       }
+                        //                   }
+                        // </select>
+
+                        <div class="position-relative custom-multi-selection">
+                            <button class="form-select text-start d-flex align-items-center flex-wrap gap-2 pd-r-28 show"
+                                    type="button"
+                                    data-bs-toggle="dropdown"
+                                    data-bs-auto-close="outside">
+                                <span class="default-text">--Select--</span>
+                            </button>
+
+                            <ul class="dropdown-menu w-100">
+
+
+                                <input type="hidden"
+                                       name="SQLInputParameters[@sequence].InputValue"
+                                       data-name="@inputParameter.ParameterName" />
+
+                                @foreach (var DDItem in inputParameter.DataDictionaryList.Where(x => x != null && !string.IsNullOrWhiteSpace(x.Name)).OrderBy(x => x.Name.Trim()))
+                                {
+                                    <li class="dropdown-item">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               id="@DDItem.Value"
+                                               value="@DDItem.Value" />
+
+                                        <label class="form-check-label ms-2" for="@DDItem.Value">
+                                            @DDItem.Name
+                                        </label>
+                                    </li>
+                                }
+
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <select class="form-select form-select-sm" data-name="@inputParameter.ParameterName" name="SQLInputParameters[@sequence].InputValue" @(inputParameter.IsRequired ? "data-val=true" : "")>
+                            @if (string.IsNullOrEmpty(inputParameter.DefaultValue))
+                            {
+                                <option value="@(inputParameter.DefaultValue == "" ? inputParameter.DefaultValue : DBNull.Value)">--Select--</option>
+                            }
+                            @if (inputParameter.DataDictionaryList != null && inputParameter.DataDictionaryList.Count > 0)
+                            {
+                                foreach (var DDItem in inputParameter.DataDictionaryList)
+                                {
+                                    <option value="@DDItem.Value" selected="@(!string.IsNullOrEmpty(inputParameter.DefaultValue) && DDItem.Value == inputParameter.DefaultValue)">@DDItem.Name</option>
+                                }
+                            }
+                        </select>
+                    }
+                </div>
+
+			</div>
+		}
+		else if (inputParameter.HTMLControlType_Id == MasterLookup._LUHTMLControlTypes.Radiobutton
+		|| inputParameter.HTMLControlType_Id == MasterLookup._LUHTMLControlTypes.Checkbox)
+		{
+			<div>
+				@*<label class="col-form-label col-form-label-sm opacity-0">Filter:</label>*@
+				<div class="row">
+
+					<div class="col-sm-12">
+						<div class="d-flex gap-3">
+							@if (inputParameter.DataDictionaryList != null && inputParameter.DataDictionaryList.Count > 0)
+							{
+								int itemSequence = 0;
+								foreach (var DDItem in inputParameter.DataDictionaryList)
+								{
+                                    // if (DDItem.Value == "TransactionEffective" && !isTransactionEffectiveEnabled)
+                                    // {
+                                    //     continue;
+                                    // }
+
+									@if (inputParameter.HTMLControlType_Id == MasterLookup._LUHTMLControlTypes.Radiobutton)
+									{
+										<div class="form-check mb-0">
+											<input type="radio"
+												   data-sqlparameter-id="@(inputParameter.SQLParameter_Id)"
+												   data-name="@(inputParameter.ParameterName)"
+												   value="@DDItem.Value"
+												   id="@($"SQLInputParameters[{sequence}].InputValue_" + itemSequence)"
+												   name="SQLInputParameters[@sequence].InputValue"
+											@(inputParameter.IsRequired ? "data-val=true" : "")
+											@(itemSequence == 0 ? "checked" : "") class="form-check-input" />
+                                            <label for="@($"SQLInputParameters[{sequence}].InputValue_" + itemSequence)" data-name="@DDItem.Name" class="form-check-label">@DDItem.Name</label>
+										</div>
+									}
+
+
+									else
+									{
+                                        if (inputParameter.DataType_Id == MasterLookup._DataTypes.Boolean && (inputParameter.DefaultValue=="1"))
+                                        {
+										<div class="form-check mb-0 ms-1">
+											<input type="checkbox"
+												   data-name="@(inputParameter.ParameterName)"                                                   
+												   value="true"
+												   id="@($"SQLInputParameters[{sequence}].InputValue_" + itemSequence)"
+												   name="SQLInputParameters[@sequence].InputValue" class="form-check-input"
+											@(inputParameter.IsRequired ? "data-val=true" : "") checked/>
+											<label for="@($"SQLInputParameters[{sequence}].InputValue_" + itemSequence)" class="form-check-label">@DDItem.Name</label>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="form-check mb-0 ms-1">
+                                                <input type="checkbox"
+                                                       data-name="@(inputParameter.ParameterName)"
+                                                       value="true"
+                                                       id="@($"SQLInputParameters[{sequence}].InputValue_" + itemSequence)"
+                                                       name="SQLInputParameters[@sequence].InputValue" class="form-check-input"
+                                                       @(inputParameter.IsRequired ? "data-val=true" : "")/>
+                                                <label for="@($"SQLInputParameters[{sequence}].InputValue_" + itemSequence)" class="form-check-label">@DDItem.Name</label>
+                                            </div>
+                                        }
+                                    }
+
+
+
+									itemSequence++;
+
+								}
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+		}
+		else if (inputParameter.HTMLControlType_Id == MasterLookup._LUHTMLControlTypes.Textarea)
+		{
+			<div class="form-floating">
+				<textarea class="form-control" placeholder="@parameterName" name="SQLInputParameters[@sequence].InputValue" @(inputParameter.IsRequired ? "data-val=true" : "")>@inputParameter.DefaultValue</textarea>
+				<label class="form-label">@parameterName</label>
+			</div>
+		}
+		else if (inputParameter.HTMLControlType_Id == MasterLookup._LUHTMLControlTypes.MultiSelect)
+		{
+			<div class="form-floating custom-dropdown" data-multiselect-type="checkbox" data-multiselect-dropdown-toggle>
+				<input type="text" class="form-control dropdown-toggle" placeholder="@parameterName" name="SQLInputParameters[@sequence].InputValue" value="@inputParameter.DefaultValue" @(inputParameter.IsRequired ? "data-val=true" : "") data-bs-toggle="dropdown" aria-expanded="false" data-multiSelectSeparator="@inputParameter.MultiInputSeparator" data-multiselect-input>
+				<label>@parameterName</label>
+				<img src="~/images/arrow-down.svg" data-name="imgToggleIcon" alt="arrow" width="12" class="arrow-icon">
+				<ul class="dropdown-menu auto" style="width: 100%" data-multiselect-items-panel>
+					<li data-opt-all-items="true" data-multiselect-item>
+						<a class="dropdown-item" href="javascript:void(0);">
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" value="" id="SelectAllItems">
+								<label class="form-check-label" for="SelectAllItems">
+									Select all
+								</label>
+							</div>
+						</a>
+					</li>
+					@{
+						int itemSequence = 0;
+						foreach (var DDItem in inputParameter.DataDictionaryList)
+						{
+							<li value="@(DDItem.Value)" name="@(DDItem.Name)" data-multiselect-item>
+								<a class="dropdown-item" href="javascript:void(0);">
+									<div class="form-check">
+										<input class="form-check-input" type="checkbox" id="@($"SQLInputParameters[{sequence}].InputValue_"+itemSequence)">
+										<label class="form-check-label" for="@($"SQLInputParameters[{sequence}].InputValue_"+itemSequence)">
+											@(DDItem.Name)
+										</label>
+									</div>
+								</a>
+							</li>
+							itemSequence++;
+						}
+					}
+				</ul>
+			</div>
+		}
+		else
+		{
+			<div class="row">
+				<div class="col-sm-4">
+					<label class="col-form-label col-form-label-sm">@parameterName</label>
+				</div>
+				<div class="col-sm-8">
+                    <input type="text" data-name="@inputParameter.ParameterName" class="form-control" placeholder="@parameterName" name="SQLInputParameters[@sequence].InputValue" value="@inputParameter.DefaultValue" @(inputParameter.IsRequired ? "data-val=true" : "")>
+				</div>
+			</div>
+		}
+	}
+</div>
+@if (IsParentInput)
+{
+	<script type="text/javascript">
+		$(document).ready(function () {
+			$("[data-name=@($"{inputParameter.SQLParameter_Id}")]").closest('[data-form-group-item]').each(function () {
+				BindReportFormInputChange(this, '@inputParameter.SQLQuery_Id', '@inputParameter.SQLParameter_Id');
+			});
+		});
+	</script>
+}
+<script>
+    $(document).ready(function () {
+        $('.custom-multi-selection .dropdown-item input').on('change', function () {
+        const $dropdown = $(this).closest('.custom-multi-selection');
+        const $button = $dropdown.find('button.form-select');
+        const $defaultText = $button.find('.default-text');
+        const $hiddenInput = $dropdown.find('input[type="hidden"]');
+
+        // Get checked inputs
+        const $checkedInputs = $dropdown.find('.dropdown-item input:checked');
+
+        
+        const selectedIds = [];
+        const selectedNames = [];
+
+        $checkedInputs.each(function () {
+            selectedIds.push($(this).val()); 
+            selectedNames.push($(this).siblings('label').text().trim()); 
+        });
+
+        
+        $hiddenInput.val(selectedIds.join(','));
+
+        
+        $button.find('.chip').remove();
+
+        if (selectedNames.length === 0) {
+            $defaultText.show();
+            $button.attr('title', 'Select');
+            return;
+        }
+
+        $defaultText.hide();
+      
+         // Show first 2 chips
+        const maxChips = 2;
+        selectedNames.slice(0, maxChips).forEach((name, index) => {
+            const id = selectedIds[index];
+            $button.append(
+                '<div class="chip text-truncate d-inline-flex align-items-center me-1" ' +
+                'data-value="' + id + '" style="max-width: 100px;" title="' + name + '">' +
+                '<span class="chip-text text-truncate">' + name + '</span>' +
+                '<span class="remove-chip ms-2" style="cursor:pointer;">&times;</span>' +
+                '</div>'
+            );
+        });
+
+        // Show +N chip if more than 2 selected
+        if (selectedNames.length > maxChips) {
+            const extraCount = selectedNames.length - maxChips;
+            $button.append(
+                '<div class="chip pe-2 d-inline-flex align-items-center" ' +
+                'data-count="' + extraCount + '" title="' + extraCount + ' more selected" style="cursor: default;">+' + extraCount + '</div>'
+            );
+        }
+
+
+        // Update button title
+        $button.attr('title', 'Selected (' + selectedNames.length + '): ' + selectedNames.join(', '));
+    });
+
+            // On chip remove
+         $(document).on('click', '.remove-chip', function (e) {
+    e.stopPropagation();
+    const $chip = $(this).closest('.chip');
+    const value = $chip.data('value');
+    const $dropdown = $(this).closest('.custom-multi-selection');
+    const $button = $dropdown.find('button.form-select');
+    const $checkbox = $dropdown.find('.dropdown-item input[value="' + value + '"]');
+
+    $checkbox.prop('checked', false).trigger('change');
+    });
+    });
+</script>
+<style>
+    .custom-multi-selection .dropdown-menu {
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+        .custom-multi-selection .dropdown-menu::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .custom-multi-selection .dropdown-menu::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            min-height: 40px;
+        }
+
+        .custom-multi-selection .dropdown-menu::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+    .custom-multi-selection .dropdown-menu {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(0,0,0,0.3) rgba(0,0,0,0.05);
+    }
+
+    .custom-multi-selection .dropdown-item .form-check-label {
+        color: #000 !important; 
+    }
+</style>

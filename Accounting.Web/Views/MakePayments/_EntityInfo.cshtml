@@ -1,0 +1,100 @@
+﻿@model List<PaymentsEntity>
+@{
+    var alldata = Model;
+    var agenciesWithInvoices = Model?
+     .Where(x => !string.IsNullOrEmpty(x.EntityName))
+     .Select(x => new
+     {
+         x.NetDue,
+         x.Entity_Id,
+         EntityTypeId = x.EntityType_Id,
+         x.EntityName,
+         x.EntityTypeName,
+         x.NetOutgoingPaymentDue,
+         x.Direction_Id,
+         x.HasBankInfo
+     })
+     .ToList();
+}
+@if (agenciesWithInvoices != null && agenciesWithInvoices.Any())
+{
+    foreach (var item in agenciesWithInvoices)
+    {
+        var divid = "";
+        var collapseId = $"entity-{item.EntityTypeId}-{item.Entity_Id}";
+        var displayName = item.EntityName;
+        if (item.EntityTypeId == MasterLookup._EntityTypes.State && !string.IsNullOrEmpty(displayName))
+        {
+            divid = $"{displayName.Replace("State of ", "", StringComparison.OrdinalIgnoreCase)}";
+        }
+        else
+        {
+            divid = $"{item.Entity_Id}";
+        }
+        <div class="agency mb-3">
+            <div class="agency-details d-flex justify-content-between" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId" data-entity-Id="@item.Entity_Id" data-entity-type-Id="@item.EntityTypeId" data-payee-name="@item.EntityName">
+                <div class="d-flex align-items-center gap-2 flex-1" data-name="AgencyAccordion" data-entity-Id="@item.Entity_Id" data-entity-type-Id="@item.EntityTypeId" data-payee-name="@item.EntityName">
+                    <div class="collapse-icon"><i class="ri-arrow-up-s-line"></i></div>
+                    Entity Name:<div class="agency-name">@item.EntityName</div> &nbsp;
+                    Entity Type:<div class="agency-name">@item.EntityTypeName</div>&nbsp;
+                    @if(item.EntityTypeId == MasterLookup._EntityTypes.Agency)
+                    {
+                        <span>ACH: <strong class="ms-1">@(item.HasBankInfo ? "Yes" : "No")</strong></span>
+                    }            
+        </div>
+                <div class="d-flex gap-3 align-items-center flex-1 justify-content-between info">
+                    <div class="d-flex gap-2">
+                        <div class="chip" data-name="totaldue">
+                            <span>Due:</span><strong class="text-danger">
+                                @CommonUtility.ConvertToCurrencyFormat((double?)(item.Direction_Id == MasterLookup._Directions.AR
+                                         ? item.NetOutgoingPaymentDue
+                                         : item.NetDue), false, 2)
+                            </strong>
+                        </div>
+                    </div>
+                    <div class="d-flex">
+                        <div class="d-flex align-items-center" data-name="MakePaymentsAmountApplied"><span>Amount Applied:</span> <strong>$00.00</strong></div>
+                    </div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center">
+                            <div class="form-check mb-0 prevent-toggle" data-bs-toggle="collapse">
+                                <input class="form-check-input apply-all" type="checkbox" value="" data-entity-Id="@item.Entity_Id" data-entity-type-id="@item.EntityTypeId" data-name="applyAll"
+                                       data-netdue="@(item.Direction_Id == MasterLookup._Directions.AR
+                                               ? item.NetOutgoingPaymentDue
+                                               : item.NetDue)"
+                                       data-payee-name="@item.EntityName">
+
+                                <label for="@item.Entity_Id">Apply All</label>
+                            </div>
+                        </div>
+                        <button href="javascript:void(0)" class="btn btn-primary btn-sm fw-medium fz-13 btn-payment prevent-toggle" data-bs-toggle="collapse" data-name="btnCreateBill" data-entity_Id="@item.Entity_Id" data-entityType_Id="@item.EntityTypeId" data-amount="@(item.Direction_Id == MasterLookup._Directions.AR
+                                                       ? item.NetOutgoingPaymentDue
+                                                       : item.NetDue)" data-due="@(item.Direction_Id == MasterLookup._Directions.AR
+                                                       ? item.NetOutgoingPaymentDue
+                                                       : item.NetDue)" data-entity-name="@item.EntityName" style=" display:none;">
+                            Create Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="collapse multi-collapse" id="@collapseId" @* data-bs-parent="#payment-container" *@>
+                <div data-name="MakePaymentsInvoiceContainer_@divid" class="position-relative">
+                    <div class="position-absolute transaction-table-skeleton"
+                         style="inset:0; z-index:9999; background:#fff; display:none;">
+                        <div class="d-flex justify-content-center align-items-center" style="height:100px;">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="text-center">
+        <text>No records found.</text>
+    </div>
+
+}
+

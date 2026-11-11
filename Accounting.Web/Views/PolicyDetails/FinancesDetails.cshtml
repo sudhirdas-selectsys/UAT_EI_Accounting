@@ -1,0 +1,64 @@
+﻿@model PolicyDetails
+@{
+	var FinanceDetails = Model?.FinanceDetails;
+}
+
+<div class="row">
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Name" name="FinanceDetails.Name" value="@FinanceDetails?.Name">
+			<label for="FinanceDetails.Name">Name</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Address1" name="FinanceDetails.Address1" value="@FinanceDetails?.Address1">
+			<label for="FinanceDetails.Address1">Address1</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Address2" name="FinanceDetails.Address2" value="@FinanceDetails?.Address2">
+			<label for="FinanceDetails.Address2">Address2</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="City" name="FinanceDetails.City" value="@FinanceDetails?.City">
+			<label for="FinanceDetails.City">City</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Country" name="FinanceDetails.Country" value="@FinanceDetails?.Country">
+			<label for="FinanceDetails.Country">Country</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="County" name="FinanceDetails.County" value="@FinanceDetails?.County">
+			<label for="FinanceDetails.County">County</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<select class="form-select" name="FinanceDetails.State">
+				<option value="">Select</option>
+				@{
+					var StateList = LookupUtility.GetAllStates();
+					foreach (var state in StateList)
+					{
+						<option value="@state.StateCode" selected="@(FinanceDetails != null && FinanceDetails.State == state.StateCode)">@state.StateCode</option>
+					}
+				}
+			</select>
+			<label for="FinanceDetails.State">State</label>
+		</div>
+	</div>
+	<div class="mb-3 col-md-6 col-xl-4">
+		<div class="form-floating">
+			<input type="text" class="form-control" placeholder="Zipcode" name="FinanceDetails.ZipCode" value="@FinanceDetails?.ZipCode">
+			<label for="FinanceDetails.ZipCode">Zipcode</label>
+		</div>
+	</div>
+</div>

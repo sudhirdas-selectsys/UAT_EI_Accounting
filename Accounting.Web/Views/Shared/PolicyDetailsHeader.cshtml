@@ -1,0 +1,34 @@
+﻿@model PolicyDetails
+
+<div class="card-heading d-flex justify-content-between page-title bg-white h-60">
+    <div class="me-5">
+        <h4 class="mb-0">@Model?.PolicyNumber (@Model?.TransactionType)<span class="sub-text text-muted d-inline ms-1"> (ID - @Model?.Submission_Id) </span></h4>
+        <span class="sub-title text-muted text-end">@Model?.InsuredDetails?.Name</span>
+    </div>
+    <div class="policy-buttons">
+        <a class="btn btn-primary" role="button" href="/PolicyDetails/Index/@Model?.Id" data-name="policybuttons" data-tab-name="PolicyDetails">Policy Details</a>
+        <a class="btn btn-primary" role="button" href="/PolicyDetails/PolicyDetailsTransfer/@Model?.Id" data-name="policybuttons" data-tab-name="PolicyDetailsTransfer">Policy Detail Transfer</a>
+        <a class="btn btn-primary" role="button" href="/invoices/Index/@Model?.Id" data-name="policybuttons" data-tab-name="Invoices">Invoices</a>
+    </div>
+
+</div>
+<style>
+    .policy-buttons .btn-primary {
+        background-color: #fff !important;
+        transition: all 0.5s;
+        box-shadow: none;
+        color: #5F2EE5;
+        border-color: #5f2ee5;
+        border: 0;
+        font-weight: 600;
+    }
+
+    .policy-buttons .btn.active,
+    .btn:first-child:active {
+        color: #5F2EE5 !important;
+        background: #e0d9f9 !important;
+    }
+        .policy-buttons .btn-primary:hover {
+            background-color: #e8dfff !important;
+        }
+</style>

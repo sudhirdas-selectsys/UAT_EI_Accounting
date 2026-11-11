@@ -1,0 +1,526 @@
+select * from Accounting_LU_ReportTemplates
+--update Accounting_LU_ReportTemplates
+--set Template='<!DOCTYPE html>  
+--<html lang="en">
+--   <head>
+--      <meta charset="UTF-8" />
+--      {{fonts}}         
+--       <style>                   
+--	  .border-top-1 { border-top: 1px solid #CCCCCC; }         
+--	  .border-bottom-1 { border-bottom: 1px solid #CCCCCC; }  
+--	  body{
+--            font-family: "Poppins", sans-serif;
+--            font-size: 13px;
+--            color: #333;
+--            font-weight: 400;
+--            line-height: normal;
+--        }
+
+--        .mt-0{
+--            margin-top: 0;
+--        }
+
+--        .mb-0{
+--            margin-bottom: 0;
+--        }
+
+--        .pb-10{
+--            padding-bottom: 10px;
+--        }
+
+--        .statement-date{
+--            color: #289FD7;
+--            font-weight: 600;
+--            font-size: 24px;
+--            padding: 8px 0px;
+--            text-align: center;
+--            border-bottom: solid 1px #085284;
+--            border-top: solid 1px #085284;
+--        }
+
+--        .agency-name{
+--            background-color: #085284;
+--            padding: 6px 12px;
+--            color: #FFF;
+--            font-size: 16px;
+--        }
+
+--        .pc-left{
+--            background-color: #F0F0F0;
+--            padding: 10px;
+--            width: 240px;
+--            color: #085284;
+--            vertical-align: top;
+--        }
+
+--        .pc-right{
+--            padding:0px 10px;
+--            border: solid 1px #CCCCCC;
+--            border-left: none;
+--			position:relative;
+--            vertical-align: top;
+--        }
+
+--        .pc-right table thead th, .pc-right table tbody td{
+--            padding: 12px 4px;
+           
+--        }
+
+--        .pc-right table tfoot td{
+--            padding: 12px 4px;
+--        }
+
+--        .pc-right table tbody{
+--            vertical-align: top;
+--        }   
+
+
+--	  </style>
+--   </head>
+--   <body>
+--      <table width="100%" cellpadding="0" cellspacing="0" border="0">
+--         <tr>
+--            <td style="padding: 20px 0; color: #333; font-size: 15px; line-height:23px;">
+--               <table border="0" cellspacing="0" cellpadding="0" width="1050"  align="center" style="border-color:rgba(0,0,0,.09); margin-bottom:100px">
+--                  <tr>
+--                     <td>
+--                        <table cellpadding="0" cellspacing="0" width="100%">
+--                           <tr>
+--                              <td>
+--                                 <table cellpadding="0" cellspacing="0" width="100%">
+--                                    <tr>
+--									<td align="left">                                                      {{clientLogo}}                                                  </td>
+                                    
+--                                       <td style="text-align:right;" width="80%">
+--                                          <div style="font-weight: bold; font-size: 13px;">{{clientCompanyName}}</div>
+--                                          <div style="font-size: 13px;">                                                          {{clientAddress}}<br />                                                          {{clientCityStateZip}}<br />                                                      </div>
+--                                       </td>
+--                                       </tr>
+--                                 </table>
+--                              </td>
+--                           </tr>
+--                        </table>
+--                        <table cellpadding="0" cellspacing="0" style="width:100%;">
+--                           <tr>
+--                              <td style="font-weight:700; padding:10px 0; text-align:center; font-size: 24px; color:#289FD7; border-top:1px solid #085284; border-bottom: 1px solid #085284;">                                          Commission Statements as of {{statementDate}}                                      </td>
+--                           </tr>
+--                        </table>
+--                        <table cellpadding="0" cellspacing="0" class="body-table">                                  {{carrierBlocks}}                              </table>
+--                     </td>
+--                  </tr>
+--               </table>
+--            </td>
+--         </tr>
+--      </table>
+--   </body>
+--</html>'  where Report_Id=3
+
+
+--INSERT INTO Accounting_ReportsSettings (
+--    Client_Id,
+--    Report_Id,
+--    Sequence,
+--    Status,
+--    CreatedOn
+--)
+--VALUES 
+--    (1, 4, 4, 1, Getdate()),
+--    (1, 5, 5, 1, Getdate()),
+--	(10002, 4, 4, 1, Getdate()),
+--    (10002, 5, 5, 1, Getdate()),
+--	(10003, 4, 4, 1, Getdate()),
+--    (10003, 5, 5, 1, Getdate()),
+--	(10004, 4, 4, 1, Getdate()),
+--    (10004, 5, 5, 1, Getdate());
+
+--update Accounting_LU_PredefinedParameters set Status=0 where PredefinedParameter_Id in (2,3)
+--Update Accounting_LU_SQLInputParameters set PredefinedParameter_Id=NULL where SQLParameter_Id in (
+--14
+--,15
+--,60
+--,61
+--,62
+--,63)
+
+--ALTER Proc [dbo].[USP_Accounting_DirectBillCommissionStatementReport]    
+--(                
+-- @Client_Id bigint = null  ,               
+-- @AgentDetail_Id BIGINT = NULL,                
+-- @InvoiceDate VARCHAR(100) = NULL,                
+-- @InvoiceCreatedFromDate VARCHAR(200) = NULL,                
+-- @InvoiceCreatedToDate VARCHAR(200) = NULL,                
+-- @InvoiceEffectiveFromDate VARCHAR(200) = NULL,              
+-- @InvoiceEffectiveToDate VARCHAR(200) = NULL,                
+-- @Range VARCHAR(200) = NULL ,               
+-- @WholesalerDetail_Id BIGINT = NULL,              
+-- @CarrierDetail_Id BIGINT = NULL,            
+-- @LOB_Id INT = NULL                 
+--  )                
+--  as                
+--  begin                
+      
+--  DECLARE @CompareDateFrom DATETIME;                
+--    DECLARE @CompareDateTo DATETIME;                
+                
+--    IF @InvoiceDate = 'InvoiceCreatedDate'                
+--    BEGIN                
+--        SET @CompareDateFrom = CONVERT(DATETIME, CONVERT(VARCHAR(11), @InvoiceCreatedFromDate, 101));                
+--        SET @CompareDateTo = DATEADD(ms, -2, DATEADD(d, 1, CONVERT(DATETIME, CONVERT(VARCHAR(11), @InvoiceCreatedToDate, 101))));                
+--    END                
+--    ELSE IF @InvoiceDate = 'InvoiceEffectiveDate'                
+--    BEGIN                
+--        SET @CompareDateFrom = CONVERT(DATETIME, CONVERT(VARCHAR(11), @InvoiceEffectiveFromDate, 101));                
+--        SET @CompareDateTo = DATEADD(ms, -2, DATEADD(d, 1, CONVERT(DATETIME, CONVERT(VARCHAR(11), @InvoiceEffectiveToDate, 101))));                
+--    END                
+                
+--    SELECT *                 
+--    FROM Accounting_AgentDetails                 
+--    WHERE Client_Id = @Client_Id AND Status = 1                
+--      AND (@AgentDetail_Id IS NULL OR AgentDetail_Id = @AgentDetail_Id);                
+                
+--  SELECT   
+--  PD.*,   
+--  I.InvoiceNo  
+--  FROM Accounting_PolicyDetails PD  
+--  JOIN Accounting_Invoices I   
+--  ON I.PolicyDetails_Id = PD.ID AND I.Status = 1  
+--  WHERE PD.Client_Id = @Client_Id   
+--  AND PD.Status = 1   
+--  AND PD.BillType = 'Direct'  
+--  AND (@CompareDateFrom IS NULL OR @CompareDateTo IS NULL    
+--   OR (@InvoiceDate = 'InvoiceEffectiveDate'    
+--    AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL    
+--    AND PD.EffectiveDate > @CompareDateFrom AND PD.EffectiveDate <= @CompareDateTo)    
+--   OR (@InvoiceDate = 'InvoiceCreatedDate'    
+--    AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL    
+--    AND PD.CreatedOn > @CompareDateFrom AND PD.CreatedOn <= @CompareDateTo))    
+--  AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)    
+--  AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)    
+--  AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)  
+     
+--    ;WITH AggregatedPremiumCommissionInvoiceDetails AS (         
+--	SELECT              
+--	I.Id AS InvoiceId,            
+--	I.PolicyDetails_Id,             
+--	CAST(I.InvoiceNo AS VARCHAR(50)) AS InvoiceNo,             
+--	SUM(CASE WHEN LI.Name = 'Total Premium' AND LUD.Name = 'Accounts Receivable' THEN ID.Amount ELSE 0 END) AS PremiumAR,             SUM(CASE WHEN LI.Name = 'Agency/Broker Commission' AND LUD.Name = 'Accounts Payable' THEN ID.Amount ELSE 0 END) AS AgentCommission,             SUM(CASE WHEN LI.Name = 'MGA 
+--Commission' AND LUD.Name = 'Internal' THEN ID.Amount ELSE 0 END) AS MGACommission         FROM Accounting_Invoices I         JOIN Accounting_PolicyDetails PD ON PD.ID = I.PolicyDetails_Id AND PD.Client_Id = @Client_Id AND PD.Status = 1 AND PD.BillType = 'Direct'         
+--JOIN Accounting_InvoiceDetails ID ON ID.Invoice_Id = I.Id AND ID.Status = 1         JOIN Accounting_LU_BillingType_LineItems_Directions BLD ON BLD.BillingType_LineItems_Directions_Id = ID.BillingType_LineItems_Directions_Id AND BLD.Status 
+--= 1         JOIN Accounting_LU_LineItems_Directions LD ON LD.LineItems_Directions_Id = BLD.LineItems_Directions_Id AND LD.Status = 1         JOIN Accounting_LU_LineItems LI ON LI.LineItem_Id = LD.LineItem_Id AND LI.Status = 1         JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id AND LUD.Status = 1         WHERE I.Status = 1           AND (             @CompareDateFrom IS NULL OR @CompareDateTo IS NULL             OR (                 @InvoiceDate = 'InvoiceEffectiveDate'         
+--        AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                 AND PD.EffectiveDate > @CompareDateFrom AND PD.EffectiveDate <= @CompareDateTo             )             OR (                 @InvoiceDate = 'InvoiceCreatedDate'      
+--           AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL                 AND I.CreatedOn > @CompareDateFrom AND I.CreatedOn <= @CompareDateTo             )         )         AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id) 
+--		   AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)         AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)         
+--		   AND (@LOB_Id IS NULL OR EXISTS (             SELECT 1 FROM Accounting_InvoiceDetails AID WHERE AID.Invoice_Id = I.Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id         ))         GROUP BY I.Id, I.PolicyDetails_Id, I.InvoiceNo     ),  
+--		   PolicyLOBs AS (                
+--        SELECT DISTINCT                 
+--            PD.PolicyNumber,                
+--            PD.AgentDetail_Id,                
+--            IND.Name AS InsuredName,                
+--            LOB.Name AS LOBName,                
+--            CD.Name AS CarrierName                
+--        FROM Accounting_PolicyDetails PD                
+--        JOIN Accounting_InsuredDetails IND ON IND.InsuredDetail_Id = PD.InsuredDetail_Id AND IND.Status = 1                
+--        JOIN Accounting_CarrierDetails CD ON CD.CarrierDetail_Id = PD.CarrierDetail_Id AND CD.Status = 1                
+--        JOIN Accounting_Invoices IES ON IES.PolicyDetails_Id = PD.ID AND IES.Status = 1                
+--        JOIN Accounting_InvoiceDetails ID ON ID.Invoice_Id = IES.ID AND ID.Status = 1                
+--        JOIN Accounting_LU_LOBs LOB ON LOB.LOB_Id = ID.LOB_Id AND LOB.Status = 1                
+--  JOIN AggregatedPremiumCommissionInvoiceDetails APCID ON APCID.InvoiceId = IES.Id              
+--        WHERE PD.Client_Id = @Client_Id AND PD.BillType = 'Direct' AND PD.Status = 1              
+--  AND            
+--  (            
+--        @CompareDateFrom IS NULL OR @CompareDateTo IS NULL            
+--        OR            
+--        (            
+--            @InvoiceDate = 'InvoiceEffectiveDate'            
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL            
+--            AND PD.EffectiveDate > @CompareDateFrom AND PD.EffectiveDate <= @CompareDateTo            
+--        )            
+--        OR            
+--        (            
+--            @InvoiceDate = 'InvoiceCreatedDate'            
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL            
+--            AND IES.CreatedOn > @CompareDateFrom AND IES.CreatedOn <= @CompareDateTo            
+--        ))             
+-- AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)          
+-- AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)      
+-- AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)      
+-- AND (@LOB_Id IS NULL OR EXISTS (      
+--    SELECT 1      
+--    FROM Accounting_InvoiceDetails AID      
+--    WHERE AID.Invoice_Id = IES.Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id))      
+--    )                
+--    SELECT                 
+--        PolicyNumber,                
+--        InsuredName,           
+--        AgentDetail_Id,                
+--        CarrierName,                
+--        STUFF((                
+--            SELECT DISTINCT ', ' + L2.LOBName                
+--            FROM PolicyLOBs L2                
+--            WHERE L2.PolicyNumber = L1.PolicyNumber AND L2.InsuredName = L1.InsuredName                
+--            FOR XML PATH(''), TYPE      
+--        ).value('.', 'NVARCHAR(MAX)'), 1, 2, '') AS LOBNames                
+--    FROM PolicyLOBs L1                
+--    GROUP BY PolicyNumber, InsuredName, AgentDetail_Id, CarrierName;                
+                
+--    ;WITH AggregatedPremiumCommissionInvoiceDetails  AS (  
+--    SELECT Distinct  
+--        I.Id AS InvoiceId,  
+--        I.PolicyDetails_Id,  
+--        CAST(I.InvoiceNo AS VARCHAR(50)) AS InvoiceNo,  
+  
+--        -- Premium AR: Premium + AR  
+--        SUM(CASE   
+--            WHEN LI.Name = 'Total Premium' AND LUD.Name = 'Accounts Receivable'   
+--            THEN ID.Amount ELSE 0   
+--        END) AS PremiumAR,  
+  
+--        -- Agent Commission: Agency/Broker Commission + Accounts Payable  
+--        SUM(CASE   
+--            WHEN LI.Name = 'Agency/Broker Commission' AND LUD.Name = 'Accounts Payable'   
+--            THEN ID.Amount ELSE 0   
+--        END) AS AgentCommission,  
+  
+--  ID.Amount AS Premium,  
+--        -- MGA Commission: MGA Commission + Internal  
+    
+--        PDL.HouseCommission - PDL.AgentCommission  AS MGACommission,  
+  
+--  -- Agent Commission Percentage = (AgentCommission / PremiumAR) * 100  
+--  PDL.AgentCommission AS AgentCommissionPercentage  
+
+--    FROM Accounting_Invoices I  
+--    JOIN Accounting_PolicyDetails PD   
+--        ON PD.ID = I.PolicyDetails_Id   
+--        AND PD.Client_Id = @Client_Id   
+--        AND PD.Status = 1   
+--        AND PD.BillType = 'Direct'  
+  
+--    JOIN Accounting_InvoiceDetails ID   
+--        ON ID.Invoice_Id = I.Id   
+--        AND ID.Status = 1  
+  
+--    JOIN Accounting_LU_BillingType_LineItems_Directions BLD   
+--        ON BLD.BillingType_LineItems_Directions_Id = ID.BillingType_LineItems_Directions_Id   
+--        AND BLD.Status = 1  
+  
+--    JOIN Accounting_LU_LineItems_Directions LD   
+--        ON LD.LineItems_Directions_Id = BLD.LineItems_Directions_Id   
+--        AND LD.Status = 1  
+  
+--    JOIN Accounting_LU_LineItems LI   
+--        ON LI.LineItem_Id = LD.LineItem_Id   
+--        AND LI.Status = 1  
+  
+--    LEFT JOIN (  
+--    SELECT   
+--        PolicyDetails_Id,  
+--        MAX(HouseCommission) AS HouseCommission,  
+--        MAX(AgentCommission) AS AgentCommission  
+--    FROM Accounting_PolicyDetailsLineItems  
+--    WHERE Status = 1  
+--    GROUP BY PolicyDetails_Id  
+--) PDL ON PDL.PolicyDetails_Id = I.PolicyDetails_Id  
+  
+--   JOIN Accounting_LU_Directions LUD   
+--        ON LUD.Direction_Id = LD.Direction_Id   
+--        AND LUD.Status = 1   
+--    WHERE   
+--        I.Status = 1           
+--  AND            
+--  (            
+--        @CompareDateFrom IS NULL OR @CompareDateTo IS NULL            
+--        OR            
+--        (            
+--            @InvoiceDate = 'InvoiceEffectiveDate'            
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL            
+--            AND PD.EffectiveDate > @CompareDateFrom AND PD.EffectiveDate <= @CompareDateTo            
+--        )            
+--        OR            
+--        (            
+--            @InvoiceDate = 'InvoiceCreatedDate'            
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL            
+--            AND I.CreatedOn > @CompareDateFrom AND I.CreatedOn <= @CompareDateTo            
+--        ))            
+--  AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)          
+-- AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)      
+-- AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)       
+-- AND (@LOB_Id IS NULL OR EXISTS (      
+--    SELECT 1      
+--    FROM Accounting_InvoiceDetails AID      
+--    WHERE AID.Invoice_Id = I.Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id))      
+--        GROUP BY I.Id, I.PolicyDetails_Id, I.InvoiceNo,  
+--  PDL.HouseCommission, PDL.AgentCommission,              
+--    ID.Amount),                
+--    FeeData AS   
+-- (                
+--        SELECT Distinct                
+--            I.PolicyDetails_Id,  
+--            I.Id AS Invoice_Id,                
+--            ID.Id AS InvoiceDetail_Id,                
+--            CONCAT(PD.TransactionType, ' ', LI.Name) AS LineItemDescription,                
+--            I.InvoiceNo AS IdNo,                
+--            PD.EffectiveDate,                
+--            PD.ExpirationDate,                
+--            ID.Amount AS GrossAmount,                   
+--  -- Agent Commission Percentage = (AgentCommission / PremiumAR) * 100  
+--   PDL.AgentCommission AS AgentCommPercentage   ,      
+--            ID.Amount AS NetAmount,     
+--  --APCID.Premium,           
+--            I.DueDate,                
+--            PD.PolicyNumber,    
+--   ID.RemainingBalance AS RemainingBalance ,  
+--   ID.Amount * (PDL.AgentCommission / 100.0) AS AgentCommissionAmt,  
+--   CASE   
+--   WHEN PDL.AgentCommission IS NOT NULL AND PDL.AgentCommission <> 0  
+--   THEN (ID.Amount * (PDL.AgentCommission / 100.0)) / (PDL.AgentCommission / 100.0)  
+--   ELSE 0  
+--   END AS PremiumCollected,  
+--  ID.Amount - (ID.Amount * (APCID.MGACommission / 100.0)) AS CommsNetDue              
+--        FROM Accounting_Invoices I                
+--        JOIN Accounting_PolicyDetails PD ON PD.ID = I.PolicyDetails_Id AND PD.Client_Id = @Client_Id AND PD.Status = 1 AND PD.BillType = 'Direct'                
+--        JOIN Accounting_InvoiceDetails ID ON ID.Invoice_Id = I.Id AND ID.Status = 1                
+--        JOIN Accounting_LU_BillingType_LineItems_Directions BLD ON BLD.BillingType_LineItems_Directions_Id = ID.BillingType_LineItems_Directions_Id AND BLD.Status = 1                
+--        JOIN Accounting_LU_LineItems_Directions LD ON LD.LineItems_Directions_Id = BLD.LineItems_Directions_Id AND LD.Status = 1                
+--        JOIN Accounting_LU_LineItems LI ON LI.LineItem_Id = LD.LineItem_Id AND LI.Status = 1                        JOIN Accounting_LU_LineItemTypes LIT ON LIT.LineItemType_Id = LI.LineItemType_Id AND LIT.Status = 1                
+--        JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id AND LUD.Status = 1                
+--        JOIN Accounting_LU_LOBs LOB ON LOB.LOB_Id = ID.LOB_Id AND LOB.Status = 1              
+--  JOIN AggregatedPremiumCommissionInvoiceDetails APCID ON APCID.InvoiceId = I.Id   
+--  LEFT JOIN (SELECT PolicyDetails_Id,MAX(HouseCommission) AS HouseCommission,MAX(AgentCommission) AS AgentCommission  
+--   FROM Accounting_PolicyDetailsLineItems WHERE Status = 1 GROUP BY PolicyDetails_Id   
+--  ) PDL ON PDL.PolicyDetails_Id = I.PolicyDetails_Id  
+    
+    
+--        WHERE I.Status = 1                
+--      AND            
+--  (            
+--        @CompareDateFrom IS NULL OR @CompareDateTo IS NULL            
+--        OR            
+--        (            
+--            @InvoiceDate = 'InvoiceEffectiveDate'            
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL            
+--            AND PD.EffectiveDate > @CompareDateFrom AND PD.EffectiveDate <= @CompareDateTo            
+--        )            
+--        OR            
+--        (            
+--            @InvoiceDate = 'InvoiceCreatedDate'            
+--            AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL            
+--            AND I.CreatedOn > @CompareDateFrom AND I.CreatedOn <= @CompareDateTo            
+--        ))             
+--  AND (LIT.Code = 'Fee' OR LIT.Code = 'Tax') AND LUD.Code = 'AR'          
+--  AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)          
+--  AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)       
+--  AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)        
+--  AND (@LOB_Id IS NULL OR EXISTS (      
+--    SELECT 1      
+--    FROM Accounting_InvoiceDetails AID      
+--    WHERE AID.Invoice_Id = I.Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id))           
+--    )                
+--    , PaymentApplication AS (  
+--    SELECT *  
+--    FROM (  
+--        SELECT   
+--            I.PolicyDetails_Id,                
+--            I.Id AS Invoice_Id,   
+--            ID.Id AS InvoiceDetail_Id,                
+--            'Cash Receipt' AS LineItemDescription,   
+--            I.InvoiceNo AS IdNo,                
+--            CAST(P.CreatedOn AS DATE) AS EffectiveDate,                
+--            PD.ExpirationDate,                
+--            APCID.AgentCommission + PremiumAR AS GrossAmount,    
+--            APCID.AgentCommissionPercentage AS AgentCommPercentage,                        
+--            ID.Amount AS NetAmount,                
+--            I.DueDate,                
+--            PD.PolicyNumber,   
+--            0 AS RemainingBalance,  
+--   ID.Amount * (PDL.AgentCommission / 100.0) AS AgentCommissionAmt,  
+--   CASE   
+--   WHEN PDL.AgentCommission IS NOT NULL AND PDL.AgentCommission <> 0  
+--   THEN (ID.Amount * (PDL.AgentCommission / 100.0)) / (PDL.AgentCommission / 100.0)  
+--   ELSE 0  
+--   END AS PremiumCollected,  
+--  ID.Amount - (ID.Amount * (APCID.MGACommission / 100.0)) AS CommsNetDue ,  
+--            ROW_NUMBER() OVER (PARTITION BY I.Id ORDER BY P.CreatedOn DESC, PALI.AppliedAmount DESC) AS rn  
+--        FROM Accounting_Invoices I  
+--        JOIN Accounting_PolicyDetails PD ON PD.ID = I.PolicyDetails_Id AND PD.Client_Id = @Client_Id AND PD.Status = 1 AND PD.BillType = 'Direct'  
+--        JOIN Accounting_InvoiceDetails ID ON ID.Invoice_Id = I.Id AND ID.Status = 1  
+--        JOIN Accounting_LU_BillingType_LineItems_Directions BLD ON BLD.BillingType_LineItems_Directions_Id = ID.BillingType_LineItems_Directions_Id AND BLD.Status = 1  
+--        JOIN Accounting_LU_LineItems_Directions LD ON LD.LineItems_Directions_Id = BLD.LineItems_Directions_Id AND LD.Status = 1  
+--        JOIN Accounting_LU_LineItems LI ON LI.LineItem_Id = LD.LineItem_Id AND LI.Status = 1  
+--        JOIN Accounting_LU_LineItemTypes LIT ON LIT.LineItemType_Id = LI.LineItemType_Id AND LIT.Status = 1  
+--        JOIN Accounting_LU_Directions LUD ON LUD.Direction_Id = LD.Direction_Id AND LUD.Status = 1  
+--        JOIN Accounting_LU_LOBs LOB ON LOB.LOB_Id = ID.LOB_Id AND LOB.Status = 1  
+--        JOIN Accounting_PaymentApplicationLineItems PALI ON PALI.InvoiceLineItem_Id = ID.Id AND PALI.Status = 1  
+--        JOIN Accounting_PaymentApplications PA ON PA.PaymentApplication_Id = PALI.PaymentApplication_Id AND PA.Status = 1  
+--        JOIN Accounting_Payments P ON P.Payment_Id = PA.Payment_Id AND P.Status = 1  
+--        LEFT JOIN AggregatedPremiumCommissionInvoiceDetails APCID ON APCID.InvoiceId = I.Id  
+--  LEFT JOIN (SELECT PolicyDetails_Id,MAX(HouseCommission) AS HouseCommission,MAX(AgentCommission) AS AgentCommission  
+--   FROM Accounting_PolicyDetailsLineItems WHERE Status = 1 GROUP BY PolicyDetails_Id   
+--  ) PDL ON PDL.PolicyDetails_Id = I.PolicyDetails_Id  
+--        WHERE   
+--            I.Status = 1  
+--            AND LUD.Code = 'AR'  
+--            AND (  
+--                @CompareDateFrom IS NULL OR @CompareDateTo IS NULL  
+--                OR (  
+--                    @InvoiceDate = 'InvoiceEffectiveDate'  
+--                    AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL  
+--                    AND PD.EffectiveDate > @CompareDateFrom AND PD.EffectiveDate <= @CompareDateTo  
+--                )  
+--                OR (  
+--                    @InvoiceDate = 'InvoiceCreatedDate'  
+--                    AND @CompareDateFrom IS NOT NULL AND @CompareDateTo IS NOT NULL  
+--                    AND I.CreatedOn > @CompareDateFrom AND I.CreatedOn <= @CompareDateTo  
+--                )  
+--            )  
+--            AND (@AgentDetail_Id IS NULL OR PD.AgentDetail_Id = @AgentDetail_Id)  
+--            AND (@WholesalerDetail_Id IS NULL OR PD.WholesalerDetail_Id = @WholesalerDetail_Id)  
+--            AND (@CarrierDetail_Id IS NULL OR PD.CarrierDetail_Id = @CarrierDetail_Id)  
+--            AND (@LOB_Id IS NULL OR EXISTS (  
+--                SELECT 1  
+--                FROM Accounting_InvoiceDetails AID  
+--                WHERE AID.Invoice_Id = I.Id AND AID.Status = 1 AND AID.LOB_Id = @LOB_Id  
+--            ))  
+--    ) Ranked  
+--    WHERE rn = 1  
+--)  
+  
+--SELECT   
+--    PolicyDetails_Id,  
+--    Invoice_Id,  
+--    InvoiceDetail_Id,  
+--    LineItemDescription,  
+--    IdNo,  
+--    EffectiveDate,  
+--    ExpirationDate,  
+--    GrossAmount,  
+--    AgentCommPercentage,  
+--    NetAmount,  
+--    DueDate,  
+--    PolicyNumber,  
+--    RemainingBalance,  
+--    PremiumCollected,  
+-- CommsNetDue  
+--FROM FeeData  
+  
+--UNION ALL  
+  
+--SELECT   
+--    PolicyDetails_Id,  
+--    Invoice_Id,  
+--    InvoiceDetail_Id,  
+--    LineItemDescription,  
+--    IdNo,  
+--    EffectiveDate,  
+--    ExpirationDate,  
+--    GrossAmount,  
+--    AgentCommPercentage,  
+--    NetAmount,  
+--    DueDate,  
+--    PolicyNumber,  
+--    RemainingBalance,  
+--    PremiumCollected,  
+-- CommsNetDue  
+--FROM PaymentApplication  
+  
+--  end

@@ -1,0 +1,59 @@
+﻿@model Invoices
+@{
+	var Direction_Id = ViewBag.Direction_Id != null ? ViewBag.Direction_Id : 0;
+}
+<div data-name="PartialPaymentInfoContainer">
+	<form data-name="frmPartialInvoicePaymentInfo">
+		<div class="row">
+			<div class="col-sm-6">
+				<div class="data-item">
+					<label>Invoice #</label>
+					<span class="popInv">@Model?.InvoiceNo</span>
+				</div>
+			</div>
+			<div class="col-sm-6">
+				<div class="data-item">
+					<label>Policy Number</label>
+					<span class="popPn">@Model?.PolicyNumber</span>
+				</div>
+			</div>
+			<div class="col-sm-6">
+				<div class="data-item mb-0">
+					<label>Agency Name</label>
+					<span class="popAn">@Model?.AgencyName</span>
+				</div>
+			</div>
+			<div class="col-sm-6">
+				<div class="data-item mb-0">
+					<label>Insured's Name</label>
+					<span class="popIn">@Model?.InsuredsName</span>
+				</div>
+			</div>
+			<div class="col-sm-12">
+				<div class="data-item">
+					<label>Balance Due</label>
+					<input type="hidden" data-name="RemainingBalance" value="@Model?.RemainingBalance" />
+					<span>@CommonUtility.ConvertToCurrencyFormat(Model?.RemainingBalance, false, 2)</span>
+				</div>
+			</div>
+			<div class="col-sm-6">
+				<div class="data-item">
+					<label>Payment Amount</label>
+					<input type="text" class="form-control" data-val="true" placeholder="Amount" data-currency-fractiondigits="2" name="PaymentAmount" autocomplete="off" data-name="PaymentAmount">
+				</div>
+			</div>
+		</div>
+		<div class="modal-footer justify-content-center border-top-0">
+			<button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-name="btnClosePaymentWindow">Close</button>
+			@if ((Model?.RemainingBalance != 0 && Model?.Paid == false && Direction_Id == MasterLookup._Directions.AR) || (Direction_Id == MasterLookup._Directions.AP && Model?.InvoicesDetailsList.Any(b => b.Paid == false && b.RemainingBalance != 0)))
+			{
+				<button type="button" class="btn btn-primary" data-name="btnPartialInvoiceAmount" data-invoice-id="@Model?.Id">Apply Partial Amount</button>
+			}
+		</div>
+	</form>
+</div>
+<script>
+	$(function(){
+		appCommon.InitializePanelOrFormValidations($('[data-name="PartialPaymentInfoContainer"]'));
+	})
+</script>

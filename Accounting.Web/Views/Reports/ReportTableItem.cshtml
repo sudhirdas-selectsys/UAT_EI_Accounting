@@ -1,0 +1,184 @@
+﻿@using System.Data
+@model ReportOutputTables
+@{
+    DataTable dt = Model.OutputDataTable;
+    var ReportParameters = Model.OutputParameters.OrderBy(c => c.DisplaySequence).ToList();
+    bool hasTotalFooter = false;
+    var PageSize = ViewBag.PageSize;
+    var PageIndex = ViewBag.PageIndex;
+    var TotalRecords = ViewBag.TotalRecords;
+    var Report_Id = ViewBag.Report_Id;
+    List<ReportOutputTables> ReportsData = ViewBag.ReportsData;
+    var client_Id = ViewBag.ClientId;
+    var enabled = false;
+    bool isInvoiceProductionReport = Report_Id == MasterLookup._Reports.InvoiceProduction;
+    var ReferralSourceSetting = LookupUtility.GetClientSettings(client_Id, MasterLookup._ClientSettings.ShowReferralSourceColumn);    
+    bool enableReferralSourceColumnInInvoiceProductionReport = !string.IsNullOrEmpty(ReferralSourceSetting) && bool.TryParse(ReferralSourceSetting, out enabled) && enabled;
+    if (isInvoiceProductionReport && !enableReferralSourceColumnInInvoiceProductionReport)
+    {
+        ReportParameters = ReportParameters.Where(c => c.ParameterName != "Referral Source").ToList();
+    }
+
+    var enableAdditionalInvoiceProductionColumns = LookupUtility.GetClientSettings(client_Id, MasterLookup._ClientSettings.EnableAdditionalInvoiceProductionColumns);
+    bool enableAditionalInvoiceColumns = !string.IsNullOrEmpty(enableAdditionalInvoiceProductionColumns) && bool.TryParse(enableAdditionalInvoiceProductionColumns, out enabled) && enabled;
+    if (isInvoiceProductionReport && !enableAditionalInvoiceColumns)
+    {
+        ReportParameters = ReportParameters.Where(c => c.ParameterName != "Surplus Lines Tax" && c.ParameterName != "Stamping Fee" && c.ParameterName != "Issuing Company/Billing Company" && c.ParameterName != "Invoice Created/Invoice Booked").ToList();
+    }
+}
+@if (ReportParameters != null && ReportParameters.Count > 0 && Model.DataTable != null && Model.DataTable.Rows.Count > 0 && Model.DataTable.Columns.Count > 0)
+{
+    hasTotalFooter = ReportParameters.Any(c => c.Enable_Total);
+    <div class="table-responsive reports-table">
+        <div data-name="ReportTablePanel" style="overflow-x: auto; overflow-y: auto; " class="reports-container">
+            <!--height: calc(-390px + 100vh); min-height: 538.2px; max-height: 538.2px;-->
+            <table class="table table-sm table-bordered table-striped table-hover">
+                <thead>
+                    <tr>
+                        @foreach (var RP in ReportParameters)
+                        {
+                            <th>
+                                <div class="custom-th">
+                                    @(
+                                        !string.IsNullOrEmpty(RP.DisplayName) ? RP.DisplayName : RP.ParameterName
+                                        )
+                                </div>
+                            </th>
+                        }
+                    </tr>
+                </thead>
+                @if (Model.DataTable != null && Model.DataTable.Rows.Count > 0 && Model.DataTable.Columns.Count > 0)
+                {
+                    <tbody>
+                        @for (int r = 0; r < dt.Rows.Count; r++)
+                        {
+                            if (!hasTotalFooter || r != dt.Rows.Count - 1)
+                            {
+                                DataRow dr = dt.Rows[r];
+                                <tr>
+                                    @foreach (var RP in ReportParameters)
+                                    {
+                                        var columnValue = dr[RP.ParameterName];
+                                        string strColumnValue = Convert.ToString(columnValue);
+                                        <td>
+                                            <text>@dr[RP.ParameterName]</text>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                    if (hasTotalFooter)
+                    {
+                        DataRow footerRow = dt.Rows[dt.Rows.Count - 1];
+                        int RPIteration = 0;
+                        <tfoot class="sticky-bottom table-light">
+                            <tr>
+                                @foreach (var RP in ReportParameters)
+                                {
+                                    var columnValue = footerRow[RP.ParameterName];
+                                    <th>
+                                        @if (string.IsNullOrEmpty(Convert.ToString(columnValue)) && RPIteration == 0)
+                                        {
+                                            <text>Total</text>
+                                        }
+                                        else
+                                        {
+                                            <text>@columnValue</text>
+                                        }
+                                    </th>
+                                    RPIteration++;
+                                }
+                            </tr>
+                        </tfoot>
+                    }
+                }
+            </table>
+        </div>
+    </div>
+                //Paging
+    @if (ReportsData != null)
+    {
+        <div class="row align-items-center mt-3 relative me-4" data-name="ReportsContainerPagination">
+            <div class="col-sm-6 offset-sm-6 xs-center">
+                <div class="row align-items-center justify-content-end table-pagination">
+                    <div class="col-auto"><strong>Page Size</strong></div>
+                    <div class="col-auto">
+                        @{
+                            List<int> pageSizeOptions = new List<int> { 20, 40, 50, 100 };
+                        }
+                        <select class="form-select" data-name="PageSize" data-report-id="@Report_Id" data-table-name="ReportDetails">
+                            @foreach (var size in pageSizeOptions)
+                            {
+                                <option value="@size" selected="@(PageSize == size)">@size</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-auto">
+                        <strong>
+                            @{
+                                if (ReportsData[0].DataTable.Rows?.Count > 0)
+                                {
+                                    @(PageIndex == 0 ? 1 : (PageIndex * PageSize) + 1)
+                                    <text> - </text>
+                                    @(PageIndex == 0 ? ReportsData[0].DataTable.Rows?.Count : (PageIndex * PageSize) + ReportsData[0].DataTable.Rows?.Count)
+
+                                }
+                                else
+                                {
+                                    <text>0-0</text>
+                                }
+                            }
+
+                        </strong>
+
+                        of <strong>@TotalRecords</strong>
+                    </div>
+                    <div class="col-auto">
+                        <div class="btn-group">
+                            @if (PageIndex > 0)
+                            {
+                                <button type="button" class="btn btn-outline-primary" data-page-index="@PageIndex" data-report-id="@Report_Id" data-table-name="ReportDetails" data-name="btnPrevious"><i class="fa fa-angle-left"></i></button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-outline-primary" disabled><i class="fa fa-angle-left"></i></button>
+                            }
+                            @if (TotalRecords > (PageSize * (PageIndex + 1)))
+                            {
+                                <button type="button" class="btn btn-outline-primary" title="Next" data-page-index="@PageIndex" data-report-id="@Report_Id" data-table-name="ReportDetails" data-name="btnNext"><i class="fa fa-angle-right"></i></button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-outline-primary" title="Next" disabled><i class="fa fa-angle-right"></i></button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+}
+<style>
+    [data-name="ReportTablePanel"] {
+        /* min-height: inherit !important;
+            max-height: inherit !important; */
+        /* height: calc(-465px + 100vh) !important; */
+    }
+
+    /* .reports-container[data-name="ReportTablePanel"] { */
+    /*     height: calc(100vh - 265px) !important; */
+    /* } */
+</style>
+<script>
+    $(document).ready(function(){
+        //$('.reports-container').css('');
+         var tabs = $('#tabReports [data-name="ReportForm"]');
+         $('.reports-container').css({
+             //'height': ($(window).height() + 210) - tabs.height(),
+             'maxHeight': ($(window).height() + 210) - tabs.height()
+         })
+         console.log('height',($(window).height() + 100) - tabs.height());
+    })
+
+</script>

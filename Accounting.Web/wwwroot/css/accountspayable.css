@@ -1,0 +1,118 @@
+﻿.sub-title {
+    font-size: 0.875rem;
+    color: #6c757d;
+    display: block;
+    margin-top: 4px;
+}
+
+.state-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    width: 38%;
+}
+
+    .state-actions label {
+        font-size: 0.875rem;
+        color: #6f4ef6;
+    }
+
+.accordion-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    position: relative;
+}
+
+.checkbox-container {
+    position: absolute;
+    right: 0;
+    top: 21%;
+    transform: translateY(-50%);
+    background-color: #fff;
+    padding: 4px 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border-top-right-radius: 8px;
+}
+
+    .checkbox-container input {
+        margin: 0;
+    }
+
+td input.form-control {
+    display: none;
+}
+/* Style for labels */
+td .label {
+    display: block;
+    color: #495057;
+    font-size: 13px;
+}
+
+.form-check-input:focus {
+    box-shadow: none;
+}
+
+.checkbox-container.form-check .form-check-input {
+    border-color: #663ced;
+    border-radius: 2px;
+}
+
+.invoice-data-view-item label {
+    color: #707070;
+    display: block;
+    font-size: 12px;
+    position: relative;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-wrap: nowrap;
+}
+
+.invoice-data-view-item span {
+    display: block;
+    position: relative;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    text-wrap: nowrap;
+}
+
+.invoice-data-view-item span {
+    font-weight: 700;
+}
+
+    .invoice-data-view-item span.premium {
+        color: #6f4ef6;
+    }
+
+
+.account-payable .state-actions {
+    width: 70%;
+    gap: 30px;
+}
+
+.account-payable .ap-item-selected.accordion-item {
+    opacity: 0.25;
+    pointer-events: none;
+    background-color: #b1a2dc;
+}
+
+    .account-payable .ap-item-selected.accordion-item .checkbox-container {
+        background-color: transparent;
+    }
+.edit-arr {
+    position: absolute;
+    right: 14px;
+    top: 4px;
+}
+
+    .edit-arr .icon-with-circle {
+        width: 20px;
+        height: 20px;
+        font-size: 12px;
+    }
+.arr-data .data-item {
+    margin-bottom: 0;
+    border-bottom: 0;
+    padding: 3px 8px;
+}

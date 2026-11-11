@@ -1,0 +1,50 @@
+﻿@{
+    long Payment_Id = ViewBag.PaymentId;
+    string AccountNumber = ViewBag.AccountNumber;
+    string RoutingNumber = ViewBag.RoutingNumber;
+    string SignerValue = ViewBag.SignerValue;
+    string SignerType = ViewBag.SignerType;
+}
+<html>
+<body>
+    <div>
+        <form data-name="frmPrintCheckform">
+            <div>
+                <h5 class="fs-18">Bank Account Details</h5>
+            </div>
+            <div class="row">
+                @*<div class="col-md-12 mb-3">
+                <label for="txtAccountNumber" class="form-label fw-semibold">Account Number</label>
+                <input type="text" class="form-control" id="txtAccountNumber" placeholder="Enter Account Number" data-name="accountNumber" data-val="true" />
+                </div>
+                <div class="col-md-12 mb-3">
+                <label for="txtRoutingNumber" class="form-label fw-semibold">Routing Number</label>
+                    <input type="text" class="form-control" id="txtRoutingNumber" placeholder="Enter Routing Number at least 9 character" data-name="routingNumber" data-val="true" minlength="9"
+                           maxlength="9" />
+            </div>
+                <div class="col-md-12 mb-3">
+                <label for="txtSignerNumber" class="form-label fw-semibold">Signer Name</label>
+                <input type="text" class="form-control" id="txtSignervalue" placeholder="Enter Signer Name" data-name="signerValue" data-val="true" />
+            </div> *@
+                <div class="col-md-12 mb-3">
+                    <label for="txtSignerNumber" class="form-label fw-semibold">Check Number</label>
+                    <input type="text" class="form-control" id="txtNumber" placeholder="Enter Check Number" data-name="checkNumber" data-val="true" />
+                </div>
+            </div>
+
+            <div class="d-grid" style="margin-bottom:16px !important">
+                <button type="button" class="btn btn-primary" data-name="DownloadCheck" data-payment-Id="@Payment_Id" data-account-number="@AccountNumber" data-routing-number="@RoutingNumber" data-signer-value="@SignerValue" data-singer-type="@SignerType">
+                    Print
+                </button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+
+<script>
+    $(function(){
+        appCommon.InitializePanelOrFormValidations($('[data-name="frmPrintCheckform"]'));
+    })
+</script>
+@* <script src="~/js/payments.js" asp-append-version="true"></script> *@

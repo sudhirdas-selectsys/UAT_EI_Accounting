@@ -1,0 +1,52 @@
+﻿@{
+	ViewData["Title"] = "Home Page";
+}
+
+<div class="row">
+    <div class="col-sm-12">
+        <div class="card custom-card">
+            <div class="bg-white card-body pb-0 pt-2">
+                <div class="card-heading d-flex justify-content-start page-title mb-2 pb-0 ps-0">
+                    <div class="ar-tabs">
+                        <ul class="nav nav-tabs tab-card align-items-center" id="myTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link fs-20" data-name="btnDashboardTabs" data-tab-name="Dashboard" data-bs-toggle="tab" type="button" role="tab" aria-controls="dashboard-tab-pane" aria-selected="false" title="Dashboard" tabindex="-1">Dashboard </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-name="btnDashboardTabs" data-bs-toggle="tab" data-tab-name="Payments" type="button" role="tab" aria-controls="Payments-tab-pane" aria-selected="true" title="Payments">Payments</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-name="btnDashboardTabs" data-bs-toggle="tab" data-tab-name="AccountsReceivable" type="button" role="tab" aria-controls="accounts-receivable-tab-pane" aria-selected="false" title="Accounts Receivable (Cash receipt)" tabindex="-1">Accounts Receivable (Cash receipt) </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-name="btnDashboardTabs" data-bs-toggle="tab" data-tab-name="AccountsPayable" type="button" role="tab" aria-controls="accounts-payable-tab-pane" aria-selected="false" title="Accounts Payable (Cash payment)" tabindex="-1">Accounts Payable (Cash payment) </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-name="btnDashboardTabs" data-bs-toggle="tab" data-tab-name="TransactionHistory" role="tab" type="button" aria-controls="transaction-history-tab-pane" aria-selected="true" title="Transaction History">Transaction History</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-name="btnDashboardTabs" data-bs-toggle="tab" data-tab-name="MakePayments" role="tab" type="button" aria-controls="make-payments-tab-pane" aria-selected="true" title="Make Payments">Make Payments</button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" data-name="btnDashboardTabs" data-bs-toggle="tab" data-tab-name="PrintChecks" role="tab" type="button" aria-controls="print-checks-tab-pane" aria-selected="true" title="Make Payments">Print Checks</button>
+                            </li>
+                           
+                        </ul>
+                    </div>
+                </div>
+                <div class="tab-content" id="myTabContent">
+                    <div class="tab-pane fade show active" data-name="DashboardTabsContainer" role="tabpanel" tabindex="0">
+
+                     </div>
+                    <!-- MY TAB Content -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="~/js/dashboardtabs.js" asp-append-version="true"></script>
+<style>
+    [data-name="DashboardTabsContainer"] {
+        min-height: 545px !important;
+    }
+</style>

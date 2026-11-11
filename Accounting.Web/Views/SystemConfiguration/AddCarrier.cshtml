@@ -1,0 +1,101 @@
+﻿@model CarrierDetails
+
+<div>
+    <form data-name="formAddCarrier" name="formAddCarrier">
+        <div class="row">
+            <div class="mb-3 col-md-12">
+                <div class="data-item">
+                    <label>Carrier Reference ID</label>
+                    <input type="text" class="form-control" name="CarrierReference_ID"
+                           placeholder="Carrier Reference ID"
+                           autocomplete="off"
+                           data-val="true" />
+                </div>
+            </div>
+
+            <div class="mb-3 col-md-12">
+                <div class="data-item">
+                    <label>Name</label>
+                    <input type="text" class="form-control" name="Name"
+                           placeholder="Carrier Name" autocomplete="off" data-val="true">
+                </div>
+            </div>
+
+            <div class="mb-3 col-md-12">
+                <div class="data-item">
+                    <label>Address</label>
+                    <input type="text" class="form-control" name="Address1"
+                           placeholder="Address"
+                           autocomplete="off">
+                </div>
+            </div>
+
+            <div class="mb-3 col-md-12">
+                <div class="data-item">
+                    <label>City</label>
+                    <input type="text" class="form-control" name="City"
+                           placeholder="City"
+                           autocomplete="off">
+                </div>
+            </div>
+
+            <div class="mb-3 col-md-12">
+                <div class="data-item">
+                    <label>State</label>
+                    <input type="text" class="form-control" name="State"
+                           placeholder="State"
+                           autocomplete="off">
+                </div>
+            </div>
+
+            <div class="mb-3 col-md-12">
+                <div class="data-item">
+                    <label>Zipcode</label>
+                    <input type="text" class="form-control" name="Zipcode"
+                           placeholder="Zipcode"
+                           autocomplete="off">
+                </div>
+            </div>
+
+            <div class="mb-3 col-md-12">
+                <div class="data-item">
+                    <label>Carrier Status</label>
+                    <input type="text" class="form-control" name="CarrierStatus"
+                           placeholder="Carrier Status"
+                           autocomplete="off">
+                </div>
+            </div>
+
+        </div>
+
+        <div class="offcanvas-footer text-end row" style="background-color:white">
+            <button type="button" class="btn btn-secondary" data-name="btnClose" data-bs-dismiss="offcanvas">Close</button>
+            <button type="button" class="btn btn-primary" data-name="btnSaveCarrier">Save</button>
+        </div>
+
+    </form>
+</div>
+<script>
+    $(function () {
+        $('[data-name="btnSaveCarrier"]').off('click');
+        $('[data-name="btnSaveCarrier"]').on('click', function () {
+            var form = $('[data-name="formAddCarrier"]');
+            if (appCommon.IsValidForm(form)) {
+                appCommon.SubmitForm(form,function (response) {
+                        if (response && response.Status) {
+                            appCommon.ShowMessageModal(response.Message,"Success");
+                        }
+                        else {
+                            appCommon.ShowMessageModal(response.Message);
+                        }
+                    },"/SystemConfiguration/AddCarrier",true,true);
+            }
+            $('[data-name="GenericModal"]').modal('hide');
+        });
+        LoadLOBCarrierGrouping
+    });
+        function LoadLOBCarrierGrouping() {
+        appCommon.RenderHTMLPanel("/SystemConfiguration/LobCarrierGrouings", $('[data-name="ConfigurationTabContainer"]'), function () { MakeSubMenuActive($('[data-tab-name="btnLobCarrierGrouping"]')) }, true);
+    }
+</script>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

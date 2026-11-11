@@ -1,0 +1,59 @@
+﻿@using System.Data
+@model DataTable
+@{
+    Layout = null;
+    var fontsize = ViewBag.FontSize;
+}
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Report PDF</title>
+    <style type="text/css">
+        table {
+            width: 100%;
+            margin-bottom: 10px;
+            font-size: @fontsize;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 2px;
+        }
+    </style>
+</head>
+<body>
+    @if (Model != null)
+    {
+        if (Model.Rows.Count > 0)
+        {
+            <table>
+                <tr>
+                    @foreach (DataColumn column in Model.Columns)
+                    {
+                        <td style="font-weight:bold;">
+                            @column.ColumnName
+                        </td>
+                    }
+                </tr>");
+                @foreach (DataRow row in Model.Rows)
+                {
+                    <tr>
+                        @foreach (DataColumn column in Model.Columns)
+                        {
+                            <td>
+                                @row[column.ColumnName]
+                            </td>
+
+                        }
+                    </tr>
+                }
+            </table>
+        }
+    }
+</body>
+</html>

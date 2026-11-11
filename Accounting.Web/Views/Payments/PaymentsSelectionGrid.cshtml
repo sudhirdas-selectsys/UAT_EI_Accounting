@@ -1,0 +1,140 @@
+﻿@model List<Payments>
+@{
+	var Direction_Id = ViewBag.Direction_Id != null ? ViewBag.Direction_Id : 0;
+}
+<div style="display: flex; align-items: center; gap: 10px; margin-bottom:3px">
+	<p class="m-0">Outstanding Balance:</p>
+	<div class="form-check form-switch m-0">
+		<input class="form-check-input custom-switch-purple" type="checkbox" data-name="toggleOutstandingBalance" @(ViewBag.IsOutstandingChecked == true ? "checked" : "")>
+	</div>
+</div>
+<div class="position-relative border">
+	<div class="table-responsive table-scroll">
+		<table class="table ei-table mb-0 no-wrap ei-ac-db-table trns-db-table" data-name="tblPaymentsSelection">
+			<thead>
+				<tr>
+					<th style="width:100px;">Payment Id</th>
+					<th style="width:120px;">Entity Type</th>
+					<th style="width:180px;">Entity Name</th>
+					<th>Payment Date</th>
+					<th>Amount</th>
+					<th>Remaining Amount</th>
+					<th>Payment Type</th>
+					<th>Reference Number</th>
+					<th>Payment Status</th>
+					<th>Payment Direction</th>
+					<th style="width:700px">Bank Account</th>
+				</tr>
+			</thead>
+			<tbody id="line-items-body">
+				@if (Model?.Count > 0)
+				{
+					foreach (var item in Model)
+					{
+						<tr data-name="payment_@item.Payment_Id" data-direction-id="@Direction_Id" data-payment-id="@item.Payment_Id">
+							<td>@item.Payment_Id</td>
+							<td>
+								<div class="text-truncate" title="@LookupUtility.GetAllEntityTypes().FirstOrDefault(c => c.EntityType_Id == item.EntityType_Id)?.Name">@LookupUtility.GetAllEntityTypes().FirstOrDefault(c => c.EntityType_Id == item.EntityType_Id)?.Name</div>
+							</td>
+							<td><div class="text-truncate" title="@item.EntityName">@item.EntityName</div></td>
+							<td>@item.PaymentDate?.ToShortDateString()</td>
+							<td>@CommonUtility.ConvertToCurrencyFormat(item.Amount,false,2)</td>
+							<td>
+								<div class="@(item.RemainingAmount > 0 ? "tdRemainingAmountNotZero" :item.RemainingAmount == 0 ? "tdRemainingAmount":"tdRemainingAmountLessZero")">@CommonUtility.ConvertToCurrencyFormat(item.RemainingAmount, false, 2)</div>
+							</td>
+							<td>@LookupUtility.GetAllPaymentTypes().FirstOrDefault(x => x.PaymentType_Id == item.PaymentType_Id)?.Name</td>
+							<td><div class="text-truncate" title="@item.ReferenceNumber">@item.ReferenceNumber</div></td>
+							<td>@LookupUtility.GetAllPaymentStatus().FirstOrDefault(x => x.PaymentStatus_Id == item.PaymentStatus_Id)?.Name</td>
+							<td>
+								@if (item.PaymentDirection_Id == MasterLookup._PaymentDirections.Incoming)
+								{
+									<i class="ri-arrow-down-line me-1"></i>
+								}
+								else
+								{
+									<i class="ri-arrow-up-line me-1"></i>
+								}@LookupUtility.GetAllPaymentDirections().FirstOrDefault(x => x.PaymentDirection_Id == item.PaymentDirection_Id)?.Name
+							</td>
+							<td><div class="text-truncate" title="@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id)?.Name">@LookupUtility.GetAllOperatingBanks().FirstOrDefault(x => x.OperatingBank_Id == item.OperatingBank_Id)?.Name</div></td>
+						</tr>
+					}
+				}
+				else
+				{
+					<tr><td colspan="11">No records found!</td></tr>
+				}
+			</tbody>
+
+
+		</table>
+	</div>
+
+</div>
+<div class="modal-footer justify-content-center position-relative">
+	<button type="button" class="btn btn-primary" data-name="btnPaymentSelected">Select Payment</button>
+</div>
+
+<script>
+	$(document).ready(function() {
+		 $('[data-name="tblPaymentsSelection"] tbody tr').each(function (index, ele) {
+
+		$(this).on('click', function () {
+			$('[data-name="tblPaymentsSelection"] tbody tr').removeClass('selected-payment');
+			$(this).addClass('selected-payment');
+		});
+	});
+	$('[data-name="btnPaymentSelected"]').off('click');
+	$('[data-name="btnPaymentSelected"]').on('click', function () {
+		var tbody = $('[data-name="tblPaymentsSelection"] tbody tr.selected-payment');
+		var Payment_Id = tbody.attr('data-payment-id');
+		var Direction_Id = tbody.attr('data-direction-id');
+		appCommon.ExecuteAjaxGetMethod("/Payments/SelectedPaymentsTile?Payment_Id=" + Payment_Id + "&Direction_Id="+Direction_Id, function (response) {
+			if (response != null && response != undefined) {
+				$('[data-name="divSelectedPayments"]').html(response);
+				$('[data-name="GenericModal"]').modal('hide');
+				BindPaymentpanelEvents();
+			}
+
+		}, true);
+	});
+	});
+	function BindPaymentpanelEvents(){
+	$('[data-name="btnEditSelectedPayment"]').off('click');
+	$('[data-name="btnEditSelectedPayment"]').on('click', function () {
+		var Payment_Id = $(this).attr('data-payment-id');
+		appCommon.SubmitForm($('[data-name="selectPayments"]'), function (response) {
+			if (response != undefined && response != null) {
+				appCommon.GenericModalFunction("Select Payments", response);
+				$('[data-name="GenericModal"]').find(".modal-dialog").css("--bs-modal-width", "1400px");
+				$('[data-name="payment_' + Payment_Id + '"]').addClass('selected-payment');
+			}
+		}, "/Search/PaymentsSearchForSelection", true, false);
+	});
+	}
+
+	$('[data-name="toggleOutstandingBalance"]').off('change');
+	$('[data-name="toggleOutstandingBalance"]').on('change', function () {
+		var isChecked = $(this).prop('checked');
+		var paymentSelectGrid = $('[data-name="tblPaymentsSelection"]');
+		var queryString = appCommon.BuildQueryStringParameters({
+			OutstandingBalances: isChecked
+		});
+		appCommon.ShowPartialPanelLoader(paymentSelectGrid);
+		appCommon.SubmitForm($('[data-name="selectPayments"]'), function (response) {
+			if (response != undefined && response != null) {
+				appCommon.GenericModalFunction("Select Payments", response);
+				$('[data-name="GenericModal"]').find(".modal-dialog").css("--bs-modal-width", "1400px");
+
+			}
+		}, "/Search/PaymentsSearchForSelection?" + queryString, true, false);
+	});
+</script>
+<style>
+	[data-name="DashboardTabsContainer"] {
+		min-height: auto !important;
+	}
+
+	.text-bg-primary {
+		background-color: #5F2EE5 !important
+	}
+</style>

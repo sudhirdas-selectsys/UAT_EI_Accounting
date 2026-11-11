@@ -1,0 +1,658 @@
+--/****** Object:  Table [dbo].[Accounting_LU_InstallmentBasisTypes]    Script Date: 8/26/2025 00:11:39 ******/
+--SET ANSI_NULLS ON
+--GO
+--SET QUOTED_IDENTIFIER ON
+--GO
+--CREATE TABLE [dbo].[Accounting_LU_InstallmentBasisTypes](
+--	[InstallmentBasisType_Id] [tinyint] IDENTITY(1,1) NOT NULL,
+--	[Name] [nvarchar](50) NOT NULL,
+--	[Description] [nvarchar](255) NULL,
+--	[SequenceNo] [tinyint] NULL,
+--	[Status] [bit] NOT NULL,
+--	[CreatedOn] [datetime] NOT NULL,
+--	[UpdatedOn] [datetime] NULL
+--) ON [PRIMARY]
+--GO
+--/****** Object:  Table [dbo].[Accounting_LU_IntervalUnitTypes]    Script Date: 8/26/2025 00:11:39 ******/
+--SET ANSI_NULLS ON
+--GO
+--SET QUOTED_IDENTIFIER ON
+--GO
+--CREATE TABLE [dbo].[Accounting_LU_IntervalUnitTypes](
+--	[IntervalUnitType_Id] [tinyint] IDENTITY(1,1) NOT NULL,
+--	[Name] [nvarchar](50) NOT NULL,
+--	[Description] [nvarchar](255) NULL,
+--	[SequenceNo] [tinyint] NULL,
+--	[Status] [bit] NOT NULL,
+--	[CreatedOn] [datetime] NOT NULL,
+--	[UpdatedOn] [datetime] NULL
+--) ON [PRIMARY]
+--GO
+--/****** Object:  Table [dbo].[Accounting_LU_PaymentAnchorTypes]    Script Date: 8/26/2025 00:11:39 ******/
+--SET ANSI_NULLS ON
+--GO
+--SET QUOTED_IDENTIFIER ON
+--GO
+--CREATE TABLE [dbo].[Accounting_LU_PaymentAnchorTypes](
+--	[PaymentAnchorType_Id] [tinyint] IDENTITY(1,1) NOT NULL,
+--	[Name] [nvarchar](50) NOT NULL,
+--	[Description] [nvarchar](255) NULL,
+--	[SequenceNo] [tinyint] NULL,
+--	[Status] [bit] NOT NULL,
+--	[CreatedOn] [datetime] NOT NULL,
+--	[UpdatedOn] [datetime] NULL
+--) ON [PRIMARY]
+--GO
+--/****** Object:  Table [dbo].[Accounting_LU_PaymentPlans]    Script Date: 8/26/2025 00:11:39 ******/
+
+----SET ANSI_NULLS ON
+----GO
+----SET QUOTED_IDENTIFIER ON
+----GO
+----CREATE TABLE [dbo].[Accounting_LU_PaymentPlans](
+----	[PaymentPlan_Id] [tinyint] IDENTITY(1,1) NOT NULL,
+----	[Name] [nvarchar](100) NOT NULL,
+----	[Client_Id] [bigint] NOT NULL,
+----	[Carrier_Id] [bigint] NULL,
+----	[DownPaymentPercent] [float] NOT NULL,
+----	[DownPaymentMinimum] [float] NOT NULL,
+----	[DownPaymentTermDays] [tinyint] NOT NULL,
+----	[PaymentAnchorType_Id] [tinyint] NULL,
+----	[NumberOfPayments] [tinyint] NULL,
+----	[InstallmentBasisType_Id] [tinyint] NULL,
+----	[IntervalUnitType_Id] [tinyint] NULL,
+----	[IntervalValue] [tinyint] NULL,
+----	[FirstPaymentOffsetDays] [tinyint] NULL,
+----	[FixedDayOfMonth] [tinyint] NULL,
+----	[IsSetBillDateEqualDue] [bit] NOT NULL,
+----	[LeadTime] [tinyint] NULL,
+----	[IsInstallmentFeeSetup] [bit] NOT NULL,
+----	[IsAutoSendInvoices] [bit] NOT NULL,
+----	[SequenceNo] [tinyint] NULL,
+----	[Status] [bit] NOT NULL,
+----	[CreatedOn] [datetime] NOT NULL,
+----	[UpdatedOn] [datetime] NULL,
+----	[Code] [nvarchar](20) NULL
+----) ON [PRIMARY]
+----GO
+--/****** Object:  Table [dbo].[Accounting_PolicyPaymentSchedule]    Script Date: 8/26/2025 00:11:39 ******/
+----SET ANSI_NULLS ON
+----GO
+----SET QUOTED_IDENTIFIER ON
+----GO
+----CREATE TABLE [dbo].[Accounting_PolicyPaymentSchedule](
+----	[PolicyPaymentSchedule_Id] [bigint] IDENTITY(1,1) NOT NULL,
+----	[PolicyDetail_Id] [bigint] NOT NULL,
+----	[PaymentPlan_Id] [tinyint] NOT NULL,
+----	[InstallmentNo] [tinyint] NULL,
+----	[IsDownPayment] [bit] NOT NULL,
+----	[DueDate] [date] NOT NULL,
+----	[BillDate] [date] NULL,
+----	[Amount] [float] NOT NULL,
+----	[Paid] [bit] NOT NULL,
+----	[PaidOn] [date] NULL,
+----	[Notes] [nvarchar](500) NULL,
+----	[SequenceNo] [tinyint] NULL,
+----	[Status] [bit] NOT NULL,
+----	[CreatedOn] [datetime] NOT NULL,
+----	[UpdatedOn] [datetime] NULL
+----) ON [PRIMARY]
+----GO
+----SET IDENTITY_INSERT [dbo].[Accounting_LU_InstallmentBasisTypes] ON 
+----GO
+----INSERT [dbo].[Accounting_LU_InstallmentBasisTypes] ([InstallmentBasisType_Id], [Name], [Description], [SequenceNo], [Status], [CreatedOn], [UpdatedOn]) VALUES (1, N'Effective Date', N'Installment schedule based on policy effective date.', 1, 1, CAST(N'2025-08-18T06:01:56.337' AS DateTime), NULL)
+----GO
+----INSERT [dbo].[Accounting_LU_InstallmentBasisTypes] ([InstallmentBasisType_Id], [Name], [Description], [SequenceNo], [Status], [CreatedOn], [UpdatedOn]) VALUES (2, N'Date Billed', N'Installment schedule based on billing date.', 2, 1, CAST(N'2025-08-18T06:01:56.337' AS DateTime), NULL)
+----GO
+----INSERT [dbo].[Accounting_LU_InstallmentBasisTypes] ([InstallmentBasisType_Id], [Name], [Description], [SequenceNo], [Status], [CreatedOn], [UpdatedOn]) VALUES (3, N'Day Of Month', N'Installment schedule anchored to a specific day of the month.', 3, 1, CAST(N'2025-08-18T06:01:56.337' AS DateTime), NULL)
+----GO
+----SET IDENTITY_INSERT [dbo].[Accounting_LU_InstallmentBasisTypes] OFF
+----GO
+----SET IDENTITY_INSERT [dbo].[Accounting_LU_IntervalUnitTypes] ON 
+----GO
+----INSERT [dbo].[Accounting_LU_IntervalUnitTypes] ([IntervalUnitType_Id], [Name], [Description], [SequenceNo], [Status], [CreatedOn], [UpdatedOn]) VALUES (1, N'Days', N'Interval in days', 1, 1, CAST(N'2025-08-18T06:03:50.037' AS DateTime), NULL)
+----GO
+----INSERT [dbo].[Accounting_LU_IntervalUnitTypes] ([IntervalUnitType_Id], [Name], [Description], [SequenceNo], [Status], [CreatedOn], [UpdatedOn]) VALUES (2, N'Months', N'Interval in months', 2, 1, CAST(N'2025-08-18T06:03:50.037' AS DateTime), NULL)
+----GO
+----SET IDENTITY_INSERT [dbo].[Accounting_LU_IntervalUnitTypes] OFF
+----GO
+----SET IDENTITY_INSERT [dbo].[Accounting_LU_PaymentAnchorTypes] ON 
+----GO
+----INSERT [dbo].[Accounting_LU_PaymentAnchorTypes] ([PaymentAnchorType_Id], [Name], [Description], [SequenceNo], [Status], [CreatedOn], [UpdatedOn]) VALUES (1, N'Effective Date', N'Anchor payments based on the policy effective date.', 1, 1, CAST(N'2025-08-18T06:01:19.340' AS DateTime), NULL)
+----GO
+----INSERT [dbo].[Accounting_LU_PaymentAnchorTypes] ([PaymentAnchorType_Id], [Name], [Description], [SequenceNo], [Status], [CreatedOn], [UpdatedOn]) VALUES (2, N'Date Billed', N'Anchor payments based on the date billed.', 2, 1, CAST(N'2025-08-18T06:01:19.340' AS DateTime), NULL)
+----GO
+----SET IDENTITY_INSERT [dbo].[Accounting_LU_PaymentAnchorTypes] OFF
+----GO
+----SET IDENTITY_INSERT [dbo].[Accounting_LU_PaymentPlans] ON 
+----GO
+----INSERT [dbo].[Accounting_LU_PaymentPlans] ([PaymentPlan_Id], [Name], [Client_Id], [Carrier_Id], [DownPaymentPercent], [DownPaymentMinimum], [DownPaymentTermDays], [PaymentAnchorType_Id], [NumberOfPayments], [InstallmentBasisType_Id], [IntervalUnitType_Id], [IntervalValue], [FirstPaymentOffsetDays], [FixedDayOfMonth], [IsSetBillDateEqualDue], [LeadTime], [IsInstallmentFeeSetup], [IsAutoSendInvoices], [SequenceNo], [Status], [CreatedOn], [UpdatedOn], [Code]) VALUES (2, N'3 Month', 10002, 20024, 1, 150, 2, 1, 2, 1, 1, 30, 10, 10, 1, 0, 1, 1, 1, 1, CAST(N'2025-08-19T06:53:00.027' AS DateTime), CAST(N'2025-08-20T13:14:08.270' AS DateTime), N'M3')
+----GO
+----INSERT [dbo].[Accounting_LU_PaymentPlans] ([PaymentPlan_Id], [Name], [Client_Id], [Carrier_Id], [DownPaymentPercent], [DownPaymentMinimum], [DownPaymentTermDays], [PaymentAnchorType_Id], [NumberOfPayments], [InstallmentBasisType_Id], [IntervalUnitType_Id], [IntervalValue], [FirstPaymentOffsetDays], [FixedDayOfMonth], [IsSetBillDateEqualDue], [LeadTime], [IsInstallmentFeeSetup], [IsAutoSendInvoices], [SequenceNo], [Status], [CreatedOn], [UpdatedOn], [Code]) VALUES (3, N'Quarterly 4 Payments', 10002, 20024, 10, 100, 6, 2, 3, 1, 1, 1, 12, 15, 0, 10, 1, 1, 2, 1, CAST(N'2025-08-19T07:54:36.283' AS DateTime), CAST(N'2025-08-20T13:19:17.700' AS DateTime), N'QP4')
+----GO
+----INSERT [dbo].[Accounting_LU_PaymentPlans] ([PaymentPlan_Id], [Name], [Client_Id], [Carrier_Id], [DownPaymentPercent], [DownPaymentMinimum], [DownPaymentTermDays], [PaymentAnchorType_Id], [NumberOfPayments], [InstallmentBasisType_Id], [IntervalUnitType_Id], [IntervalValue], [FirstPaymentOffsetDays], [FixedDayOfMonth], [IsSetBillDateEqualDue], [LeadTime], [IsInstallmentFeeSetup], [IsAutoSendInvoices], [SequenceNo], [Status], [CreatedOn], [UpdatedOn], [Code]) VALUES (6, N'Annual Full Payment', 10002, 20025, 100, 150, 2, 1, 1, 0, 0, 0, NULL, NULL, 1, 0, 0, 0, 3, 1, CAST(N'2025-08-19T09:27:30.213' AS DateTime), CAST(N'2025-08-20T13:23:03.013' AS DateTime), N'ANNUAL')
+----GO
+----INSERT [dbo].[Accounting_LU_PaymentPlans] ([PaymentPlan_Id], [Name], [Client_Id], [Carrier_Id], [DownPaymentPercent], [DownPaymentMinimum], [DownPaymentTermDays], [PaymentAnchorType_Id], [NumberOfPayments], [InstallmentBasisType_Id], [IntervalUnitType_Id], [IntervalValue], [FirstPaymentOffsetDays], [FixedDayOfMonth], [IsSetBillDateEqualDue], [LeadTime], [IsInstallmentFeeSetup], [IsAutoSendInvoices], [SequenceNo], [Status], [CreatedOn], [UpdatedOn], [Code]) VALUES (8, N'Semi Annual 2 Payments', 10002, NULL, 50, 150, 0, 1, 2, 1, 2, 6, NULL, NULL, 1, 0, 1, 1, 4, 1, CAST(N'2025-08-19T13:31:46.200' AS DateTime), NULL, N'ANNUAL')
+----GO
+----INSERT [dbo].[Accounting_LU_PaymentPlans] ([PaymentPlan_Id], [Name], [Client_Id], [Carrier_Id], [DownPaymentPercent], [DownPaymentMinimum], [DownPaymentTermDays], [PaymentAnchorType_Id], [NumberOfPayments], [InstallmentBasisType_Id], [IntervalUnitType_Id], [IntervalValue], [FirstPaymentOffsetDays], [FixedDayOfMonth], [IsSetBillDateEqualDue], [LeadTime], [IsInstallmentFeeSetup], [IsAutoSendInvoices], [SequenceNo], [Status], [CreatedOn], [UpdatedOn], [Code]) VALUES (7, N'Monthly Plan', 10002, NULL, 20, 200, 2, 1, 2, 1, 1, 15, NULL, NULL, 1, 0, 1, 1, 4, 0, CAST(N'2025-08-19T12:08:17.847' AS DateTime), NULL, N'MP')
+----GO
+----SET IDENTITY_INSERT [dbo].[Accounting_LU_PaymentPlans] OFF
+----GO
+--/****** Object:  Index [UK_EI_Accounting_LU_InstallmentBasisTypes_Id]    Script Date: 8/26/2025 00:11:40 ******/
+--ALTER TABLE [dbo].[Accounting_LU_InstallmentBasisTypes] ADD  CONSTRAINT [UK_EI_Accounting_LU_InstallmentBasisTypes_Id] UNIQUE NONCLUSTERED 
+--(
+--	[InstallmentBasisType_Id] ASC
+--)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+--GO
+--SET ANSI_PADDING ON
+--GO
+--/****** Object:  Index [UQ_EI_Accounting_LU_InstallmentBasisTypes_Name]    Script Date: 8/26/2025 00:11:40 ******/
+--ALTER TABLE [dbo].[Accounting_LU_InstallmentBasisTypes] ADD  CONSTRAINT [UQ_EI_Accounting_LU_InstallmentBasisTypes_Name] UNIQUE NONCLUSTERED 
+--(
+--	[Name] ASC
+--)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+--GO
+--/****** Object:  Index [UK_EI_IntervalUnitType_Id]    Script Date: 8/26/2025 00:11:40 ******/
+--ALTER TABLE [dbo].[Accounting_LU_IntervalUnitTypes] ADD  CONSTRAINT [UK_EI_IntervalUnitType_Id] UNIQUE NONCLUSTERED 
+--(
+--	[IntervalUnitType_Id] ASC
+--)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+--GO
+--SET ANSI_PADDING ON
+--GO
+--/****** Object:  Index [UQ_EI_IntervalUnitType_Name]    Script Date: 8/26/2025 00:11:40 ******/
+--ALTER TABLE [dbo].[Accounting_LU_IntervalUnitTypes] ADD  CONSTRAINT [UQ_EI_IntervalUnitType_Name] UNIQUE NONCLUSTERED 
+--(
+--	[Name] ASC
+--)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+--GO
+--/****** Object:  Index [UK_EI_Accounting_LU_PaymentAnchorTypes_PaymentAnchorType_Id]    Script Date: 8/26/2025 00:11:40 ******/
+----ALTER TABLE [dbo].[Accounting_LU_PaymentAnchorTypes] ADD  CONSTRAINT [UK_EI_Accounting_LU_PaymentAnchorTypes_PaymentAnchorType_Id] UNIQUE NONCLUSTERED 
+----(
+----	[PaymentAnchorType_Id] ASC
+----)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+----GO
+----SET ANSI_PADDING ON
+----GO
+--/****** Object:  Index [UQ_EI_Accounting_LU_PaymentAnchorTypes_Name]    Script Date: 8/26/2025 00:11:40 ******/
+----ALTER TABLE [dbo].[Accounting_LU_PaymentAnchorTypes] ADD  CONSTRAINT [UQ_EI_Accounting_LU_PaymentAnchorTypes_Name] UNIQUE NONCLUSTERED 
+----(
+----	[Name] ASC
+----)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+----GO
+--/****** Object:  Index [UK_EI_PaymentPlan_Id]    Script Date: 8/26/2025 00:11:40 ******/
+----ALTER TABLE [dbo].[Accounting_LU_PaymentPlans] ADD  CONSTRAINT [UK_EI_PaymentPlan_Id] UNIQUE NONCLUSTERED 
+----(
+----	[PaymentPlan_Id] ASC
+----)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+----GO
+----SET ANSI_PADDING ON
+----GO
+--/****** Object:  Index [UQ_EI_Accounting_LU_PaymentPlans_Name_Client_Carrier]    Script Date: 8/26/2025 00:11:40 ******/
+----ALTER TABLE [dbo].[Accounting_LU_PaymentPlans] ADD  CONSTRAINT [UQ_EI_Accounting_LU_PaymentPlans_Name_Client_Carrier] UNIQUE NONCLUSTERED 
+----(
+----	[Name] ASC,
+----	[Client_Id] ASC,
+----	[Carrier_Id] ASC
+----)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+----GO
+--/****** Object:  Index [UQ_EI_Accounting_PolicyPaymentSchedule_Policy_Installment]    Script Date: 8/26/2025 00:11:40 ******/
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule] ADD  CONSTRAINT [UQ_EI_Accounting_PolicyPaymentSchedule_Policy_Installment] UNIQUE NONCLUSTERED 
+--(
+--	[PolicyDetail_Id] ASC,
+--	[InstallmentNo] ASC
+--)WITH (STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ONLINE = OFF, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_InstallmentBasisTypes] ADD  CONSTRAINT [DF_EI_Accounting_LU_InstallmentBasisType_Status]  DEFAULT ((1)) FOR [Status]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_InstallmentBasisTypes] ADD  CONSTRAINT [DF_EI_Accounting_LU_InstallmentBasisType_CreatedOn]  DEFAULT (getdate()) FOR [CreatedOn]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_IntervalUnitTypes] ADD  CONSTRAINT [DF_EI_Accounting_LU_IntervalUnitType_Status]  DEFAULT ((1)) FOR [Status]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_IntervalUnitTypes] ADD  CONSTRAINT [DF_EI_Accounting_LU_IntervalUnitType_CreatedOn]  DEFAULT (getdate()) FOR [CreatedOn]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentAnchorTypes] ADD  CONSTRAINT [DF_EI_Accounting_LU_PaymentAnchorTypes_Status]  DEFAULT ((1)) FOR [Status]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentAnchorTypes] ADD  CONSTRAINT [DF_EI_Accounting_LU_PaymentAnchorTypes_CreatedOn]  DEFAULT (getdate()) FOR [CreatedOn]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentPlans] ADD  CONSTRAINT [DF_EI_Accounting_LU_PaymentPlans_InstallmentFeeSetup]  DEFAULT ((0)) FOR [IsInstallmentFeeSetup]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentPlans] ADD  CONSTRAINT [DF_EI_Accounting_LU_PaymentPlans_AutoSendInvoices]  DEFAULT ((1)) FOR [IsAutoSendInvoices]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentPlans] ADD  CONSTRAINT [DF_EI_Accounting_LU_PaymentPlans_Status]  DEFAULT ((1)) FOR [Status]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentPlans] ADD  CONSTRAINT [DF_EI_Accounting_LU_PaymentPlans_CreatedOn]  DEFAULT (getdate()) FOR [CreatedOn]
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule] ADD  CONSTRAINT [DF_EI_Accounting_PolicyPaymentSchedule_IsDownPayment]  DEFAULT ((0)) FOR [IsDownPayment]
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule] ADD  CONSTRAINT [DF_EI_Accounting_PolicyPaymentSchedule_Paid]  DEFAULT ((0)) FOR [Paid]
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule] ADD  CONSTRAINT [DF_EI_Accounting_PolicyPaymentSchedule_Status]  DEFAULT ((1)) FOR [Status]
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule] ADD  CONSTRAINT [DF_EI_Accounting_PolicyPaymentSchedule_CreatedOn]  DEFAULT (getdate()) FOR [CreatedOn]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentPlans]  WITH CHECK ADD  CONSTRAINT [FK_EI_Accounting_LU_PaymentPlan_Accounting_LU_AnchorTypes] FOREIGN KEY([PaymentAnchorType_Id])
+--REFERENCES [dbo].[Accounting_LU_PaymentAnchorTypes] ([PaymentAnchorType_Id])
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentPlans] CHECK CONSTRAINT [FK_EI_Accounting_LU_PaymentPlan_Accounting_LU_AnchorTypes]
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule]  WITH CHECK ADD  CONSTRAINT [FK_EI_PolicyPaymentSchedule_Accounting_LU_PaymentPlan] FOREIGN KEY([PaymentPlan_Id])
+--REFERENCES [dbo].[Accounting_LU_PaymentPlans] ([PaymentPlan_Id])
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule] CHECK CONSTRAINT [FK_EI_PolicyPaymentSchedule_Accounting_LU_PaymentPlan]
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule]  WITH CHECK ADD  CONSTRAINT [FK_PolicyPaymentSchedule_PolicyDetail] FOREIGN KEY([PolicyDetail_Id])
+--REFERENCES [dbo].[Accounting_PolicyDetails] ([Id])
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule] CHECK CONSTRAINT [FK_PolicyPaymentSchedule_PolicyDetail]
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentPlans]  WITH CHECK ADD  CONSTRAINT [CK_EI_PaymentPlan_DownPaymentPercent] CHECK  (([DownPaymentPercent]>=(0) AND [DownPaymentPercent]<=(100)))
+--GO
+--ALTER TABLE [dbo].[Accounting_LU_PaymentPlans] CHECK CONSTRAINT [CK_EI_PaymentPlan_DownPaymentPercent]
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule]  WITH CHECK ADD  CONSTRAINT [CK_EI_Accounting_PolicyPaymentSchedule_Amount] CHECK  (([Amount]>=(0)))
+--GO
+--ALTER TABLE [dbo].[Accounting_PolicyPaymentSchedule] CHECK CONSTRAINT [CK_EI_Accounting_PolicyPaymentSchedule_Amount]
+--GO
+
+
+
+--
+-- Alter Table: Accounting_Invoices
+--
+
+--ALTER TABLE Accounting_Invoices
+--ADD Schedule_Id BIGINT NULL;
+
+
+
+----
+---- Alter Table: Accounting_PolicyDetails
+----
+
+--ALTER TABLE Accounting_PolicyDetails
+--ADD PaymentPlan_Id TINYINT NULL,-- FK to Accounting_LU_PaymentPlans
+--    DownPaymentAmount float NULL;
+
+--ALTER TABLE Accounting_PolicyDetails
+--ADD CONSTRAINT FK_Accounting_PolicyDetails_Accounting_LU_PaymentPlans
+--    FOREIGN KEY (PaymentPlan_Id) REFERENCES Accounting_LU_PaymentPlans(PaymentPlan_Id);
+
+---- Clustered Index on Status DESC, PolicyPaymentSchedule_Id ASC
+--CREATE CLUSTERED INDEX CLU_EI_Accounting_PolicyPaymentSchedule_Status_Id
+--ON Accounting_PolicyPaymentSchedule ( PolicyPaymentSchedule_Id ASC,Status DESC);
+
+
+---- Create a clustered index with PaymentAnchorType_Id ASC and Status DESC
+--CREATE CLUSTERED INDEX [CLU_EI_Accounting_LU_PaymentAnchorTypes_PaymentAnchorType_Id_Status]
+--ON [dbo].[Accounting_LU_PaymentAnchorTypes] ([PaymentAnchorType_Id] ASC, [Status] DESC);
+--GO
+
+---- Clustered index for ordering by InstallmentBasisType_Id ASC and Status DESC
+--CREATE CLUSTERED INDEX [CLU_EI_InstallmentBasisTypes_InstallmentBasisType_Id_Status]
+--ON [dbo].[Accounting_LU_InstallmentBasisTypes] ([InstallmentBasisType_Id] ASC, [Status] DESC);
+--GO
+
+
+---- Clustered index for display/order
+--CREATE CLUSTERED INDEX [CLU_EI_IntervalUnitTypes_IntervalUnitType_Id_Status]
+--    ON [dbo].[Accounting_LU_IntervalUnitTypes] ([IntervalUnitType_Id] ASC, [Status] DESC);
+--GO
+
+---- Clustered index with Status DESC and PaymentPlan_Id ASC
+--CREATE CLUSTERED INDEX CLU_EI_Accounting_LU_PaymentPlan_Status_PlanId
+--ON Accounting_LU_PaymentPlans (Status DESC, PaymentPlan_Id ASC);
+
+  
+--ALTER PROCEDURE [dbo].[USP_Accounting_InsertUpdateScheduledInvoices]    
+    
+--     @PolicyInstallmentDetails_Id BIGINT = NULL,    
+--    @PolicyDetail_Id       BIGINT,    
+--    @PaymentPlan_Id        BIGINT,    
+--    @InstallmentNo         INT=null,    
+--    @IsDownPayment         BIT,    
+--    @DueDate               DATETIME,    
+--    @BillDate              DATETIME,    
+--    @Amount                DECIMAL(18,2),    
+--    @Paid                  BIT,    
+--    @PaidOn                DATETIME = NULL,    
+--    @Notes                 NVARCHAR(MAX) = NULL,    
+--    @Sequence           INT ,
+--	@PolicyPaymentSchedule_Id BIGINT OUTPUT
+--AS    
+--BEGIN    
+--    SET NOCOUNT ON;    
+    
+--    IF @PolicyInstallmentDetails_Id IS NULL    
+--    BEGIN    
+--        -- Insert    
+--        INSERT INTO dbo.Accounting_PolicyPaymentSchedule    
+--        (    
+--            PolicyDetail_Id,    
+--            PaymentPlan_Id,    
+--            InstallmentNo,    
+--            IsDownPayment,    
+--            DueDate,    
+--            BillDate,    
+--            Amount,    
+--            Paid,    
+--            PaidOn,    
+--            Notes,    
+--            SequenceNo    
+--        )    
+--        VALUES    
+--        (    
+--            @PolicyDetail_Id,    
+--            @PaymentPlan_Id,    
+--            @InstallmentNo,    
+--            @IsDownPayment,    
+--            @DueDate,    
+--            @BillDate,    
+--            @Amount,    
+--            @Paid,    
+--            @PaidOn,    
+--            @Notes,    
+--            @Sequence    
+--        );    
+--		SET @PolicyPaymentSchedule_Id = SCOPE_IDENTITY();
+--    END    
+--    ELSE    
+--    BEGIN    
+--        -- Update    
+--        UPDATE dbo.Accounting_PolicyPaymentSchedule    
+--        SET    
+--            PolicyDetail_Id = @PolicyDetail_Id,    
+--            PaymentPlan_Id = @PaymentPlan_Id,    
+--            InstallmentNo = @InstallmentNo,    
+--            IsDownPayment = @IsDownPayment,    
+--            DueDate = @DueDate,    
+--            BillDate = @BillDate,    
+--            Amount = @Amount,    
+--            Paid = @Paid,    
+--            PaidOn = @PaidOn,    
+--            Notes = @Notes,    
+--            SequenceNo = @Sequence    
+--        WHERE PolicyPaymentSchedule_Id = @PolicyPaymentSchedule_Id;   
+--		SET @PolicyPaymentSchedule_Id =@PolicyPaymentSchedule_Id;
+--    END    
+--END 
+
+
+-- Alter Proc [dbo].[USP_Accounting_InsertUpdateInvoices]    
+--(                      
+--@Id bigint output                      
+--,@PolicyDetails_Id bigint                      
+--,@InvoiceNo varchar(100) output                      
+--,@InstallmentNo int = null                      
+--,@DueDate datetime = null                      
+--,@InvoiceNote varchar(500) = null                      
+--,@Paid bit = null                
+--,@Amount float = null                
+--,@RemainingBalance  float = null                
+--,@InvoiceEffectiveDate datetime = null 
+--,@Schedule_Id tinyint =null
+--,@InvoiceCreatedOn datetime output    
+--)                      
+--As                      
+--Begin                      
+--if exists (select 1 from Accounting_Invoices where PolicyDetails_Id = @PolicyDetails_Id and InstallmentNo = @InstallmentNo and status = 1)                      
+--begin                      
+--update Accounting_Invoices set                      
+--InvoiceNo = @InvoiceNo                      
+--,DueDate = @DueDate                      
+--,InvoiceNote = @InvoiceNote                 
+--,Amount = @Amount                
+--,RemainingBalance = @RemainingBalance                
+--,UpdatedOn = Getdate()                      
+--where PolicyDetails_Id = @PolicyDetails_Id and InstallmentNo = @InstallmentNo and status = 1                      
+--end                      
+--else                      
+--begin        
+--DECLARE @LocalDueDate DATETIME;        
+--SET @LocalDueDate = ISNULL(@DueDate, DATEADD(DAY, 30, ISNULL(@InvoiceEffectiveDate, GETDATE())));        
+--DECLARE @NextInvoiceNo VARCHAR(50) = 'INV' +               
+--    RIGHT('000000' + CAST(              
+--        ISNULL(              
+--            (SELECT TOP 1 CAST(SUBSTRING(InvoiceNo, PATINDEX('%[0-9]%', InvoiceNo), LEN(InvoiceNo)) AS INT)              
+--             FROM Accounting_Invoices               
+--             WHERE Status = 1               
+--             ORDER BY Id DESC), 0              
+--        ) + 1 AS VARCHAR), 6);              
+              
+--SELECT @NextInvoiceNo AS NewInvoiceNo;              
+--insert into Accounting_Invoices                      
+--(                      
+--PolicyDetails_Id                      
+--,InvoiceNo                      
+--,InstallmentNo                      
+--,DueDate                      
+--,InvoiceNote                 
+--,Amount                
+--,RemainingBalance 
+--,Schedule_Id
+--)                      
+--Values                      
+--(                      
+--@PolicyDetails_Id                      
+--,@NextInvoiceNo                      
+--,@InstallmentNo                      
+--,@LocalDueDate                      
+--,@InvoiceNote                
+--,@Amount                
+--,@RemainingBalance
+--,@Schedule_Id
+--)                      
+--set @Id = SCOPE_IDENTITY()    
+--set @InvoiceNo = @NextInvoiceNo    
+--end    
+--select @InvoiceCreatedOn = CreatedOn from Accounting_Invoices where Id = @Id and Status = 1    
+--end
+--go
+
+
+
+--ALTER PROCEDURE [dbo].[USP_Accounting_GetPaymentPlanByPaymentCode]  
+--    @PaymentCode NVARCHAR(100)  
+--AS  
+--BEGIN  
+--    SET NOCOUNT ON;  
+  
+--    SELECT PaymentPlan_Id
+--,PP.Name
+--,Client_Id
+--,Carrier_Id
+--,DownPaymentPercent
+--,DownPaymentMinimum
+--,DownPaymentTermDays
+--,AT.Name As PaymentAnchorType
+--,PP.PaymentAnchorType_Id
+--,NumberOfPayments
+--,IBT.Name As InstallmentBasisType
+--,PP.InstallmentBasisType_Id
+--,IUT.Name As IntervalUnitType
+--,PP.IntervalUnitType_Id
+--,IntervalValue
+--,FirstPaymentOffsetDays
+--,FixedDayOfMonth
+--,IsSetBillDateEqualDue
+--,LeadTime
+--,IsInstallmentFeeSetup
+--,IsAutoSendInvoices
+--,PP.SequenceNo
+--,PP.Status  
+--    FROM dbo.Accounting_LU_PaymentPlans  PP 
+--	INNER Join Accounting_LU_PaymentAnchorTypes AT on AT.PaymentAnchorType_Id=PP.PaymentAnchorType_Id
+	
+--	INNER Join Accounting_LU_InstallmentBasisTypes IBT on IBT.InstallmentBasisType_Id=PP.InstallmentBasisType_Id
+	
+--	INNER Join Accounting_LU_IntervalUnitTypes IUT on IUT.IntervalUnitType_Id=PP.IntervalUnitType_Id
+
+--    WHERE PP.Status = 1 AND Code = @PaymentCode;  
+--END  
+
+
+--ALTER PROCEDURE [dbo].[USP_Accounting_InsertUpdateScheduledInvoices]
+
+--    @PolicyInstallmentDetails_Id BIGINT = NULL,
+--    @PolicyDetail_Id       BIGINT,
+--    @PaymentPlan_Id        BIGINT,
+--    @InstallmentNo         INT=null,
+--    @IsDownPayment         BIT,
+--    @DueDate               DATETIME,
+--    @BillDate              DATETIME,
+--    @Amount                DECIMAL(18,2),
+--    @Paid                  BIT,
+--    @PaidOn                DATETIME = NULL,
+--    @Notes                 NVARCHAR(MAX) = NULL,
+--    @Sequence           INT,
+--	@PolicyInstallmentDetails_Id BIGINT  OUTPUT
+--AS
+--BEGIN
+--    SET NOCOUNT ON;
+
+--    IF @PolicyInstallmentDetails_Id IS NULL
+--    BEGIN
+--        -- Insert
+--        INSERT INTO dbo.Accounting_PolicyPaymentSchedule
+--        (
+--            PolicyDetail_Id,
+--            PaymentPlan_Id,
+--            InstallmentNo,
+--            IsDownPayment,
+--            DueDate,
+--            BillDate,
+--            Amount,
+--            Paid,
+--            PaidOn,
+--            Notes,
+--            SequenceNo
+--        )
+--        VALUES
+--        (
+--            @PolicyDetail_Id,
+--            @PaymentPlan_Id,
+--            @InstallmentNo,
+--            @IsDownPayment,
+--            @DueDate,
+--            @BillDate,
+--            @Amount,
+--            @Paid,
+--            @PaidOn,
+--            @Notes,
+--            @Sequence
+--        );
+--		SET @PolicyPaymentSchedule_Id = SCOPE_IDENTITY();
+--    END
+--    ELSE
+--    BEGIN
+--        -- Update
+--        UPDATE dbo.PolicyInstallmentDetails
+--        SET
+--            PolicyDetail_Id = @PolicyDetail_Id,
+--            PaymentPlan_Id = @PaymentPlan_Id,
+--            InstallmentNo = @InstallmentNo,
+--            IsDownPayment = @IsDownPayment,
+--            DueDate = @DueDate,
+--            BillDate = @BillDate,
+--            Amount = @Amount,
+--            Paid = @Paid,
+--            PaidOn = @PaidOn,
+--            Notes = @Notes,
+--            SequenceNo = @Sequence
+--        WHERE PolicyInstallmentDetails_Id = @PolicyInstallmentDetails_Id;
+--		SET @PolicyPaymentSchedule_Id =@PolicyInstallmentDetails_Id;
+--    END
+--END
+--GO
+
+-- Alter Proc [dbo].[USP_Accounting_InsertUpdateInvoices]    
+--(                      
+--@Id bigint output                      
+--,@PolicyDetails_Id bigint                      
+--,@InvoiceNo varchar(100) output                      
+--,@InstallmentNo int = null                      
+--,@DueDate datetime = null                      
+--,@InvoiceNote varchar(500) = null                      
+--,@Paid bit = null                
+--,@Amount float = null                
+--,@RemainingBalance  float = null                
+--,@InvoiceEffectiveDate datetime = null 
+--,@Schedule_Id tinyint =null
+--,@InvoiceCreatedOn datetime output    
+--)                      
+--As                      
+--Begin                      
+--if exists (select 1 from Accounting_Invoices where PolicyDetails_Id = @PolicyDetails_Id and InstallmentNo = @InstallmentNo and status = 1)                      
+--begin                      
+--update Accounting_Invoices set                      
+--InvoiceNo = @InvoiceNo                      
+--,DueDate = @DueDate                      
+--,InvoiceNote = @InvoiceNote                 
+--,Amount = @Amount                
+--,RemainingBalance = @RemainingBalance                
+--,UpdatedOn = Getdate()                      
+--where PolicyDetails_Id = @PolicyDetails_Id and InstallmentNo = @InstallmentNo and status = 1                      
+--end                      
+--else                      
+--begin        
+--DECLARE @LocalDueDate DATETIME;        
+--SET @LocalDueDate = ISNULL(@DueDate, DATEADD(DAY, 30, ISNULL(@InvoiceEffectiveDate, GETDATE())));        
+--DECLARE @NextInvoiceNo VARCHAR(50) = 'INV' +               
+--    RIGHT('000000' + CAST(              
+--        ISNULL(              
+--            (SELECT TOP 1 CAST(SUBSTRING(InvoiceNo, PATINDEX('%[0-9]%', InvoiceNo), LEN(InvoiceNo)) AS INT)              
+--             FROM Accounting_Invoices               
+--             WHERE Status = 1               
+--             ORDER BY Id DESC), 0              
+--        ) + 1 AS VARCHAR), 6);              
+              
+--SELECT @NextInvoiceNo AS NewInvoiceNo;              
+--insert into Accounting_Invoices                      
+--(                      
+--PolicyDetails_Id                      
+--,InvoiceNo                      
+--,InstallmentNo                      
+--,DueDate                      
+--,InvoiceNote                 
+--,Amount                
+--,RemainingBalance 
+--,Schedule_Id
+--)                      
+--Values                      
+--(                      
+--@PolicyDetails_Id                      
+--,@NextInvoiceNo                      
+--,@InstallmentNo                      
+--,@LocalDueDate                      
+--,@InvoiceNote                
+--,@Amount                
+--,@RemainingBalance
+--,@Schedule_Id
+--)                      
+--set @Id = SCOPE_IDENTITY()    
+--set @InvoiceNo = @NextInvoiceNo    
+--end    
+--select @InvoiceCreatedOn = CreatedOn from Accounting_Invoices where Id = @Id and Status = 1    
+--end
+--go
+
+
+--Accounting_PolicyPaymentSchedule
+--Accounting_LU_PaymentPlans
+--Accounting_PolicyDetails
+--Accounting_LU_IntervalUnitTypes
+--Accounting_LU_InstallmentBasisTypes
+--Accounting_Invoices
+--Accounting_LU_PaymentAnchorTypes
+
+--USP_Accounting_InsertUpdateScheduledInvoices
+--USP_Accounting_GetPaymentPlanByPaymentCode
+--USP_Accounting_GetAllCarrier
+--USP_Accounting_GetAllCarrierByClient_Id
+--USP_Accounting_GetAllIntervalUnitTypes
+--USP_Accounting_GetAllInstallmentBasisTypes
+--USP_Accounting_GetAllAnchorTypes
+--USP_Accounting_InsertUpdatePaymentPlans
+--USP_Accounting_GetAllPaymentPlanDetails
+
+

@@ -1,0 +1,123 @@
+﻿@model List<LU_LineItems_Clients>;
+@{
+	var groupedModel = Model?
+		.GroupBy(x => new { x.LineItems_Clients_Id, })?
+		.ToList();
+	var displayList = new List<LU_LineItems_Clients>();
+	if (groupedModel != null)
+	{
+		foreach (var grp in groupedModel)
+		{
+			var distinctDirections = grp.Select(g => g.DirectionName).Distinct().ToList();
+			var directions = string.Join(",", distinctDirections);
+
+			var distinctBillingTypes = grp.Select(g => g.BillingTypeName).Distinct().ToList();
+			var BillingTypes = string.Join(",", distinctBillingTypes);
+
+			var LineItems_Directions_IdList = string.Join(",", grp.Select(g => g.LineItems_Directions_Id));
+			var BillingType_LineItems_Directions_IdList = string.Join(",", grp.Select(g => g.BillingType_LineItems_Directions_Id));
+			var PassthroughBillingLineItemDirectionsList = string.Join(",", grp.Select(g => g.BillingType_LineItems_Directions_Id));
+			var firstItem = grp.First();
+			var distinctEntities = grp?
+				.Where(x => !string.IsNullOrWhiteSpace(x.EntityName) && x.Direction_Id == MasterLookup._Directions.AP)
+				.Select(x => x.EntityName)?
+				.Distinct()?
+				.ToList();
+			var entityNames = string.Join(",", distinctEntities);
+			displayList.Add(new LU_LineItems_Clients()
+					{
+						LineItems_Clients_Id = firstItem.LineItems_Clients_Id,
+						LineItemName = firstItem.LineItemName,
+						LineItem_Id = firstItem.LineItem_Id,
+						LineItems_Directions_Ids = LineItems_Directions_IdList,
+						BillingType_LineItems_Directions_Ids = BillingType_LineItems_Directions_IdList,
+						Direction_Id = firstItem.Direction_Id,
+						BillingType_Id = firstItem.BillingType_Id,
+						BillingTypeName = BillingTypes,
+						DirectionName = directions,
+						LineItemType_Id = firstItem.LineItemType_Id,
+						Is_Passthrough = firstItem.Is_Passthrough,
+						Is_Excluded = firstItem.Is_Excluded,
+						Is_Commissionable = firstItem.Is_Commissionable,
+						EntityName = entityNames
+					});
+		}
+	}
+}
+<div class="w-100 pb-2 pt-0">
+	<div class="table-responsive table-scroll payment-table" style="height: calc(100vh - 272px);">
+		<table class="table table-striped ei-table text-nowrap">
+			<thead>
+				<tr>
+					<th>S.No </th>
+					<th>Line Item</th>
+					<th>Direction</th>
+					<th>Billing Type</th>
+					<th>Is Passthrough</th>
+					<th>Is Excluded</th>
+					<th>Passthrough Entity</th>
+					<th>
+						Actions
+						<a href="javascript:void(0)" data-name="btnAddLineItemMapping" href="javascript:void(0)"><i class="ri-add-line ms-3" style="font-size: 16px;"></i></a>
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				@{
+					if (displayList?.Count > 0)
+					{
+						int Index = 1;
+						@foreach (var item in displayList.Where(x => x.LineItemType_Id == MasterLookup._LineItemTypes.Fee || x.LineItemType_Id == MasterLookup._LineItemTypes.Tax || x.LineItemType_Id == MasterLookup._LineItemTypes.CarrierFee))
+						{
+							<tr>
+								<td>@Index</td>
+								<td>
+									@{
+										if (item.Is_Commissionable)
+										{
+											<span title="Commissionable" style="color:Red;font-size:Small;font-weight:bold;" class="pe-2">c</span>
+										}
+									}<label class="label">@item?.LineItemName </label>
+								</td>
+								<td><label class="label">@item?.DirectionName</label></td>
+								<td><label class="label">@item?.BillingTypeName</label></td>
+								<td><label class="label">@Convert.ToString(item?.Is_Passthrough)</label></td>
+								<td><label class="label">@Convert.ToString(item?.Is_Excluded)</label></td>
+								<td><label class="label">@item?.EntityName</label></td>
+								<td valign="middle">
+									<div class="action-btns @(item.Is_Commissionable ? "disabled-link" : "")">
+										@if (item?.Is_Passthrough == false)
+										{
+											<a href="javascript:void(0)" data-name="btnEditLineItemMapping" data-is-passthrough="@Convert.ToString(item?.Is_Passthrough)" data-lineitems-client-id="@item?.LineItems_Clients_Id" data-lineitem-id="@item?.LineItem_Id" data-lineitem-direction-id="@item?.LineItems_Directions_Id" data-lineitem-direction-billingtype-id="@item?.BillingType_LineItems_Directions_Id">
+												<i class="ri-pencil-line save-btn edit-btn"></i>
+											</a>
+											<a href="javascript:void(0)" data-name="btnDeleteLineItemMapping" data-is-passthrough="@Convert.ToString(item?.Is_Passthrough)" data-lineitems-client-id="@item?.LineItems_Clients_Id" data-lineitem-id="@item?.LineItem_Id" data-lineitem-direction-id="@item?.LineItems_Directions_Id" data-lineitem-direction-billingtype-id="@item?.BillingType_LineItems_Directions_Id">
+												<i class="ri-delete-bin-6-line text-danger delete-btn" title="delete"></i>
+											</a>
+										}
+										else
+										{
+											<a href="javascript:void(0)" data-name="btnEditLineItemMapping" data-is-passthrough="@Convert.ToString(item?.Is_Passthrough)" data-lineitems-client-id="@item?.LineItems_Clients_Id" data-lineitem-id="@item?.LineItem_Id" data-line-direction-ids="@item?.LineItems_Directions_Ids" data-lineitem-direction-billingtype-ids="@item?.BillingType_LineItems_Directions_Ids">
+												<i class="ri-pencil-line save-btn edit-btn"></i>
+											</a>
+											<a href="javascript:void(0)" data-name="btnDeleteLineItemMapping" data-is-passthrough="@Convert.ToString(item?.Is_Passthrough)" data-lineitems-client-id="@item?.LineItems_Clients_Id" data-lineitem-id="@item?.LineItem_Id" data-line-direction-ids="@item?.LineItems_Directions_Ids" data-lineitem-direction-billingtype-ids="@item?.BillingType_LineItems_Directions_Ids">
+												<i class="ri-delete-bin-6-line text-danger delete-btn" title="delete"></i>
+											</a>
+										}
+
+									</div>
+
+								</td>
+							</tr>
+							Index++;
+						}
+					}
+					else
+					{
+						<tr><td colspan="51">No records found!</td></tr>
+					}
+				}
+			</tbody>
+		</table>
+	</div>
+</div>

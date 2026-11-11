@@ -1,0 +1,81 @@
+﻿@model List<LU_SQLInputParameters>
+@{
+    Layout = null;
+    // UserSession userSession = Context.Session.GetObjectFromJson<UserSession>("UserSession");
+    // var transactionEffectiveDate = LookupUtility.GetClientSettings(userSession.Client_Id, MasterLookup._ClientSettings.EnableInvoiceProductionReportTransactionEffectiveDate);
+    // bool enableTransactionEffectiveDate =  Convert.ToBoolean(transactionEffectiveDate);  
+}
+@{
+    var Report_Id = ViewBag.Report_Id;
+}
+@if (Model != null && Model.Count > 0)
+{
+    int sequence = 0;
+    <form method="post" name="ReportForm">
+ @*        <div class="d-flex align-items-start gap-3">
+            <div class=""> *@
+                <div class="row g-1">
+                    @foreach (var inputParameter in Model)
+                    {
+                        @* if (!enableTransactionEffectiveDate && inputParameter.RangeGroupName == "TransactionEffective")
+                        {
+                            continue;
+                        } *@
+                        ViewBag.UniqueIdentifier = Guid.NewGuid();
+                        ViewBag.inputParameter = inputParameter;
+                        ViewBag.Report_Id = Report_Id;
+                        if (inputParameter.Dependency_SQLParameter_Id > 0)
+                        {
+                            <div class="col-md-6" data-dependency-sqlparameter-panel="@(inputParameter.Dependency_SQLParameter_Id)" data-Dependency_SQLParameter_Id="@inputParameter.Dependency_SQLParameter_Id" data-sequence="@sequence" style="display:none;" data-form-group-item></div>
+                        }
+                        else
+                        {
+                            @* if (Report_Id == MasterLookup._Reports.AgencyBill)
+                            {
+                                <div class="@(inputParameter.HTMLControlType_Id == MasterLookup._LUHTMLControlTypes.Checkbox ? "col-md-6" : "col-md-6")"
+                                     data-form-group-item @(!inputParameter.ShowInputField ? "style=display:none;" : "")>
+                                    @{
+                                        Html.RenderPartial("LoadInputField", Model);
+                                    }
+                                </div>
+                            }
+                            else
+                            { *@
+                                <div class="@(inputParameter.HTMLControlType_Id == MasterLookup._LUHTMLControlTypes.Checkbox ? "col-md-3" : "col-md-6")"
+                                     data-form-group-item @(!inputParameter.ShowInputField ? "style=display:none;" : "")>
+                                    @{
+                                        Html.RenderPartial("LoadInputField", Model);
+                                    }
+                                </div>
+                            @* } *@
+                        }
+                        sequence++;
+                    }
+                </div>
+@* 
+            </div>
+
+
+        </div> *@
+        <div>
+            <div class="text-center mb-2 mt-2">
+                <button type="button" data-reportid="@(Report_Id)" data-name="btnResetReport" class="btn btn-primary btn-sm me-2"><i class="ri-loop-left-line me-1"></i> Reset</button>
+                <button type="button" data-reportid="@(Report_Id)" data-name="btnLoadReport" class="btn btn-primary btn-sm"><i class="ri-search-2-line me-1"></i> Search</button>
+
+            </div>
+        </div>
+    </form>
+}
+<script src="@Url.Content("~/js/reports/reportform.js")"></script>
+<script type="text/javascript">
+    var Report_Id = '@(ViewBag.Report_Id)';
+
+    $(document).ready(function () {
+        InitializeFlatpickr();
+    });
+</script>
+<script>
+    window.ReportConstants = window.ReportConstants || {};
+    window.ReportConstants.Report1099 = @MasterLookup._Reports.Report1099;
+</script>
+

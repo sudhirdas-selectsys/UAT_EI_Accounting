@@ -1,0 +1,16 @@
+﻿@{
+    Layout = null;
+}
+
+@model Dictionary<string, string>
+
+<form method="post" name="GenericFormPost" action="@ViewBag.ActionURL">
+    @foreach (var kv in Model)
+    {
+        <input type="hidden" name="@kv.Key" value="@kv.Value" />
+    }
+</form>
+
+<script>
+    document.forms["GenericFormPost"].submit();
+</script>

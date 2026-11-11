@@ -1,0 +1,303 @@
+﻿@model List<Invoices>
+@{
+    UserSession userSession = Context.Session.GetObjectFromJson<UserSession>("UserSession");
+    var cancelledPolicies = Model?
+    .GroupBy(x => x.PolicyNumber)?
+    .Where(group =>
+    {
+        var transactions = group?
+            .OrderBy(x => x.CreatedOn)?
+            .ToList();
+
+        // Find latest CAN
+        var latestCancellation = transactions?
+            .Where(x => x.TransactionType == MasterLookup._EITransactionTypes.CAN)?
+            .OrderByDescending(x => x.CreatedOn)?
+            .FirstOrDefault();
+
+        // No cancellation => not red
+        if (latestCancellation == null)
+            return false;
+
+        // Check if any recovery transaction exists AFTER latest CAN
+        var hasRecoveryAfterCancellation = transactions?.Any(x =>
+            x.CreatedOn > latestCancellation.CreatedOn &&
+            (
+                x.TransactionType == MasterLookup._EITransactionTypes.REI ||
+                x.TransactionType == MasterLookup._EITransactionTypes.REN ||
+                x.TransactionType == MasterLookup._EITransactionTypes.NEW
+            ));
+
+        // Red only if no recovery after latest CAN
+        return !(hasRecoveryAfterCancellation == true);
+    })?
+    .Select(x => x.Key)?
+    .ToList() ?? new List<string>();
+    var SchedulerJobs = LookupUtility.GetClientSettings(userSession.Client_Id, MasterLookup._ClientSettings.SchedulerJobs);
+}
+
+<div class="position-relative account-payable">
+    <div class="accordion ar-accordion states" id="accountsReceivableStayOpen">
+        @{
+            if (Model?.Count > 0)
+            {
+                foreach (var invoice in Model)
+                {
+                    var backgroundColor =
+                    (invoice.RemainingBalance == 0 && invoice.Paid)
+                    ? "#eaffeb"
+                    : (cancelledPolicies.Contains(invoice.PolicyNumber)
+                    ? "#ffeaea"
+                    : "");
+                    <div class="accordion-item " data-invoice-number="@invoice.InvoiceNo" data-insured-name="@invoice.InsuredsName">
+                        <div style="background-color: @backgroundColor;">
+                            @*<div style="@(invoice.RemainingBalance == 0 ? "background-color: #eaffeb;" : "")">*@
+                            <div class="accordion-header">
+                                <div class="position-relative">
+                                    <button class="accordion-button state-name collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse_@invoice.Id" aria-expanded="false" aria-controls="collapse_@invoice.Id"> @invoice.InvoiceNo </button>
+                                </div>
+                                <div class="d-none d-md-flex flex-row state-actions align-items-center position-relative" style="margin-top:12px">
+                                    <div class="invoice-data-view-item text-start me-3">
+                                        <label class="fw-medium">Agency Name: </label>
+                                        <span class="custom-text-truncate" style="width:140px;" title="@invoice.AgencyName">@invoice.AgencyName</span>
+                                    </div>
+                                    <div class="invoice-data-view-item text-start me-3">
+                                        <label class="fw-medium">Insured Name: </label>
+                                        <span class="custom-text-truncate" style="width:140px;" title="@invoice.InsuredsName">@invoice.InsuredsName</span>
+                                    </div>
+                                    <div class="invoice-data-view-item text-start me-3">
+                                        <label class="fw-medium">Policy Number: </label>
+                                        <span class="custom-text-truncate" style="width: 140px;" title="@invoice.PolicyNumber">@invoice.PolicyNumber</span>
+                                    </div>
+                                    <div class="invoice-data-view-item text-start me-3">
+                                        <label class="fw-medium">Transaction Type: </label>
+                                        <span class="custom-text-truncate" style="width: 100px;" title="@invoice.TransactionType">@invoice.TransactionType</span>
+                                    </div>
+                                    <div class="invoice-data-view-item text-start me-3">
+                                        <label class="fw-medium">Billing Type: </label>
+                                        <span class="custom-text-truncate" style="width: 100px;" title="@invoice.BillingType">@invoice.BillingType</span>
+                                    </div>
+                                    <div class="invoice-data-view-item text-start me-3">
+                                        <label class="fw-medium">Billed Date: </label>
+                                        <span class="custom-text-truncate" style="width: 80px;" title="@invoice.BillDate.ToShortDateString()">@invoice.BillDate.ToShortDateString()</span>
+                                    </div>
+                                    <div class="invoice-data-view-item text-start me-3">
+                                        <label class="fw-medium">Due Date: </label>
+                                        @* <span class="custom-text-truncate" style="width: 80px;" title="@invoice.CreatedOn.ToShortDateString()">@invoice.CreatedOn.ToShortDateString()</span>*@
+                                        <span class="custom-text-truncate" style="width: 80px;" title="@invoice.InvoiceDueDate.ToShortDateString()">@invoice.InvoiceDueDate.ToShortDateString()</span>
+                                    </div>
+                                    <div class="invoice-data-view-item text-start me-3">
+                                        <label class="fw-medium">Amount: </label>
+                                        <span style="width: 100px;">@CommonUtility.ConvertToCurrencyFormat(invoice.Amount, false, 2)</span>
+                                    </div>
+                                    <div class="invoice-data-view-item text-start me-3">
+                                        <label class="fw-medium">Remaining Balance: </label>
+                                        <span style="width: 100px;">@CommonUtility.ConvertToCurrencyFormat(invoice.RemainingBalance, false, 2)</span>
+                                    </div>
+                                    <div class="d-flex flex-column">
+                                        <div class="d-flex customDropdownMenu">
+                                            <a href="javascript:void(0)" data-name="ViewInvoice" data-policydetails-id="@invoice.PolicyDetails_Id" data-installmentNo="@invoice.InstallmentNo">
+                                                <i class="ri-eye-line me-1 ms-1" style="font-size:16px;" title="View Invoice"></i>
+                                            </a>
+                                            <a href="javascript:void(0)" data-name="ViewPayments" data-direction-id="@MasterLookup._Directions.AR" data-policydetails-id="@invoice.PolicyDetails_Id" data-invoice-id="@invoice.Id" data-invoice-number="@invoice.InvoiceNo">
+                                                <i class="ri-bank-card-line me-0" style="font-size:16px;" title="View Payments"></i>
+                                            </a>
+                                            <div class="dropdown dropend ms-1">
+                                                <a class="dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false" data-name="ViewMoreOptions">
+                                                    <i class="ri-more-2-line me-0" style="font-size:16px;" title="View More Options"></i>
+                                                </a>
+                                                <ul class="dropdown-menu" data-policydetails-id="@invoice.PolicyDetails_Id" data-invoice-id="@invoice.Id" data-invoice-number="@invoice.InvoiceNo" data-is-financed="@invoice.Is_Financed">
+                                                    <li><a class="dropdown-item @(invoice.Is_Financed ? "d-none" : "")" data-name="MarkAsFinanced" href="javascript:void(0)" data-is-financed="true">Mark as Financed</a> </li>
+                                                    <li><a class="dropdown-item @(invoice.Is_Financed ? "" : "d-none")" data-name="UnMarkAsFinanced" href="javascript:void(0)" data-is-financed="false">Un-mark as Financed</a> </li>
+                                                    <li><a class="dropdown-item" data-name="SubmissionDocuments" href="javascript:void(0)" data-is-financed="true" data-submission-id="@invoice.Submission_Id" data-policy-number="@invoice.PolicyNumber" data-transaction-type="@invoice.TransactionType" data-file-type-id=@MasterLookup._LUFileTypes.PDF>Submission Documents</a> </li>
+                                                    @{
+                                                        if (!string.IsNullOrEmpty(SchedulerJobs))
+                                                        {
+                                                            <li><a class="dropdown-item" data-name="PaymentReminder" href="javascript:void(0)" data-scheduler-client-job-id="2" data-invoice-id="@invoice.Id" data-invoice-number="@invoice.InvoiceNo">Send Courtesy Reminder</a> </li>
+                                                            <li><a class="dropdown-item" data-name="PaymentReminder" href="javascript:void(0)" data-scheduler-client-job-id="3" data-invoice-id="@invoice.Id" data-invoice-number="@invoice.InvoiceNo">Send Intent To Cancel</a> </li>
+                                                            <li><a class="dropdown-item" data-name="PaymentReminder" href="javascript:void(0)" data-scheduler-client-job-id="4" data-invoice-id="@invoice.Id" data-invoice-number="@invoice.InvoiceNo">Send Notice Of Cancellation</a> </li>
+
+                                                        }
+                                                    }
+                                                </ul>
+                                            </div>
+                                        </div>
+                                        @*<div style="@((invoice.RemainingBalance == 0 && invoice.Paid) ? "display: none;" : ":")">*@
+                                        <div>
+                                            <div class="d-flex align-items-center">
+                                                <label class="fw-medium form-label text-black me-1 mb-0 fs-12">Amount</label>
+                                                <input type="text" class="form-control fs-12 ms-2 @((invoice.RemainingBalance == 0 && invoice.Amount == 0) ? "disabled-link" : "") " data-val="true" placeholder="Amount" data-currency-fractiondigits="2" name="PayableAmount" autocomplete="off" data-name="PayableAmount" data-invoice-id="@invoice.Id" data-invoice-number="@invoice.InvoiceNo" data-policy-number="@invoice.PolicyNumber" data-direction-id="@MasterLookup._Directions.AR" data-remaining-amount="@invoice.RemainingBalance" data-accounts-payable="false" data-invoice-paid="@invoice.Paid">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-check checkbox-container FinanceBadge @(invoice.Is_Financed ? " " : "d-none")" data-name="FinanceBadge" style="">
+                                    <div style="vertical-align: middle;">
+                                        Financed
+                                    </div>
+                                </div>
+                                <div class="form-check checkbox-container FinanceNameBadge @(invoice.Is_Financed && (!string.IsNullOrEmpty(invoice.FinanceName)) ? " " : "d-none")" data-name="FinanceNameBadge" style="left:100px;width:fit-content;">
+                                    <div style="vertical-align: middle;">
+                                        @(invoice.FinanceName)
+                                    </div>
+                                </div>
+                                <div class="form-check checkbox-container">
+                                    <input class="form-check-input" data-invoice-id="@invoice.Id" data-remaining-amount="@invoice.RemainingBalance" data-name="chkInvoice" type="checkbox" value="true" id="" data-invoice-paid="@invoice.Paid">
+                                </div>
+                            </div>
+                        </div>
+                        <div id="collapse_@invoice.Id" class="accordion-collapse collapse">
+                            <div class="accordion-body mt-2">
+                                <div class="position-relative border">
+                                    <div class="table-responsive">
+                                        <table class="table ei-table ei-ac-db-table text-nowrap mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width:49.14px;"></th>
+                                                    <th style="width:317.89px;">Transaction Description</th>
+                                                    <th style="width:165.46px;">Line-Item Type</th>
+                                                    <th style="width:270px;">Payor Name</th>
+                                                    <th style="width:214.6px;">Payor Type</th>
+                                                    <th style="width:211.59px;">Amount</th>
+                                                    <th style="width:211.59px;">Remaining Balance</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @{
+                                                    if (invoice.InvoicesDetailsList?.Count > 0)
+                                                    {
+                                                        foreach (var invoiceDetail in invoice.InvoicesDetailsList)
+                                                        {
+                                                            <tr class="@(invoiceDetail.Paid == true ? "completed" : "")">
+                                                                <td valign="middle"><input class="form-check-input" data-invoice-id="@invoice.Id" data-invoicedetail-id="@invoiceDetail.Id" data-name="chkInvoiceDetails" data-invoice-paid="@invoiceDetail.Paid" data-amount="@invoiceDetail.RemainingBalance" data-remaining-amount="@invoiceDetail.RemainingBalance" data-lob-id="@invoiceDetail.LOB_Id" data-lineitem-name="@invoiceDetail.LineItemName" type="checkbox" value="true" data-accounts-payable="false" data-billing-type="@invoice.BillingType"></td>
+                                                                <td>
+                                                                    <div class="text-truncate label" title="@invoiceDetail.Description" style="width:200px;">
+                                                                        @invoiceDetail.Description
+                                                                    </div>
+                                                                </td>
+                                                                @*<td><label class="label">@invoiceDetail.Description</label></td>*@
+                                                                <td><label class="label">@invoiceDetail.LineTypeName</label></td>
+                                                                <td><div class="text-truncate label" title="@invoiceDetail.EntityName">@invoiceDetail.EntityName</div></td>
+                                                                <td><label class="label">@invoiceDetail.EntityTypeName</label></td>
+                                                                <td><label class="label">@CommonUtility.ConvertToCurrencyFormat(invoiceDetail.Amount, false, 2)</label></td>
+                                                                <td>
+                                                                    <label class="label">@CommonUtility.ConvertToCurrencyFormat(invoiceDetail.RemainingBalance, false, 2)</label>
+                                                                    <a href="javascript:void(0)"
+                                                                       data-name="btnEditInvoiceDetail"
+                                                                       data-invoicedetail-id="@invoiceDetail.Id"
+                                                                       data-entity-id="@invoiceDetail.Entity_Id"
+                                                                       data-entitytype-id="@invoiceDetail.EntityType_Id"
+                                                                       data-invoice-id="@invoiceDetail.Invoice_Id"
+                                                                       data-lob-id="@invoiceDetail.LOB_Id"
+                                                                       data-lineitem-id="@invoiceDetail.LineItem_Id"
+                                                                       title="Edit">
+                                                                        <i class="ri-edit-line" style="font-size:16px; color: #5F2EE5; cursor:pointer; width:4%"></i>
+                                                                    </a>
+                                                                </td>
+                                                            </tr>
+                                                        }
+
+                                                    }
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                }
+            }
+            else
+            {
+                <div class="text-center">
+                    <text>No records found.</text>
+                </div>
+            }
+        }
+    </div>
+</div>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+<style>
+    .invoice-data-view-item span {
+        font-weight: 700;
+        font-size: 13px;
+    }
+
+    .account-payable .state-actions {
+        gap: 5px !important;
+    }
+
+    .ar-accordion .form-check .form-check-input {
+        margin-left: 0;
+    }
+
+    .account-payable .state-actions {
+        width: 87% !important;
+    }
+
+    .ei-ac-db-table tr th div, .ei-ac-db-table tr th, .ei-ac-db-table tr td {
+        max-width: 100px !important;
+    }
+
+    .fs-12 {
+        font-size: 12px !important;
+    }
+
+    .customDropdownMenu .dropdown-toggle::after {
+        content: none;
+    }
+
+    .customDropdownMenu .dropdown-item {
+        font-size: 12px;
+        padding: 2px 6px;
+    }
+
+    .customDropdownMenu .dropdown-menu {
+        border: 1px solid #0000002d;
+        padding: 4px;
+    }
+
+    .accordion-header .FinanceBadge,
+    .accordion-header .FinanceNameBadge {
+        width: 75px; /* right: 0px; */
+        left: 20px;
+        background-color: #e0e9fa;
+        color: #5F2EE5;
+        border-top-right-radius: 0;
+        border-bottom-left-radius: 6px;
+        font-size: 12px;
+        border-bottom-right-radius: 6px;
+        padding: 2px 10px; /* line-height: 10px;*/
+        margin-bottom: 0;
+        vertical-align: middle;
+        top: 0;
+        min-height: 10px;
+        transform: inherit;
+        white-space: nowrap;
+    }
+
+    .invoice-data-view-item {
+        flex: auto;
+    }
+
+        .invoice-data-view-item.me-3 {
+            margin-right: 0 !important;
+        }
+
+    .label {
+        display: inline-block !important;
+        min-width: 160px;
+        max-width: 100%
+    }
+</style>
+<script>
+    $(function(){
+        $('[data-name="CollapseRows"]').css('display','');
+        $('[data-name="ExpandRows"]').css('display','');
+    })
+</script>
+<script src="~/js/editentitydetaisaccountreceivable.js"></script>

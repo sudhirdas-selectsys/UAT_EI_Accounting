@@ -1,0 +1,327 @@
+﻿@model LU_LineItems_Clients
+
+<div>
+    <form name="frmLineItemsClients" data-name="frmLineItemsClients">
+        <div class="row">
+            <input type="hidden" name="Client_Id" value="@ViewBag.Client_Id" />
+            <input type="hidden" name="LineItems_Clients_Id" value="@Model?.LineItems_Clients_Id" />
+
+            <!-- Line Item Dropdown -->
+            <div class="mb-3 col-md-12">
+                <div class="data-item">
+                    <label>Line Item</label>
+                    <select class="form-select" data-val="true" name="LineItem_Id" data-name="LineItem_Id">
+                        <option value="">Select</option>
+                        @{
+                            var LineItemList = LookupUtility.GetAllLineItems().Where(x => x.LineItemType_Id == MasterLookup._LineItemTypes.Fee
+                            || x.LineItemType_Id == MasterLookup._LineItemTypes.Tax || x.LineItemType_Id == MasterLookup._LineItemTypes.CarrierFee);
+                            if (LineItemList?.Count() > 0)
+                            {
+                                foreach (var item in LineItemList)
+                                {
+                                    <option value="@item.LineItem_Id"
+                                            selected="@(Model != null && Model?.LineItem_Id == item?.LineItem_Id)" data-lineitemtype-id="@item.LineItemType_Id">
+                                        @item.Name
+                                    </option>
+                                }
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Directions -->
+            <div class="mb-3 col-md-12">
+                <div class="mx-0 my-1 g-0 data-item">
+                    <label class="col-12 col-xl-3 col-form-label col-form-label-sm text-end">Directions:</label>
+                    <div class="position-relative custom-multi-selection" data-name="direction-container">
+                        <button class="form-select select-lob text-start d-flex align-items-center flex-wrap gap-2"
+                                type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                            <span class="default-text">Select</span>
+                            <div class="selected-chips d-flex flex-wrap gap-1"></div>
+                        </button>
+                        <ul class="dropdown-menu" style="height:109px;width:372px;">
+                            <input type="hidden" name="DirectionList" value="@Model?.DirectionList" />
+                            @{
+                                var Directions = LookupUtility.GetAllDirections().Where(x => x.Direction_Id == MasterLookup._Directions.AR || x.Direction_Id == MasterLookup._Directions.AP);
+
+                                var selectedDirectionIds = (Model?.DirectionList ?? "")
+                                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                .Select(x => x.Trim())
+                                .ToList();
+
+                                if (Directions?.Count() > 0)
+                                {
+                                    foreach (var directions in Directions)
+                                    {
+                                        bool isChecked = selectedDirectionIds.Contains(directions.Direction_Id.ToString());
+
+                                        <li class="dropdown-item">
+                                            <input class="form-check-label" type="checkbox"
+                                                   data-name="direction-options"
+                                                   name="DirectionIds"
+                                                   data-direction-id="@directions.Direction_Id"
+                                                   id="directions_@directions.Direction_Id"
+                                                   value="@directions.Name"
+                                            @(isChecked ? "checked" : "") />
+                                            <label title="@directions.Name"
+                                                   style="text-overflow:ellipsis;width:350px;overflow:hidden;"
+                                                   class="form-check-label ms-2"
+                                                   for="directions_@directions.Direction_Id">
+                                                @directions.Name
+                                            </label>
+                                        </li>
+                                    }
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bill Types -->
+            <div class="mb-3 col-md-12">
+                <div class="mx-0 my-1 g-0 data-item">
+                    <label class="col-12 col-xl-3 col-form-label col-form-label-sm text-end">Bill Types:</label>
+                    <div class="position-relative custom-multi-selection" data-name="billType-container">
+                        <button class="form-select text-start d-flex align-items-center flex-wrap gap-2"
+                                type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                            <span class="default-text">Select</span>
+                            <div class="selected-chips d-flex flex-wrap gap-1"></div>
+                        </button>
+                        <ul class="dropdown-menu" style="height:140px;width:372px;">
+                            <input type="hidden" name="BillTypeList" value="@Model?.BillTypeList" />
+                            @{
+                                var BillTypes = LookupUtility.GetAllBillingTypes();
+                                var selectedBillTypeIds = (Model?.BillTypeList ?? "")
+                                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                                .Select(x => x.Trim())
+                                .ToList();
+
+                                if (BillTypes?.Count() > 0)
+                                {
+                                    foreach (var billType in BillTypes)
+                                    {
+                                        bool isChecked = selectedBillTypeIds.Contains(billType.BillingType_Id.ToString());
+
+                                        <li class="dropdown-item">
+                                            <input class="form-check-label" type="checkbox"
+                                                   data-name="billtype-options"
+                                                   name="BillTypeIds"
+                                                   data-billtype-id="@billType.BillingType_Id"
+                                                   id="billTypes_@billType.BillingType_Id"
+                                                   value="@billType.Name"
+                                            @(isChecked ? "checked" : "") />
+                                            <label title="@billType.Name"
+                                                   style="text-overflow:ellipsis;width:350px;overflow:hidden;"
+                                                   class="form-check-label ms-2"
+                                                   for="billTypes_@billType.BillingType_Id">
+                                                @billType.Name
+                                            </label>
+                                        </li>
+                                    }
+                                }
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Entity Type -->
+            <div class="mb-3 col-md-12">
+                <div class="data-item">
+                    <label>Entity Type</label>
+                    <select class="form-select" name="EntityType_Id" data-name="EntityType_Id">
+                        <option value="">Select</option>
+                        @{
+                            var EntityTypes = LookupUtility.GetAllEntityTypes().Where(l => l.EntityType_Id == MasterLookup._EntityTypes.BillingCompany || l.EntityType_Id == MasterLookup._EntityTypes.State);
+                            if (EntityTypes?.Count() > 0)
+                            {
+                                foreach (var entityType in EntityTypes)
+                                {
+                                    <option value="@entityType.EntityType_Id"
+                                            selected="@(Model != null && Model.EntityType_Id == entityType.EntityType_Id)">
+                                        @entityType.Name
+                                    </option>
+                                }
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <!-- Checkboxes -->
+            <div class="mb-3 col-md-6">
+                <div class="form-check">
+                    <input class="form-check-label" type="checkbox" data-name="Is_Passthrough"
+                           style="vertical-align:middle"
+                    @(Model?.Is_Passthrough == true ? "checked" : "") />
+                    <input type="hidden" name="Is_Passthrough" value="@(Convert.ToString(Model?.Is_Passthrough))" />
+                    <label title="Is_Passthrough" class="form-check-label ps-2" for="Is_Passthrough">
+                        Is Passthrough
+                    </label>
+                </div>
+            </div>
+
+            <div class="mb-3 col-md-6">
+                <div class="form-check">
+                    <input class="form-check-label" type="checkbox" data-name="Is_Excluded"
+                           style="vertical-align:middle"
+                    @(Model?.Is_Excluded == true ? "checked" : "") />
+                    <input type="hidden" name="Is_Excluded" value="@(Convert.ToString(Model?.Is_Excluded))" />
+                    <label title="Is_Excluded" class="form-check-label ps-2" for="Is_Excluded">
+                        Is Excluded
+                    </label>
+                </div>
+            </div>
+
+            @*  <div class="mb-3 col-md-6">
+                <div class="form-check">
+                    <input class="form-check-label" type="checkbox" data-name="Is_Commissionable"
+                           style="vertical-align:middle"
+                    @(Model?.Is_Commissionable == true ? "checked" : "") />
+                    <input type="hidden" name="Is_Commissionable" value="@(Convert.ToString(Model?.Is_Commissionable))" />
+                    <label title="Is_Commissionable" class="form-check-label ps-2" for="Is_Commissionable">
+                        Is Commissionable
+                    </label>
+                </div>
+            </div> *@
+        </div>
+        <div class="offcanvas-footer text-end">
+            <button type="button" class="btn btn-secondary" data-name="btnClose" data-bs-dismiss="offcanvas">Close</button>
+            <button type="button" class="btn btn-primary" data-name="btnSaveLineItemsMapping">Save changes</button>
+        </div>
+    </form>
+    @{
+        var allowIsExcludeLineItemMapping = LookupUtility.GetClientSettings(@ViewBag.Client_Id, MasterLookup._ClientSettings.AllowIsExcludeLineItemMapping);
+    }
+</div>
+<link href="~/lib/custom/selectfilter/select2.min.css" rel="stylesheet" /><script src="~/lib/custom/selectfilter/select2.min.js"></script>
+<script>
+        var allowIsExcludeLineItemMapping = @(string.IsNullOrEmpty(allowIsExcludeLineItemMapping) ? "false" : "true");
+        function toggleAllLobs(source, containerDataName, checkboxDataName) {
+            const container = $(source).closest(`[data-name="${containerDataName}"]`);
+            const isChecked = source.checked;
+            container.find(`[data-name="${checkboxDataName}"]`).prop('checked', isChecked).trigger('change');
+        }
+        function updateDirectionList() {
+             var selected = [];
+             $('input[data-name="direction-options"]:checked').each(function () {
+                 selected.push($(this).data("direction-id"));
+             });
+             $('input[name="DirectionList"]').val(selected.join(","));
+        }
+        function updateBillTypeList() {
+             var selected = [];
+                     $('input[data-name="billtype-options"]:checked').each(function () {
+                     selected.push($(this).data("billtype-id"));
+             });
+                 $('input[name="BillTypeList"]').val(selected.join(","));
+        }
+        $(function(){
+            $('[data-name="direction-options"]').on("change", function () {
+                updateDirectionList();
+            });
+                    $('[data-name="billtype-options"]').on("change", function () {
+                updateBillTypeList();
+            });
+            $('[data-name="Is_Passthrough"]').on("change", function () {
+                const isChecked = $(this).prop("checked");
+                $('input[name="Is_Passthrough"][type="hidden"]').val(isChecked ? "true" : "false");
+                $('[data-name="direction-options"]').prop('checked', isChecked).trigger('change');
+                // disable UI
+                toggleDirections(isChecked);
+                const entity = $('[data-name="EntityType_Id"]');
+                if (isChecked) {
+                    entity.attr('data-val', 'true');
+                } else {
+                    entity.removeAttr('data-val');
+                    entity.removeAttr('data-val-touched');
+                    entity.removeClass('input-validation-error');
+                    $('p[data-valmsg-for="EntityType_Id"]').remove();
+                }
+            });
+            $('[data-name="Is_Excluded"]').on("change", function () {
+                const isChecked = $(this).prop("checked");
+                $('input[name="Is_Excluded"][type="hidden"]').val(isChecked ? "true" : "false");
+            });
+            $('[data-name="Is_Commissionable"]').on("change", function () {
+                const isChecked = $(this).prop("checked");
+                $('input[name="Is_Commissionable"][type="hidden"]').val(isChecked ? "true" : "false");
+            });
+                $('form[data-name="frmLineItemsClients"] select[data-name="LineItem_Id"]').select2({
+                        placeholder: "",
+                        allowClear: true,
+                });
+            $('.custom-multi-selection').each(function () {
+                const container = $(this);
+                const chips = container.find('.selected-chips');
+                const defaultText = container.find('.default-text');
+                const checkboxes = container.find('.dropdown-item input[type="checkbox"]');
+
+                function updateChips() {
+                    const checked = checkboxes.filter(':checked');
+                    chips.empty();
+
+                    if (checked.length === 0) {
+                        defaultText.show();
+                    }
+                    else {
+                        defaultText.hide();
+                        checked.each(function () {
+                            const value = $(this).val();
+                            chips.append(
+                                '<div class="chip d-flex align-items-center gap-1" data-value="' + value + '">' +
+                                '<span>' + value + '</span>' +
+                                '<span class="remove-chip" style="cursor:pointer;">&times;</span>' +
+                                '</div>'
+                            );
+                        });
+                    }
+                }
+
+                checkboxes.on('change', updateChips);
+                updateChips();
+            });
+            $(document).on('click', '.remove-chip', function (e) {
+                e.stopPropagation();
+                const chip = $(this).closest('.chip');
+                const value = chip.data('value');
+                const container = chip.closest('.custom-multi-selection');
+
+                if (value === 'all') {
+                    container.find('.dropdown-item input[type="checkbox"]').prop('checked', false).trigger('change');
+                } else {
+                    container.find('input[type="checkbox"][value="' + value + '"]').prop('checked', false).trigger('change');
+                }
+            });
+            $('select[data-name="LineItem_Id"]').on('change', function () {
+                const selectedOption = $(this).find('option:selected');
+                const lineItemTypeId = selectedOption.data('lineitemtype-id');
+                // check passthrough toggle
+                const passthroughCheckbox = $('[data-name="Is_Passthrough"]');
+                if (lineItemTypeId == MasterLookup._LineItemTypes.CarrierFee) {
+                    // auto-check passthrough
+                    passthroughCheckbox.prop('checked', true).trigger('change');
+                } else {
+                     //uncheck if auto logic required
+                     passthroughCheckbox.prop('checked', false).trigger('change');
+                }
+
+            });
+            toggleIsExcluded();
+    });
+        function toggleDirections(isChecked) {
+        const directionContainer = $('[data-name="direction-container"]');
+
+        if (isChecked) {
+            directionContainer.addClass("disabled-link");
+            //directionContainer.find('input[type="checkbox"]').prop("disabled", true);
+        } else {
+            directionContainer.removeClass("disabled-link");
+            //directionContainer.find('input[type="checkbox"]').prop("disabled", false);
+        }
+    }
+
+</script>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

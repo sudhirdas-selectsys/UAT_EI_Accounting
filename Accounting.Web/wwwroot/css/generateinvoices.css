@@ -1,0 +1,279 @@
+﻿.payment-info {
+    padding: 0 25px;
+}
+
+.payment-text {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    text-align: center;
+    margin-bottom: 12px;
+}
+
+.bank-table {
+    width: 70%;
+    margin: 0 auto;
+    border-collapse: collapse;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+}
+
+    .bank-table th,
+    .bank-table td {
+        border: 1px solid #d9d9d9;
+        padding: 6px;
+        text-align: left;
+    }
+
+.detail-col {
+    width: 70%;
+}
+
+.info-col {
+    width: 30%;
+}
+.paid-text {
+    position: absolute;
+    left: 500px;
+    top: 500px;
+    right: -10px;
+    z-index: 5;
+    width: 150px;
+    height: 150px;
+}
+
+.invoice-pdf-table {
+    font-family: "Arial", sans-serif;
+    width: 100%;
+}
+
+    .invoice-pdf-table .header h6 {
+        color: #5F2EE5;
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+
+    .invoice-pdf-table .contact-info {
+        margin-bottom: 20px;
+    }
+
+        .invoice-pdf-table .contact-info p {
+            margin: 0;
+        }
+
+    .invoice-pdf-table .invoice-info {
+        background-color: #eff7ff;
+        padding: 15px;
+        margin-bottom: 30px;
+    }
+
+
+    .invoice-pdf-table .invoice-details {
+        width: 100%;
+        margin-bottom: 20px;
+    }
+
+        .invoice-pdf-table .invoice-details td {
+            padding: 5px;
+        }
+
+        .invoice-pdf-table .invoice-details .bold {
+            font-weight: bold;
+        }
+
+        .invoice-pdf-table .invoice-details .total-row {
+            font-weight: bold;
+            font-size: 9pt;
+        }
+
+    .invoice-pdf-table .product-table .overdue-name {
+        color: red;
+    }
+
+    .invoice-pdf-table .total-row.fs-18, .invoice-pdf-table .product-table .overdue-name {
+        font-size: 15px !important;
+        font-weight: bold;
+    }
+
+    .invoice-pdf-table .product-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+        .invoice-pdf-table .product-table th {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+            font-weight: 500;
+        }
+
+        .invoice-pdf-table .product-table td {
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+    .invoice-pdf-table .text-right {
+        text-align: right;
+    }
+
+    .invoice-pdf-table .product-table .no-border {
+        border-bottom: 0;
+    }
+
+    .invoice-pdf-table .px-50 {
+        padding-left: 50px;
+        padding-right: 50px;
+    }
+
+    .invoice-pdf-table .py-30 {
+        padding-top: 30px;
+        padding-bottom: 30px;
+    }
+
+.paid-text {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    width: 150px;
+    height: 150px;
+}
+
+.border-right-1 {
+    border-right: 1px solid #ddd;
+}
+
+.border-start-1 {
+    border-left: 1px solid #ddd;
+}
+
+.invoice-table tr td {
+    border: 1px solid #ddd;
+}
+
+.pb-20 {
+    padding-bottom: 20px;
+}
+
+.invoice-pdf-table .product-table .overdue-name {
+    color: red;
+}
+
+[data-name="GenericModal"] .modal-dialog {
+    --bs-modal-width: 900px !important;
+}
+
+/* */
+#dse-quicksearchdiv * {
+    box-sizing: content-box;
+}
+
+#dse-quicksearchdiv svg {
+    box-sizing: content-box;
+}
+
+#dse-disabledpopup * {
+    box-sizing: content-box;
+}
+
+#dse-search:before {
+    left: -4px !important;
+    top: 38% !important;
+    height: 6px !important;
+    width: 6px !important;
+    border: 1px solid #484644 !important;
+    border-right: none !important;
+    border-top: none !important;
+    content: ' ' !important;
+    background: #484644 !important;
+    position: absolute !important;
+    transform: rotate(45deg) !important;
+}
+
+#dse-disabledpopup:before {
+    left: -4px !important;
+    top: 38% !important;
+    height: 6px !important;
+    width: 6px !important;
+    border: 1px solid #484644 !important;
+    border-right: none !important;
+    border-top: none !important;
+    content: ' ' !important;
+    background: #484644 !important;
+    position: absolute !important;
+    transform: rotate(45deg) !important;
+}
+
+.topArrow #dse-search:before {
+    left: 50% !important;
+    top: -4px !important;
+    height: 6px !important;
+    width: 6px !important;
+    border: 1px solid #484644 !important;
+    border-top: none !important;
+    border-left: none !important;
+    content: ' ' !important;
+    background: #484644 !important;
+    position: absolute !important;
+    transform: rotate(225deg) !important;
+}
+
+.topArrow #dse-disabledpopup:before {
+    left: 50% !important;
+    top: -4px !important;
+    height: 6px !important;
+    width: 6px !important;
+    border: 1px solid #484644 !important;
+    border-top: none !important;
+    border-left: none !important;
+    content: ' ' !important;
+    background: #484644 !important;
+    position: absolute !important;
+    transform: rotate(225deg) !important;
+}
+
+#dse-disabledpopup:hover:before,
+#dse-search:hover:before,
+#dse-moreoptions:hover,
+#dse-search:hover,
+#dse-copy:hover,
+#dse-disabledpopup:hover,
+#dse-lookup:hover,
+#dse-disableFeature:hover {
+    background-color: #666 !important;
+}
+
+#dse-disabledpopup:active:before,
+#dse-search:active:before,
+#dse-moreoptions:active,
+#dse-search:active,
+#dse-copy:active,
+#dse-disabledpopup:active,
+#dse-lookup:active,
+#dse-disableFeature:active {
+    background-color: #666 !important;
+}
+
+.pt-50 {
+    padding-top: 50px !important;
+}
+
+.px-20 {
+    padding-left: 20px;
+    padding-right: 20px;
+}
+
+table, body, p, div, td {
+    font-size: 10pt !important;
+}
+
+.invoice-details td, .invoice-info td {
+    font-size: 11pt !important;
+    line-height: 24px !important;
+}
+
+.product-table th {
+    font-weight: bold !important;
+}
+.hide-col {
+    display: none;
+}

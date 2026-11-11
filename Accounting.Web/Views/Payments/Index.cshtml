@@ -1,0 +1,163 @@
+﻿@{
+	UserSession userSession = Context.Session.GetObjectFromJson<UserSession>("UserSession");
+}
+<div data-name="PaymentsContainer">
+	<div class="search-filters mb-2">
+		<form data-name="frmPaymentSearch">
+			<div class="row align-items-center" data-name="PaymentsSection">
+				<div class="col-md-4">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Entity Type:</label>
+						<div class="col-12 col-xl-7">
+							<select class="form-select" name="EntityType_Id" data-name="EntityType_Id">
+								<option value="">Select</option>
+								@{
+									var EntitypeList = LookupUtility.GetAllEntityTypes();
+									foreach (var entity in EntitypeList)
+									{
+										<option value="@entity.EntityType_Id">@entity.Name</option>
+									}
+								}
+							</select>
+
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Amount:</label>
+						<div class="col-12 col-xl-7">
+							<input type="text" class="form-control" placeholder="Amount" name="Amount">
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payment Status:</label>
+						<div class="col-12 col-xl-7">
+							<select class="form-select" name="PaymentStatus_Id">
+								<option value="">Select</option>
+								@{
+									var PaymentStatusList = LookupUtility.GetAllPaymentStatus();
+									foreach (var status in PaymentStatusList)
+									{
+										<option value="@status.PaymentStatus_Id">@status.Name</option>
+									}
+								}
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-4">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Entity Name:</label>
+						<div class="col-12 col-xl-7">
+							<input type="text" class="form-control" placeholder="Entity Name" name="EntityName" data-name="EntityName">
+							<input type="hidden" name="Entity_Id" data-name="Entity_Id" value="" />
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payment Type:</label>
+						<div class="col-12 col-xl-7">
+							<select class="form-select" name="PaymentType_Id">
+								<option value="">Select</option>
+								@{
+									var paymentTypesList = LookupUtility.GetAllPaymentTypes();
+									foreach (var type in paymentTypesList)
+									{
+										<option value="@type.PaymentType_Id">@type.Name</option>
+									}
+								}
+							</select>
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Bank Account:</label>
+						<div class="col-12 col-xl-7">
+							<select class="form-select" name="OperatingBank_Id">
+								<option value="">Select</option>
+								@{
+									var BankList = LookupUtility.GetAllOperatingBanks().Where(x => x.Client_Id == userSession.Client_Id).ToList();
+									foreach (var bank in BankList)
+									{
+										<option value="@bank.OperatingBank_Id">@bank.Name</option>
+									}
+								}
+							</select>
+						</div>
+					</div>
+
+
+
+				</div>
+				<div class="col-md-4">
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payment From/To Date:</label>
+						<div class="col-12 col-xl-7">
+							<div class="row">
+								<div class="col-md-6">
+									<div class="custom-input-group w-100">
+										<input class="form-control flatpickr flatpickr-input range-date" type="text" placeholder="MM/DD/YYYY" readonly="readonly" name="PaymentFromDate">
+										<i class="ri-calendar-line"></i>
+									</div>
+								</div>
+								<div class="col-md-6">
+									<div class="custom-input-group w-100">
+										<input class="form-control flatpickr flatpickr-input range-date" type="text" placeholder="MM/DD/YYYY" readonly="readonly" name="PaymentToDate">
+										<i class="ri-calendar-line"></i>
+									</div>
+								</div>
+							</div>							
+						</div>
+					</div>
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Reference Number:</label>
+						<div class="col-12 col-xl-7">
+							<input type="text" class="form-control" placeholder="Reference Number" name="ReferenceNumber">
+						</div>
+					</div>
+
+
+					<div class="row mx-0 my-1">
+						<label class="col-12 col-xl-5 col-form-label col-form-label-sm text-end">Payment Id:</label>
+						<div class="col-12 col-xl-7">
+							<input type="text" class="form-control" placeholder="Payment Id" name="Payment_Id">
+						</div>
+					</div>
+
+
+					<div class="row mx-0 my-1">
+						<div class="col-sm-6">
+							<div class="form-check">
+								<input class="form-check-input" type="checkbox" name="OutstandingBalances" id="OutstandingBalances" value="true" />
+								<label for="OutstandingBalances">Outstanding Balances</label>
+							</div>
+						</div>
+						<div class="col-sm-6 text-end">
+
+							<button type="button" class="btn btn-primary btn-sm fw-medium me-2" data-name="btnResetPayments"><i class="ri-loop-left-line me-1"></i>Reset</button>
+							<button type="button" class="btn btn-primary btn-sm fw-medium" data-name="btnSearchPayments"><i class="ri-search-2-line me-1"></i>Search</button>
+
+
+						</div>
+					</div>
+
+				</div>
+
+			</div>
+		</form>
+	</div>
+	<div data-name="PaymentsGridContainer">
+	</div>
+</div>
+<script src="~/js/payments.js" asp-append-version="true"></script>
+<style>
+	[data-name="PaymentsGridContainer"] {
+		min-height: auto !important;
+	}
+
+	.range-date,.range-date::placeholder {
+		font-size:12px;
+	}
+
+		.range-date+i {
+			right: 5px;
+			top: -1px;
+	}
+</style>

@@ -1,0 +1,272 @@
+﻿@model CommissionRules
+
+@{
+    var submissionTypes = LookupUtility.GetAllSubmissionTypes();
+    List<UnderWriterDetails> underWritersList = ViewBag.Underwriters;
+    bool isReadOnly = Model?.CommissionRule_Id > 0;
+}
+
+<div>
+    <form name="frmLineItemsClients" data-name="frmCommissionRules">
+
+        <div class="row">
+            <div class="mb-3 col-md-12">
+                <label class="form-label">LOB</label>
+                <select class="form-select" name="LOB_Id" data-name="LOB_Id">
+                    <option value="">Select</option>
+                    @{
+                        var lobs = ViewBag.Lobs;
+                        foreach (var lob in lobs)
+                        {
+                            <option value="@lob.LOB_Id" selected="@(Model != null && Model?.LOB_Id == lob?.LOB_Id)">@lob.Name</option>
+                        }
+                    }
+                </select>
+            </div>
+
+            <div class="mb-3 col-md-12">
+                <label class="form-label">Entity Type</label>
+                <select class="form-select" data-val="true" name="EntityType_Id" data-name="EntityType_Id">
+                    <option value="">Select</option>
+                    @{
+                        var EntitypeList = LookupUtility.GetAllEntityTypes();
+                        var finalEntityTypeList = EntitypeList.Where(y => y.EntityType_Id == MasterLookup._EntityTypes.Underwriter).ToList();
+                        if (finalEntityTypeList?.Any() == true)
+                        {
+                            foreach (var item in finalEntityTypeList)
+                            {
+                                <option value="@item.EntityType_Id" selected="@(Model != null && Model?.EntityType_Id == item?.EntityType_Id)" data-EntityType-id="@item?.EntityType_Id">@item.Name</option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Entity Dropdown -->
+            @if (Model?.CommissionRule_Id > 0)
+            {
+                string? entity = underWritersList.FirstOrDefault(x => x.UnderWriterDetail_Id == Model.Entity_Id)?.Name;
+
+                <div class="mb-3 col-md-12">
+                    <label class="form-label">Entity</label>
+                    <input type="text" class="form-control" value="@entity" readonly>
+                    <input type="hidden" name="Entity_Id" value="@Model.Entity_Id" />
+                </div>
+            }
+            else
+            {
+                <div class="mb-3 col-md-12">
+                    <label class="form-label">Entity</label>
+                    <select class="form-select" data-val="true" name="Entity_Id" data-name="Entity_Id">
+                        <option value="">Select</option>
+                        @{
+
+                            if (underWritersList?.Any() == true)
+                            {
+                                foreach (var item in underWritersList)
+                                {
+                                    <option value="@item.UnderWriterDetail_Id"
+                                            selected="@(Model != null && Model?.Entity_Id == item?.UnderWriterDetail_Id)" data-UnderWriterDetail-id="@item?.UnderWriterDetail_Id">
+                                        @item.Name
+                                    </option>
+                                }
+                            }
+                        }
+                    </select>
+                </div>
+            }
+
+            <!-- Submission Type (MultiSelect Drop Down) -->
+            @if (Model?.CommissionRule_Id > 0)
+            {
+                string? submissionType = Model.SubmissionType_Id is null ? "All" : submissionTypes.FirstOrDefault(x => x.SubmissionType_Id == Model.SubmissionType_Id)?.Name;
+
+                <div class="mb-3 col-md-12">
+                    <label class="form-label">Submission Type</label>
+                    <input type="text" class="form-control" name="@Model.SubmissionType_Id" value="@submissionType" readonly>
+                    <input type="hidden" name="SubmissionType_Id" value="@Model.SubmissionType_Id" />
+                </div>
+            }
+            else
+            {
+                <div class="mb-3 col-md-12">
+                    <div class="mx-0 my-1 g-0">
+                        <label class="form-label">Submission Types</label>
+
+                        <div class="col-12 col-xl-12">
+
+                            <div class="position-relative custom-multi-selection" data-name="submissionType-container">
+                                <button class="form-select select-lob text-start d-flex align-items-center flex-wrap gap-2" type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+                                    <span class="default-text">Select</span>
+                                    <div class="selected-chips d-flex flex-wrap gap-1"></div>
+                                </button>
+                                <ul class="dropdown-menu" style="height:320px;overflow-y:auto;width:266px;">
+                                    @{
+                                        if (submissionTypes != null)
+                                        {
+                                            <li class="dropdown-item">
+                                                <input class="form-check-label" type="checkbox" id="selectAllSubmissionTypes" data-name="submissionType-option" name="LOBNames" data-lob-id="0" onchange="toggleAllLobs(this,'submissionType-container','submissionType-option')">
+                                                <label class="form-check-label ms-2" for="selectAllSubmissionTypes">Select All</label>
+                                            </li>
+
+                                            foreach (var submissionType in submissionTypes)
+                                            {
+                                                <li class="dropdown-item">
+
+                                                    <input class="form-check-label"
+                                                           type="checkbox"
+                                                           data-name="submissionType-option"
+                                                           name="SubmissionType_Ids"
+                                                           data-submissiontype-name="@submissionType.Name"
+                                                           id="submissionType_.@submissionType.SubmissionType_Id"
+                                                           value="@submissionType.SubmissionType_Id">
+
+                                                    <label title="@submissionType.Name"
+                                                           style="text-overflow:ellipsis;width:200px;overflow:hidden;"
+                                                           class="form-check-label ms-2"
+                                                           for="submissionType_.@submissionType.SubmissionType_Id">@submissionType.Name</label>
+
+                                                </li>
+                                            }
+                                        }
+                                    }
+                                </ul>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            }
+
+            <!-- Commission Tyeps -->
+            <div class="mb-3 col-md-12">
+                <label class="form-label">Commission Type</label>
+                <select class="form-select" data-val="true" name="CommissionType_Id" data-name="CommissionType_Id">
+                    <option value="">Select</option>
+                    @{
+                        List<LU_CommissionTypes> commissionTypes = LookupUtility.GetAllCommissionTypes(); ;
+                        if (commissionTypes?.Count() > 0)
+                        {
+                            foreach (var item in commissionTypes)
+                            {
+                                <option value="@item.CommissionType_Id"
+                                        selected="@(Model != null && Model?.CommissionType_Id == item?.CommissionType_Id)" data-lineitemtype-id="@item?.CommissionType_Id">
+                                    @item.Name
+                                </option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+
+            <!-- Value -->
+            <div class="mb-3 col-md-12">
+                <label class="form-label">Value</label>
+                <input type="text" class="form-control" data-val='true' data-val-type='decimal' name="Value" placeholder="Value" value="@Model?.Value">
+            </div>
+
+            <!--Referral Commission Split Percentage-->
+            <div class="mb-3 col-md-12">
+                <label class="form-label">Referral commission split percentage</label>
+                <div class="input-group">
+                    
+                    <input type="text" class="form-control" data-val-type='decimal' name="Referral_Commission_SplitPct" placeholder="Commission split percentage" value="@Model?.Referral_Commission_SplitPct">
+                    <span class="input-group-text py-0">%</span>
+                </div>
+            </div>
+
+            <!-- Commissiion Basis -->
+            <div class="mb-3 col-md-12">
+                <label class="form-label">Commissiion Basis</label>
+                <select class="form-select" data-val="true" name="CommissionBasisType_Id" data-name="CommissionBasisType_Id">
+                    <option value="">Select</option>
+                    @{
+                        List<LU_CommissionBasisTypes> commissionBasisTypes = LookupUtility.GetAllCommissionBasisTypes();
+                        if (commissionBasisTypes?.Count() > 0)
+                        {
+                            foreach (var commissionBasis in commissionBasisTypes)
+                            {
+                                <option value="@commissionBasis.CommissionBasisType_Id"
+                                        selected="@(Model != null && Model.CommissionBasisType_Id == commissionBasis.CommissionBasisType_Id)">
+                                    @commissionBasis.Name
+                                </option>
+                            }
+                        }
+                    }
+                </select>
+            </div>
+
+        </div>
+        <div class="offcanvas-footer position-absolute text-end">
+            <button type="button" class="btn btn-secondary" data-name="btnClose" data-bs-dismiss="offcanvas">Close</button>
+            <button type="button" class="btn btn-primary" data-name="btnSaveCommissionRules">Save changes</button>
+        </div>
+        <div>
+            <input type="hidden" name="Client_Id" value="@ViewBag.Client_Id" />
+            <input type="hidden" name="CommissionRule_Id" value="@Model?.CommissionRule_Id" />
+            <input type="hidden" name="ApplyOnAllTransactions" value="@(Model?.ApplyOnAllTransactions?.ToString().ToLower())" />
+        </div>
+    </form>
+</div>
+
+<link href="~/lib/custom/selectfilter/select2.min.css" rel="stylesheet" /><script src="~/lib/custom/selectfilter/select2.min.js"></script>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>
+
+<script>
+    function toggleAllLobs(source, containerDataName, checkboxDataName) {
+        const container = $(source).closest(`[data-name="${containerDataName}"]`);
+        const isChecked = source.checked;
+        container.find(`[data-name="${checkboxDataName}"]`).prop('checked', isChecked).trigger('change');
+    }
+
+    $('.custom-multi-selection').each(function () {
+            const container = $(this);
+            const chips = container.find('.selected-chips');
+            const defaultText = container.find('.default-text');
+            const checkboxes = container.find('.dropdown-item input[type="checkbox"]');
+
+            function updateChips() {
+                const checked = checkboxes.filter(':checked');
+                chips.empty();
+
+                if (checked.length === 0) {
+                    defaultText.show();
+                } else if (checked.length === checkboxes.length) {
+                    defaultText.hide();
+                    chips.append(
+                        '<div class="chip d-flex align-items-center gap-1 all-chip" data-value="all">' +
+                        '<span>All</span>' +
+                        '<span class="remove-chip" style="cursor:pointer;">&times;</span>' +
+                        '</div>'
+                    );
+                } else {
+                    defaultText.hide();
+                    checked.each(function () {
+                        const value = $(this).data('submissiontype-name');
+                        chips.append(
+                            '<div class="chip d-flex align-items-center gap-1" data-value="' + value + '">' +
+                            '<span>' + value + '</span>' +
+                            '<span class="remove-chip" style="cursor:pointer;">&times;</span>' +
+                            '</div>'
+                        );
+                    });
+                }
+            }
+
+            checkboxes.on('change', updateChips);
+            updateChips();
+        });
+
+        $(document).on('click', '.remove-chip', function (e) {
+            e.stopPropagation();
+            const chip = $(this).closest('.chip');
+            const value = chip.data('value');
+            const container = chip.closest('.custom-multi-selection');
+
+            if (value === 'all') {
+                container.find('.dropdown-item input[type="checkbox"]').prop('checked', false).trigger('change');
+            } else {
+                container.find('input[type="checkbox"][data-submissiontype-name="' + value + '"]').prop('checked', false).trigger('change');
+            }
+        });
+</script>

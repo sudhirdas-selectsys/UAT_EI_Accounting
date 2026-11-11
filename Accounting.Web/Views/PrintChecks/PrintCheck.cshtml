@@ -1,0 +1,37 @@
+﻿@{
+    long OperatingBank_Id = ViewBag.OperatingBank_Id;
+}
+<html>
+<body>
+    <div>
+        <form data-name="frmPrintCheckform">
+            <div>
+                <h5 class="fs-18">Print Checks</h5>
+            </div>
+            <div class="row">
+                <div class="col-md-12 mb-3">
+
+                    <label class="form-label fw-semibold"> Check Number </label>
+
+                    <input type="text" class="form-control" placeholder="Enter Check Number" data-name="checkNumber" data-val="true" />
+
+                    <small class="text-muted">
+                        Enter the check number for the first selected check.
+                        The remaining selected checks will use sequential check numbers.
+                    </small>
+                </div>
+            </div>
+
+            <div class="d-grid" style="margin-bottom:16px !important">
+                <button type="button" class="btn btn-primary" data-name="DownloadChecks" data-operating-bank-id="@OperatingBank_Id">Print Checks</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>
+
+<script>
+    $(function(){
+    appCommon.InitializePanelOrFormValidations($('[data-name="frmPrintCheckform"]'));
+    })
+</script>

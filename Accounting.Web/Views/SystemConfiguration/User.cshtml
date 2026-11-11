@@ -1,0 +1,143 @@
+﻿@model Users
+@{
+	var ClientList = ViewBag.ClientList != null ? (List<Clients>)ViewBag.ClientList : null;
+	var SelectedClientsList = ViewBag.SelectedClientsList != null ? (List<Clients>)ViewBag.SelectedClientsList : null;
+}
+<div>
+	<form data-name="frmUsers" method="post" name="frmUsers">
+		<div class="row">
+			<input type="hidden" name="ExistingRole_Id" value="@Model?.Role_Id" />
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>Role</label>
+					<select class="form-select" name="Role_Id" data-name="Role_Id" @(Model?.Is_APIUser == false? "data-val=true" : "") >
+						<option value="">Select</option>
+						@{
+							var roles = LookupUtility.GetAllRoles();
+							foreach (var item in roles)
+							{
+								<option value="@item.Role_Id" selected="@(Model != null && Model.Role_Id == item.Role_Id)">@item.Name</option>
+							}
+						}
+					</select>
+
+				</div>
+			</div>
+			<!-- CompanyList -->
+			<div class="mb-3 col-md-12">
+				<div class="mx-0 my-1 g-0 data-item">
+					<label class="col-12 col-xl-3 col-form-label col-form-label-sm text-end">Client:</label>
+					<div class="position-relative custom-multi-selection" data-name="client-container">
+						<button class="form-select select-lob text-start d-flex align-items-center flex-wrap gap-2"
+								type="button" data-bs-toggle="dropdown" aria-expanded="false" data-bs-auto-close="outside">
+							<span class="default-text">Select</span>
+							<div class="selected-chips d-flex flex-wrap gap-1"></div>
+						</button>
+						<ul class="dropdown-menu" style="height:109px;width:372px; overflow-y:auto">
+							<input type="hidden" name="ClientIdList" value="@Model?.ClientIdList" />
+							@{
+								var selectedClientIds = (Model?.ClientIdList ?? "")
+								.Split(',', StringSplitOptions.RemoveEmptyEntries)
+								.Select(x => x.Trim())
+								.ToList();
+
+								if (ClientList?.Count() > 0)
+								{
+									foreach (var client in ClientList)
+									{
+										bool isChecked = selectedClientIds?.Contains(client.Client_Id.ToString()) == true;
+
+										<li class="dropdown-item">
+											<input class="form-check-label" type="checkbox"
+												   data-name="client-options"
+												   name="Client_Ids"
+												   data-client-id="@client.Client_Id"
+												   id="client_@client.Client_Id"
+												   value="@client.CompanyName"
+											@(isChecked ? "checked" : "") />
+											<label title="@client.CompanyName"
+												   style="text-overflow:ellipsis;width:350px;overflow:hidden;"
+												   class="form-check-label ms-2"
+												   for="client_@client.Client_Id">
+												@client.CompanyName
+											</label>
+										</li>
+									}
+								}
+							}
+						</ul>
+					</div>
+				</div>
+			</div>
+			<div class="apd row" data-panel-dependency-json='[{"RefName":"Role_Id","Values":[@MasterLookup._Roles.SuperAdmin],"ShowPanel":true}]' data-panel-dependency>
+				<div class="mb-3 col-md-12">
+					<div class="data-item">
+						<label>Default Client</label>
+						<select class="form-select" name="DefaultClient_Id" data-name="DefaultClient_Id">
+							<option value="">Select</option>
+							@{
+								if (ClientList?.Count() > 0)
+								{
+									foreach (var item in ClientList)
+									{
+										<option value="@item.Client_Id" selected="@(Model != null && Model.DefaultClient_Id == item.Client_Id)">@item.CompanyName</option>
+
+									}
+								}
+							}
+						</select>
+
+					</div>
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>First Name</label>
+					<input type="hidden" class="form-control" name="User_Id" value="@Model?.User_Id">
+					<input type="text" class="form-control" placeholder="First Name" name="FirstName" autocomplete="off" data-val="true" value="@Model?.FirstName">
+
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>Last Name</label>
+					<input type="text" class="form-control" placeholder="Last Name" name="LastName" autocomplete="off" data-val="true" value="@Model?.LastName">
+
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>UserName</label>
+					<input type="text" class="form-control" placeholder="User Name" name="UserName" autocomplete="new-UserName" data-val="true" value="@Model?.Username">
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>Password</label>
+					<input type="password" class="form-control" name="Password" data-val="true" autocomplete="New-Password" value="@Model?.Password">
+				</div>
+			</div>
+			<div class="mb-3 col-md-12">
+				<div class="data-item">
+					<label>Email</label>
+					<input type="text" class="form-control" placeholder="Email" name="Email" autocomplete="sample-email" data-val="true" value="@Model?.Email">
+				</div>
+			</div>
+			
+			<div class="d-flex gap-3 align-items-center">
+				<label class="ms-1">Is An API User?</label>
+				<div class="form-check form-switch">
+					<input class="form-check-input switch-input ms-5" name="Is_APIUser" data-name="Is_APIUser" type="checkbox" id="IsAPIUser" value="true" @((Model != null && Model.Is_APIUser) ? "checked" : (Model == null ? "checked" : ""))>
+					<label class="form-check-label switch-label @((Model != null && Model.Is_APIUser) ? "active" : (Model == null ? "active" : ""))" for="IsAPIUser">@((Model != null && Model.Is_APIUser) ? "Yes" : (Model == null ? "Yes" : ""))</label>
+					<input type="hidden" name="Is_APIUser" value="@(Convert.ToString(Model?.Is_APIUser))" />
+				</div>
+			</div>
+
+		</div>
+		<div class="offcanvas-footer text-end row" style="background-color:white">
+			<button type="button" class="btn btn-secondary" data-name="btnClose" data-bs-dismiss="offcanvas">Close</button>
+			<button type="button" class="btn btn-primary" data-name="btnSaveUsers">Save</button>
+		</div>
+	</form>
+</div>
+<script src="~/js/systemconfiguration.js" asp-append-version="true"></script>

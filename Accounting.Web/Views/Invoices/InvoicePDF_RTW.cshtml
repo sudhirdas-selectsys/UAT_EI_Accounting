@@ -1,0 +1,610 @@
+﻿@using Newtonsoft.Json
+@model PolicyDetails
+@{
+    var Clients = Model.Clients;
+    var AgentDetails = Model.AgentDetails;
+    var CarrierDetails = Model.CarrierDetails;
+    var InsuredDetails = Model.InsuredDetails;
+    var WholesalerDetails = Model.WholesalerDetails;
+    var BillingType_Id = LookupUtility.GetAllBillingTypes().FirstOrDefault(x => x.Code == Model.BillType)?.BillingType_Id;
+    var MortgageeDetails = Model.MortgageeDetails;
+    var PolicyDetails_Id = Model.Id;
+    var InstallmentNo = Model.InstallmentNo;
+    var minPremium = Model.PolicyDetailsLineItemsList
+                    .Where(x => x.LineType != null && x.LineType.Equals("Premium", StringComparison.OrdinalIgnoreCase))
+                    .Select(x => (double?)x.MinPremium)
+                    .FirstOrDefault();
+    var PaymentDueOn = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymentDueOn);
+    bool Is_Installment = Model?.InvoicesList.Count() > 1;
+    var paymentLink = LookupUtility.GetClientSettings(Clients.Client_Id, MasterLookup._ClientSettings.InvoicePaymentFooter);
+    var accountNumber = AgentDetails?.EI_Accounting_Id ?? @Model?.ExternalAccountInformation?.AccountNumber ?? string.Empty;
+    var postalCode = BillingType_Id switch
+    {
+        var x when x == MasterLookup._BillingTypes.Agency
+            => AgentDetails?.ZipCode ?? string.Empty,
+
+        var x when x == MasterLookup._BillingTypes.Insured
+            => InsuredDetails?.ZipCode ?? string.Empty,
+
+        var x when x == MasterLookup._BillingTypes.Mortgagee
+            => MortgageeDetails?.ZipCode ?? string.Empty,
+
+        _ => string.Empty
+    };
+    string dynamicURL = string.Format(paymentLink, accountNumber, postalCode);
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+</head>
+<body style="margin: 0;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:Arial,Helvetica,sans-serif;">
+        <tbody>
+            <tr>
+                <td style="padding:20px;">
+                    <table border="0" cellspacing="0" cellpadding="0" width="100%" align="center" style="border-color:rgba(0,0,0,.09);margin:0 auto">
+                        <tbody style="padding:50px;">
+                            <tr>
+                                <td>
+                                    <div style="padding:50px;">
+                                        <table width="100%" cellspacing="0" cellpadding="0" border="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="color:#333;font-size:17px;font-family:Arial, sans-serif;color: #333;font-size: 15px;vertical-align: top;border-bottom:2px solid #000;">
+                                                        @{
+                                                            string base64Image = Clients != null ? Convert.ToBase64String(Clients.Logo) : "";
+                                                            string imgSrc = !string.IsNullOrEmpty(base64Image) ? $"data:image/jpg;base64,{base64Image}" : "";
+                                                        }
+                                                        <div style="color:#fff;font-size:28px;font-weight:600;font-family:Arial, sans-serif;padding-bottom:10px;">
+                                                            <img src="@imgSrc" width="350" />
+                                                        </div>
+                                                        <div>
+                                                            14001 Dallas Parkway, Suite 700, Dallas, TX 75240
+                                                        </div>
+                                                        <div style="height:5px;"></div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <div height="20">
+                                        </div>
+                                        <table width="100%" cellpadding="5" cellspacing="0" border="0">
+
+                                            <tbody>
+                                                <tr>
+                                                    <td align="right" style="font-family:Arial, Helvetica, sans-serif;font-size:38px;font-weight:bold;color:#004a87;letter-spacing:8px;padding-bottom:10px;">
+                                                        @{
+                                                            var InvoiceName = Is_Installment ? "INSTALLMENT INVOICE" : "INVOICE";
+                                                        }
+                                                        @Html.Raw(InvoiceName)
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    <td align="right" style="font-family:Arial, Helvetica, sans-serif;font-size:22px;color:#555555;padding-bottom:10px;">
+                                                        Invoice# @Model?.Invoices?.InvoiceNo | &nbsp;&nbsp;
+                                                        Date: @Model?.Invoices?.BillDate.ToString(MasterLookup._ServerDateFormat)
+                                                    </td>
+                                                </tr>
+                                                <tr>
+                                                    @{
+                                                        double totalAmountDue = 0;
+                                                        double Actualamount = 0;
+                                                        if (Model?.InvoicesList?.Count > 0)
+                                                        {
+                                                            var invoiceList = Model?.InvoicesList.Where(x => x.InstallmentNo == InstallmentNo).ToList();
+                                                            if (invoiceList != null)
+                                                            {
+                                                                foreach (var invoice in invoiceList)
+                                                                {
+                                                                    totalAmountDue += Convert.ToDouble(invoice.RemainingBalance);
+                                                                    Actualamount += Convert.ToDouble(invoice.Amount);
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                    <td align="right" style="font-family:Arial, Helvetica, sans-serif;font-size:23px;font-weight:bold;color:#004a87;">
+                                                        @{
+                                                            string dueName;
+                                                            if (!Is_Installment)
+                                                            {
+                                                                dueName = "Due Amount:";
+                                                            }
+                                                            else if (Model?.InstallmentNo == 0)
+                                                            {
+                                                                dueName = "Installment Down Payment Due Amount:";
+                                                            }
+                                                            else
+                                                            {
+                                                                var suffix = Model?.InstallmentNo switch
+                                                                {
+                                                                    1 => "st",
+                                                                    2 => "nd",
+                                                                    3 => "rd",
+                                                                    _ => "th"
+                                                                };
+
+                                                                dueName = $"{Model?.InstallmentNo}<sup>{suffix}</sup> Installment Due Amount:";
+                                                            }
+                                                        }
+                                                        @Html.Raw(dueName)
+                                                        <span style="color:#004a87;">
+                                                            @CommonUtility.ConvertToCurrencyFormat(totalAmountDue, false, 2)
+                                                        </span>
+                                                        &nbsp; | &nbsp;&nbsp;
+                                                        Due Date: @Model?.Invoices?.DueDate.ToString(MasterLookup._ServerDateFormat)
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="height:10px;">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="border-top:1px solid #4b4b4b;font-size:20px;line-height:1px;">&nbsp;</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="height:10px;">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="font-size:24px;font-weight:bold;color:#004f90;letter-spacing:4px;">
+                                                        <div style="padding-bottom:4px;">Bill To :</div>
+                                                    </td>
+
+                                                </tr>
+                                                <tr>
+                                                    @{
+                                                        if (MortgageeDetails != null && BillingType_Id == MasterLookup._BillingTypes.Mortgagee)
+                                                        {
+                                                            <td width="33%" valign="top">
+                                                                <table width="100%">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td style="font-size:20px;font-weight:bold;color:#777;letter-spacing:4px;color:#777;">
+                                                                                MORTGAGEE
+                                                                            </td>
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td style="font-size:22px;color:#222;padding-top:14px;line-height:32px;">
+                                                                                @MortgageeDetails?.Name<br />
+                                                                                @MortgageeDetails?.Address1<br />
+                                                                                @MortgageeDetails?.City, @MortgageeDetails?.State @MortgageeDetails?.ZipCode
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                        }
+                                                    }
+                                                    <td width="33%" valign="top">
+                                                        <table width="100%">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td style="font-size:20px;font-weight:bold;color:#777;letter-spacing:4px;color:#777;">
+                                                                        INSURED
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style="font-size:22px;color:#222;padding-top:14px;line-height:32px;">
+                                                                        @InsuredDetails?.Name<br />
+                                                                        @if (!string.IsNullOrEmpty(@InsuredDetails?.Address2))
+                                                                        {
+                                                                            @("c/o " + InsuredDetails.Address2)<br />
+                                                                        }
+                                                                        @InsuredDetails?.Address1<br />
+                                                                        @InsuredDetails?.City, @InsuredDetails?.State @InsuredDetails?.ZipCode
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+
+                                                    <td width="33%" valign="top">
+                                                        <table width="100%">
+                                                            <tbody>
+                                                                <tr>
+                                                                    <td style="font-size:20px;font-weight:bold;color:#777;letter-spacing:4px;color:#777;">
+                                                                        PRODUCER
+                                                                    </td>
+                                                                </tr>
+                                                                <tr>
+                                                                    <td style="font-size:22px;color:#222;padding-top:14px;line-height:32px;">
+                                                                        @AgentDetails?.Name<br />
+                                                                        @AgentDetails?.Address1<br />
+                                                                        @AgentDetails?.City, @AgentDetails?.State @AgentDetails?.ZipCode
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="height:10px;">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="font-size:24px;font-weight:bold;color:#004f90;letter-spacing:4px;border-bottom:1px solid #333;">
+                                                        <div style="padding-bottom:4px;">POLICY INFORMATION</div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="height:10px;">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td width="33%" style="font-size:22px;padding-bottom:8px;color:#333;"><strong>Policy Number:</strong></td>
+                                                    <td width="67%" style="font-size:22px;padding-bottom:8px;">@Model?.PolicyNumber</td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td style="font-size:22px;padding-bottom:8px;color:#333;"><strong>Policy Term:</strong></td>
+                                                    <td style="font-size:22px;padding-bottom:8px;">@Model?.EffectiveDate.ToString(MasterLookup._ServerDateFormat) - @Model?.ExpirationDate.ToString(MasterLookup._ServerDateFormat)</td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td style="font-size:22px;padding-bottom:8px;color:#333;"><strong>Coverage:</strong></td>
+                                                    <td style="font-size:22px;padding-bottom:8px;">@Model?.PolicyDetailsLineItemsList?.FirstOrDefault()?.Coverage</td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td style="font-size:22px;"><strong>Carrier:</strong></td>
+                                                    <td style="font-size:22px;">@CarrierDetails?.Name</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="height:10px;">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="font-size:24px;font-weight:bold;color:#004f90;letter-spacing:4px;border-bottom:1px solid #333;">
+                                                        <div style="padding-bottom:4px;">CHARGE DETAILS</div>
+                                                    </td>
+
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="height:20px;">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <div>
+                                            <table class="charge-details" width="100%" cellpadding="10" cellspacing="0" border="0">
+                                                <tbody>
+                                                    <tr>
+                                                        <td style="padding:8px;color:#fff;background-color:#004f90;font-size:22px;font-weight:bold;border-top:1px solid #000;">
+                                                            Description
+                                                        </td>
+
+                                                        <td align="right" style="padding:8px;color:#fff;background-color:#004f90;font-size:22px;font-weight:bold;">
+                                                            Amount
+                                                        </td>
+                                                    </tr>
+                                                    @{
+                                                        bool alternateRow = false;
+                                                        if (!Is_Installment)
+                                                        {
+                                                            @if (Model?.PolicyDetailsLineItemsList?.Count > 0)
+                                                            {
+                                                                foreach (var item in Model?.PolicyDetailsLineItemsList)
+                                                                {
+                                                                    // PREMIUM
+                                                                    if (item.LineType != null && item.LineType.Contains("PREMIUM", StringComparison.OrdinalIgnoreCase))
+                                                                    {
+                                                                        <tr>
+                                                                            <td style='padding:8px;border-bottom:1px solid #ddd;border-left:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                Premium - @Model.TransactionType - @item.Coverage
+                                                                            </td>
+
+                                                                            <td align="right"
+                                                                                style='padding:8px;border-bottom:1px solid #ddd;border-right:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                @CommonUtility.ConvertToCurrencyFormat(item.Premium, false, 2)
+                                                                            </td>
+                                                                        </tr>
+
+                                                                        alternateRow = !alternateRow;
+
+                                                                        // COMMISSION
+                                                                        @* if (item.CommissionAmount > 0)
+                                                                            {
+                                                                                <tr>
+                                                                                    <td style='padding:8px;border-bottom:1px solid #ddd;font-size:12px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                        Commission Credit @item.HouseCommission% - @item.Coverage
+                                                                                    </td>
+
+                                                                                    <td align="right"
+                                                                                        style='padding:8px;border-bottom:1px solid #ddd;font-size:12px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                        @CommonUtility.ConvertToCurrencyFormat(item.HouseCommission, false, 2)
+                                                                                    </td>
+                                                                                </tr>
+
+                                                                                alternateRow = !alternateRow;
+                                                                            } *@
+
+                                                                    }
+
+                                                                    // TAX / FEES
+                                                                    if (item.FeeTaxAmount != 0)
+                                                                    {
+                                                                        <tr>
+                                                                            <td style='padding:8px;border-bottom:1px solid #ddd;border-left:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                @item.PolicyDetailDescription
+                                                                            </td>
+
+                                                                            <td align="right"
+                                                                                style='padding:8px;border-bottom:1px solid #ddd;border-right:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                @CommonUtility.ConvertToCurrencyFormat(item.FeeTaxAmount, false, 2)
+                                                                            </td>
+                                                                        </tr>
+
+                                                                        alternateRow = !alternateRow;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        else
+                                                        {
+                                                            if (Model?.InvoicesList?.Count > 0)
+                                                            {
+                                                                var invoiceList = Model?.InvoicesList.Where(x => x.InstallmentNo == InstallmentNo).ToList();
+                                                                if (invoiceList != null)
+                                                                {
+                                                                    foreach (var invoice in invoiceList)
+                                                                    {
+                                                                        foreach (var item in invoice.InvoicesDetailsList.GroupBy(x => x.Description).Select(g => g.First()))
+                                                                        {
+                                                                            //PREMIUM
+                                                                            if (!string.IsNullOrEmpty(item.LineTypeName) && item.LineTypeName.Contains("PREMIUM", StringComparison.OrdinalIgnoreCase))
+                                                                            {
+                                                                                <tr>
+                                                                                    <td style='padding:8px;border-bottom:1px solid #ddd;border-left:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                        @item.Description
+                                                                                    </td>
+
+                                                                                    <td align="right"
+                                                                                        style='padding:8px;border-bottom:1px solid #ddd;border-right:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                        @CommonUtility.ConvertToCurrencyFormat(item.ActualPremium, false, 2)
+                                                                                    </td>
+                                                                                </tr>
+
+                                                                                alternateRow = !alternateRow;
+                                                                            }
+
+                                                                            //TAX / FEES
+                                                                            if (!string.IsNullOrEmpty(item.LineTypeName) && (item.LineTypeName.Equals("TAX", StringComparison.OrdinalIgnoreCase) || item.LineTypeName.Equals("Fee", StringComparison.OrdinalIgnoreCase)))
+                                                                            {
+                                                                                <tr>
+                                                                                    <td style='padding:8px;border-bottom:1px solid #ddd;border-left:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                        @item.Description
+                                                                                    </td>
+
+                                                                                    <td align="right"
+                                                                                        style='padding:8px;border-bottom:1px solid #ddd;border-right:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                                        @CommonUtility.ConvertToCurrencyFormat(item.Amount, false, 2)
+                                                                                    </td>
+                                                                                </tr>
+
+                                                                                alternateRow = !alternateRow;
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                            }
+                                                        }
+                                                        <tr>
+                                                            <td style='padding:8px;border-bottom:1px solid #ddd;border-left:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                Amount Paid
+                                                            </td>
+                                                            <td align="right"
+                                                                style='padding:8px;border-bottom:1px solid #ddd;border-right:1px solid #000;font-size:22px;@(alternateRow ? "background-color:#f7f7f7;" : "")'>
+                                                                @CommonUtility.ConvertToCurrencyFormat(Model?.TotalAppliedAmount, false, 2)
+                                                            </td>
+                                                        </tr>
+                                                    }
+                                                    <tr>
+                                                        <td style="padding:10px;font-size:23px;font-weight:bold;border-top:1px solid #000;border-bottom:1px solid #000;border-left:0;">Total Due  @Model?.Invoices?.DueDate.ToString(MasterLookup._ServerDateFormat):</td>
+                                                        <td align="right" style="padding:10px;font-size:23px;font-weight:bold;border-top:1px solid #000;border-bottom:1px solid #000;border-right:0;">@CommonUtility.ConvertToCurrencyFormat(totalAmountDue, false, 2)</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        <div height="10">
+                                        </div>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="height:20px;">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        <!-- PAYMENT OPTIONS -->
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="font-size:24px;font-weight:bold;color:#004f90;letter-spacing:4px;border-top:3px solid #07518a;padding-top:12px;padding-bottom:8px;">
+                                                        PAYMENT OPTIONS
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        <table width="100%" cellpadding="0" cellspacing="0" border="0"
+                                               style="border-collapse:collapse;table-layout:fixed;border:1px solid #b6b6b6;font-family:Arial,Helvetica,sans-serif;">
+
+                                            <tbody>
+                                                <!-- PAYMENT HEADER -->
+                                                <tr>
+                                                    <td colspan="2" width="50%" align="center"
+                                                        style="border:1px solid #b6b6b6;padding:10px 6px;font-size:18px;font-weight:bold;color:#07518a;text-align:center;">
+                                                        Please make all checks payable to Risk Theory Insurance Services
+                                                        and follow the below mailing instructions
+                                                    </td>
+
+                                                    <td width="25%" align="center"
+                                                        style="border:1px solid #b6b6b6;padding:10px 6px;font-size:18px;font-weight:bold;color:#07518a;text-align:center;">
+                                                        ACH / Wire Payment
+                                                    </td>
+
+                                                    <td width="25%" align="center"
+                                                        style="border:1px solid #b6b6b6;padding:10px 6px;font-size:18px;font-weight:bold;color:#07518a;text-align:center;">
+                                                        Online Payment
+                                                    </td>
+                                                </tr>
+
+                                                <!-- PAYMENT DETAILS -->
+                                                <tr>
+                                                    <!-- REGULAR MAIL -->
+                                                    <td width="25%" valign="top"
+                                                        style="border:1px solid #b6b6b6;">
+
+                                                        <div style="padding:9px 5px;text-align:center;font-size:18px;font-weight:bold;color:#07518a;border-bottom:1px solid #b6b6b6;">
+                                                            For Regular U.S. Mail:
+                                                        </div>
+
+                                                        <div style="padding:15px 6px;font-size:18px;line-height:1.6;text-align:center;">
+                                                            Risk Theory Insurance Services <b>III</b><br />
+                                                            PO Box 669609<br />
+                                                            Dallas, TX 75266-0534
+                                                        </div>
+                                                    </td>
+
+                                                    <!-- OVERNIGHT DELIVERY -->
+                                                    <td width="25%" valign="top"
+                                                        style="border:1px solid #b6b6b6;">
+
+                                                        <div style="padding:9px 5px;text-align:center;font-size:18px;font-weight:bold;color:#07518a;border-bottom:1px solid #b6b6b6;">
+                                                            For Overnight Delivery:
+                                                        </div>
+
+                                                        <div style="padding:15px 6px;font-size:18px;line-height:1.6;text-align:center;">
+                                                            Wholesale Lockbox Department<br />
+                                                            Attn: PO Box 669609<br />
+                                                            3000 Kellway Dr, Suite 120<br />
+                                                            Carrollton, TX 75006
+                                                        </div>
+                                                    </td>
+
+                                                    <!-- ACH / WIRE PAYMENT -->
+                                                    <td width="25%" valign="top"
+                                                        style="border:1px solid #b6b6b6;">
+
+                                                        <div style="padding:15px 6px;font-size:18px;line-height:1.6;text-align:center;">
+                                                            Capital One Bank<br /><br />
+                                                            Account # 208 286 2051<br />
+                                                            Routing # 065 000 090<br />
+                                                            Type: Checking
+                                                        </div>
+                                                    </td>
+
+                                                    <!-- ONLINE PAYMENT -->
+                                                    <td width="25%" valign="top"
+                                                        style="border:1px solid #b6b6b6;">
+
+                                                        <div style="padding:15px 6px;font-size:18px;line-height:1.6;text-align:center;">
+                                                            To make an online payment,
+                                                            please click below link.
+
+                                                            <br /><br />
+
+                                                            <a href="@dynamicURL"
+                                                               style="background:#07518a;color:#ffffff;text-decoration:none;padding:9px 12px;border-radius:4px;font-size:18px;font-weight:bold;display:inline-block;">
+                                                                Click to Pay Online
+                                                            </a>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="height:20px;">
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                        <table width="100%">
+                                            <tbody>
+                                                <tr>
+                                                    <td style="border-top:1px solid #999;font-size:10px;line-height:1px;">&nbsp;</td>
+                                                </tr>
+
+                                                <tr>
+                                                    <td align="center" style="font-size:17px;color:#999;padding-top:10px;">
+                                                        Risk Theory Insurance Services, LLC |
+                                                        14001 Dallas Parkway, Suite 700,
+                                                        Dallas, TX 75240 |
+                                                        Please remit payment by @Model?.Invoices?.DueDate.ToString(MasterLookup._ServerDateFormat)
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </td>
+
+                            </tr>
+                        </tbody>
+                    </table>
+                </td>
+            </tr>
+
+        </tbody>
+    </table>
+</body>
+</html>
+<style>
+    .charge-details tr td:first-child {
+        border-left: 1px solid #000;
+    }
+
+    .charge-details tr td:last-child {
+        border-right: 1px solid #000;
+    }
+</style>

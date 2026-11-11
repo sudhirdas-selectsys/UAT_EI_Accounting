@@ -1,0 +1,150 @@
+﻿@using Newtonsoft.Json
+@model List<PolicyDetails>
+@{
+    ViewData["Title"] = "DashboardGrid";
+    var PageSize = ViewBag.PageSize;
+    var PageIndex = ViewBag.PageIndex;
+    var TotalRecords = ViewBag.TotalRecords;
+    var client_Id = ViewBag.Client_Id;
+    var enableDashBoardGridSorting = LookupUtility.GetClientSettings(Convert.ToInt64(client_Id), MasterLookup._ClientSettings.EnableDashBoardGridSorting);
+    List<string> enableDashBoardGridSortingList = null;
+    if (!string.IsNullOrWhiteSpace(enableDashBoardGridSorting))
+    {
+        enableDashBoardGridSortingList = JsonConvert.DeserializeObject<List<string>>(enableDashBoardGridSorting);
+    }
+}
+<div class="border">
+    <div class="table-responsive table-scroll" style="height: calc(100vh - 315px)!important;">
+        <table class="table  ei-table mb-0" data-sort-config="dashboardgrid">
+            <thead>
+                <tr>
+                    <th>Submission Id</th>
+                    <th style="width:250px">Policy Number</th>
+                    <th>Insured Name</th>
+                    <th>Agency Name</th>
+                    <th>Effective Date</th>
+                    <th>Expiration Date</th>
+                    <th>Total Amount</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="line-items-body">
+                @{
+                    if (Model?.Count > 0)
+                    {
+                        foreach (var item in Model)
+                        {
+                            double totalPremium = item.PolicyDetailsLineItemsList.Where(v => v.LineType == "PREMIUM").Sum(c => c.Premium);
+                            double totalFees = item.PolicyDetailsLineItemsList.Where(v => v.LineType == "FEE" || v.LineType == "TAX").Sum(c => c.FeeTaxAmount);
+                            double totalAmount = totalPremium + totalFees;
+                            <tr>
+                                <td>@item.Submission_Id</td>
+                                <td>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div class="text-truncate" title="@item.PolicyNumber" style="width:200px;">@item.PolicyNumber </div>
+                                        <div class=""><span class="badge rounded-pill  transactionend me-1 d-inline-flex align-items-center justify-content-center" style="width:50px; height: 25px;">@item.TransactionType</span></div>
+                                    </div>
+
+                                </td>
+                                <td><div class="text-truncate" title="@item.PolicyDescription" style="width:200px;">@item.PolicyDescription</div></td>
+                                <td><div class="text-truncate" title="@item.AgencyName" style="width:200px;">@item.AgencyName</div></td>
+                                <td>@item.EffectiveDate.ToShortDateString()</td>
+                                <td>@item.ExpirationDate.ToShortDateString()</td>
+                                <td>@CommonUtility.ConvertToCurrencyFormat(totalAmount, false, 2)</td>
+                                <td valign="middle"><div class="action-btns"><a href="/PolicyDetails/Index/@item.Id" title="View Policy & Invoice Details"><i class="ri-eye-line save-btn"></i></a></div></td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="9">No records found!</td></tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+    <div class="row align-items-center mt-3 mb-3 relative me-5">
+        <div class="col-sm-6 offset-sm-6 xs-center">
+            <div class="row align-items-center justify-content-end table-pagination">
+                <div class="col-auto"><strong>Page Size</strong></div>
+                <div class="col-auto">
+                    @{
+                        List<int> pageSizeOptions = new List<int> { 20, 40, 50, 100 };
+                    }
+                    <select class="form-select" data-name="PageSize" data-table-name="DashboardDetails">
+                        @foreach (var size in pageSizeOptions)
+                        {
+                            <option value="@size" selected="@(PageSize == size)">@size</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-auto">
+                    <strong>
+                        @{
+                            if (Model?.Count > 0)
+                            {
+                                @(PageIndex == 0 ? 1 : (PageIndex * PageSize) + 1)
+                                <text>-</text>
+                                @(PageIndex == 0 ? Model?.Count : (PageIndex * PageSize) + Model?.Count)
+
+                            }
+                            else
+                            {
+                                <text>0-0</text>
+                            }
+                        }
+
+                    </strong>
+
+                    of <strong>@TotalRecords</strong>
+                </div>
+                <div class="col-auto">
+                    <div class="btn-group">
+                        @if (PageIndex > 0)
+                        {
+                            <button type="button" class="btn btn-outline-primary" data-page-index="@PageIndex" data-table-name="DashboardDetails" data-name="btnPrevious"><i class="fa fa-angle-left"></i></button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-primary" disabled><i class="fa fa-angle-left"></i></button>
+                        }
+                        @if (TotalRecords > (PageSize * (PageIndex + 1)))
+                        {
+                            <button type="button" class="btn btn-outline-primary" title="Next" data-page-index="@PageIndex" data-table-name="DashboardDetails" data-name="btnNext"><i class="fa fa-angle-right"></i></button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-primary" title="Next" disabled><i class="fa fa-angle-right"></i></button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<style>
+    .transactionend {
+        color: #fff !important;
+        background-color: #4092fc;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+
+    .transactionnew {
+        color: #fff !important;
+        background-color: #5f2ee5;
+        font-size: 11px;
+        padding: 6px 10px;
+    }
+</style>
+@if (enableDashBoardGridSortingList?.Any() == true)
+{
+    <script>
+        $(document).ready(function () {
+            $("table[data-sort-config]").removeData("sort-wired");
+            TableSorter.autoWire({
+                dashboardgrid: @Html.Raw(JsonConvert.SerializeObject(enableDashBoardGridSortingList))
+            });
+        });
+    </script>
+}

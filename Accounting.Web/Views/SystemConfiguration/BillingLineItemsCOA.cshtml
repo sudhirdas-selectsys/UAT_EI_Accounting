@@ -1,0 +1,259 @@
+﻿@model List<LU_BillingType_LineItems_Directions>
+@{
+	var Client_Id = ViewBag.Client_Id != null ? ViewBag.Client_Id : 0;
+	var Service_Id = ViewBag.Service_Id != null ? ViewBag.Service_Id : 0;
+	var ChartOfAccountList = ViewBag.ChartOfAccountList != null ? (List<ChartofAccounts>)ViewBag.ChartOfAccountList : new List<ChartofAccounts>();
+	var TabName = ViewBag.TabName != null ? ViewBag.TabName : "";
+	var groupedModel = Model?
+		.Where(x => x.Is_Passthrough)?
+		.GroupBy(x => new { x.LineItemName, x.BillingTypeName })?
+		.ToList();
+
+	var nonGroupedModel = Model?.Where(x => !x.Is_Passthrough).ToList();
+	var displayList = new List<LU_BillingType_LineItems_Directions>();
+	if (groupedModel != null)
+	{
+		foreach (var grp in groupedModel)
+		{
+			var directions = string.Join("/", grp.Select(g => g.DirectionName));
+			var PassthroughBillingLineItemDirectionsList = string.Join(",", grp.Select(g => g.BillingType_LineItems_Directions_Id));
+			var firstItem = grp.First();
+			displayList.Add(new LU_BillingType_LineItems_Directions()
+					{
+						LOB_Carrier_Grouping_Id = firstItem.LOB_Carrier_Grouping_Id,
+						BillingType_Id = firstItem.BillingType_Id,
+						LineItems_Directions_Id = firstItem.LineItems_Directions_Id,
+						Status = firstItem.Status,
+						CreatedOn = firstItem.CreatedOn,
+						UpdatedOn = firstItem.UpdatedOn,
+						Client_Id = firstItem.Client_Id,
+						Service_Id = firstItem.Service_Id,
+						BillingType_LineItems_Directions_Id = firstItem.BillingType_LineItems_Directions_Id,
+						DirectionName = directions,
+						LineItemName = firstItem.LineItemName,
+						BillingTypeName = firstItem.BillingTypeName,
+						IncomeExpenseLiabilityCOA_Id = firstItem.IncomeExpenseLiabilityCOA_Id,
+						ARAPCOA_Id = firstItem.ARAPCOA_Id,
+						PassthroughBillingLineItemDirections = PassthroughBillingLineItemDirectionsList,
+						Is_Passthrough = true,
+						AccountingType_Id = firstItem.AccountingType_Id
+					});
+		}
+	}
+	if (nonGroupedModel != null)
+	{
+		foreach (var item in nonGroupedModel)
+		{
+			displayList.Add(new LU_BillingType_LineItems_Directions()
+					{
+						LOB_Carrier_Grouping_Id = item.LOB_Carrier_Grouping_Id,
+						BillingType_Id = item.BillingType_Id,
+						LineItems_Directions_Id = item.LineItems_Directions_Id,
+						Status = item.Status,
+						CreatedOn = item.CreatedOn,
+						UpdatedOn = item.UpdatedOn,
+						Client_Id = item.Client_Id,
+						Service_Id = item.Service_Id,
+						BillingType_LineItems_Directions_Id = item.BillingType_LineItems_Directions_Id,
+						DirectionName = item.DirectionName,
+						LineItemName = item.LineItemName,
+						BillingTypeName = item.BillingTypeName,
+						IncomeExpenseLiabilityCOA_Id = item.IncomeExpenseLiabilityCOA_Id,
+						ARAPCOA_Id = item.ARAPCOA_Id,
+						Is_Passthrough = false,
+						AccountingType_Id = item.AccountingType_Id
+					});
+		}
+	}
+
+}
+<style>
+	.qv-dropdown .qv-dropdown-label {
+		padding: 2px 12px;
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		cursor: pointer;
+		background-color: #fff;
+		color: #333;
+		border: 1px solid rgba(0, 0, 0, 0.175) !important;
+		border-radius: 0.25rem;
+		height: 30px;
+		line-height: 30px;
+	}
+
+	.qv-items-height {
+		height: 120px;
+		padding-right: 5px;
+		margin-top: 5px;
+		margin-bottom: 5px;
+		overflow: auto;
+	}
+
+
+
+	.qv-item {
+		cursor: pointer;
+		font-size: 12px
+	}
+
+	.qv-items-height .qv-item {
+		margin: 0px;
+		padding: 5px 10px;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 6px;
+	}
+
+		.qv-items-height .qv-item:hover {
+			background-color: #f8f9fa;
+			color: #5F2EE5;
+		}
+
+</style>
+<table class="table table-bordered table-striped table-hover ei-table">
+	<thead class="table-light">
+		<tr>
+			<th style="width:50px;">S.No</th>
+			<th style="width:150px;">Direction</th>
+			<th style="width:200px;">Line Item</th>
+			<th style="width:100px;">Passthrough Line Item</th>
+			<th style="width:80px;">Is Excluded</th>
+			<th style="width:100px;">Billing Type</th>
+			<th style="width:250px;">Income/Expense/Liability COA</th>
+			@if (displayList?.Any(x => x.AccountingType_Id == MasterLookup._AccountingTypes.Accrual) == true)
+			{
+				<th style="width:300px;">Accounts Receivables/Payables COA</th>
+			}
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		@{
+			if (displayList?.Count() > 0)
+			{
+				int index = 1;
+				foreach (var item in displayList.OrderBy(x => x.LineItemName))
+				{
+					<tr data-name="trBillingLineItems" data-index="@index">
+						<input type="hidden" name="LOB_Carrier_Grouping_Id" value="@item.LOB_Carrier_Grouping_Id">
+						<input type="hidden" name="Client_Id" value="@Client_Id">
+						<input type="hidden" name="Service_Id" value="@Service_Id">
+						<input type="hidden" name="BillingType_LineItems_Directions_Id" value="@item.BillingType_LineItems_Directions_Id">
+						<input type="hidden" name="Is_Passthrough" value="@Convert.ToString(item.Is_Passthrough)">
+						<input type="hidden" name="PassthroughBillingLineItemDirections" value="@item.PassthroughBillingLineItemDirections">
+						<td style="width: 50px;">@index </td>
+						<td class="text-truncate">@item.DirectionName</td>
+						<td>@item.LineItemName </td>
+						<td>@Convert.ToString(item.Is_Passthrough) </td>
+						<td>@Convert.ToString(item.Is_Excluded) </td>
+						<td>@item.BillingTypeName</td>
+						<td>
+							<div class="dropdown qv-dropdown disabled-link" style="border-color: #5F2EE5">
+								<div type="button" class="qv-dropdown-label show" id="qvDropdownId" data-bs-toggle="dropdown" aria-expanded="true" data-bs-auto-close="false">
+									<span data-name="SelectedCOA" class="text-truncate" title="@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.IncomeExpenseLiabilityCOA_Id)?.Name" style="max-width:200px">@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.IncomeExpenseLiabilityCOA_Id)?.Name</span> <i class="ri-arrow-down-s-line"></i>
+								</div>
+								<div class="dropdown-menu pt-1" data-identifier="IncomeExpense" data-lob-carrier-grouping-id="@item.LOB_Carrier_Grouping_Id" data-name="DropDownContainer" style="position: absolute; inset: 0px auto auto 0px; margin: 0px; transform: translate3d(0px, 42.4px, 0px);width: 295px" data-popper-placement="bottom-start">
+									<input type="hidden" name="IncomeExpenseLiabilityCOA_Id" data-name="ChartOfAccounts_Id" value="@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.IncomeExpenseLiabilityCOA_Id)?.ChartOfAccounts_Id" />
+									<div class="input-group input-group-sm mb-1 custom-input-group">
+										<input type="text" data-name="COASearchText" class="form-control" placeholder="Search..." autocomplete="off" aria-label="Search..." aria-describedby="basic-addon2">
+										<button class="input-group-text" id="qv-search-btn" type="button" data-name="btnCOASearch">
+											<i class="ri-search-2-line" style="position:inherit;"></i>
+										</button>
+										<button class="input-group-text" data-name="btnCOASearchClear" type="button" style="display:none;">
+											<i class="ri-close-large-line"></i>
+										</button>
+									</div>
+
+
+									<div class="qv-items-height" data-name="COAListContainer">
+										@{
+											if (ChartOfAccountList?.Count() > 0)
+											{
+												foreach (var Coa in ChartOfAccountList.Where(x => x.Is_UsedByEI))
+												{
+													<div class="qv-item" data-name="COAItem" data-coa-id="@Coa.ChartOfAccounts_Id">
+														<span>@Coa.Name</span>
+													</div>
+												}
+											}
+										}
+									</div>
+								</div>
+							</div>
+						</td>
+						@{
+							@if (displayList?.Any(x => x.AccountingType_Id == MasterLookup._AccountingTypes.Accrual) == true)
+							{
+								<td>
+									@if (item.AccountingType_Id == MasterLookup._AccountingTypes.Accrual)
+									{
+										<div class="dropdown qv-dropdown disabled-link" style="border-color:#5F2EE5">
+											<div type="button" class="qv-dropdown-label show" data-bs-toggle="dropdown" data-bs-auto-close="false">
+
+												<span data-name="SelectedCOA"
+													  class="text-truncate"
+													  style="max-width:200px"
+													  title="@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.ARAPCOA_Id)?.Name">
+													@ChartOfAccountList?.FirstOrDefault(x => x.ChartOfAccounts_Id == item.ARAPCOA_Id)?.Name
+												</span>
+
+												<i class="ri-arrow-down-s-line"></i>
+											</div>
+
+											<div class="dropdown-menu pt-1" data-identifier="ARAP" data-name="DropDownContainer" style="width:295px">
+												<input type="hidden" name="ARAPCOA_Id" data-name="ChartOfAccounts_Id" value="@item.ARAPCOA_Id" />
+												<div class="input-group input-group-sm mb-1 custom-input-group">
+													<input type="text" data-name="COASearchText" class="form-control" placeholder="Search..." autocomplete="off" />
+													<button class="input-group-text" type="button" data-name="btnCOASearch">
+														<i class="ri-search-2-line"></i>
+													</button>
+
+													<button class="input-group-text" type="button" data-name="btnCOASearchClear" style="display:none;">
+														<i class="ri-close-large-line"></i>
+													</button>
+												</div>
+
+												<!-- COA list -->
+												<div class="qv-items-height" data-name="COAListContainer">
+													@foreach (var coa in ChartOfAccountList.Where(x => x.Is_UsedByEI))
+													{
+														<div class="qv-item"
+															 data-name="COAItem"
+															 data-coa-id="@coa.ChartOfAccounts_Id">
+															<span>@coa.Name</span>
+														</div>
+													}
+												</div>
+											</div>
+										</div>
+									}
+									else
+									{
+										<span class="text-muted fw-semibold"
+											  title="Cash accounting does not require AR/AP">
+											NA
+										</span>
+									}
+								</td>
+							}
+						}
+
+
+
+						<td valign="middle">
+							<div class="action-btns" data-tab-type="@TabName">
+								<a href="javascript:void(0)" data-name="btnEditBillingCOA" title="Edit Chart of Account"><i class="ri-pencil-line save-btn"></i></a>
+								<a href="javascript:void(0)" data-name="btnSaveBillingLineItemCOA" style="display: none;" title="Update Chart of Account"><i class="ri-save-3-line save-btn"></i></a>
+								<a href="javascript:void(0)" data-name="btnCancelBillingCOA" style="display: none;" title="Cancel"><i class="ri-close-line delete-btn"></i></a>
+							</div>
+						</td>
+					</tr>
+					index++;
+				}
+			}
+		}
+	</tbody>
+</table>

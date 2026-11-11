@@ -1,0 +1,560 @@
+﻿@model List<ReportOutputTables>
+@{
+    double TotalPolicyNetAmount = 0;
+    double TotalPolicyDueAmount = 0;
+    double TotalDueAmount = 0;
+    var IsSimplifiedView = (bool)ViewData["IsSimplifiedView"];
+    var ReportsInvoiceDate = Convert.ToString(ViewBag.ReportsInvoiceDueDate);
+}
+
+@if (Model?.Count > 0 && Model[0].DataTable.Rows.Count > 0)
+{
+    int counter = 1;
+    foreach (DataRow agency in Model[0].DataTable.Rows)
+    {
+        double AgencyNetDueTotal = 0;
+        TotalDueAmount = 0;
+        var agentExists = Model[2].DataTable.AsEnumerable().Any(r => r.Field<long>("AgentDetail_Id") == Convert.ToInt64(agency["AgentDetail_Id"]));
+
+        if (agentExists)
+        {
+            <div class="policy-block">
+
+                <table class="agency-billed-table" cellspacing="0" cellpadding="0">
+
+                    <tr class="header-info-sepeation">
+                        <td class="fs-13 lh-20">
+                            @agency["Name"]<br />
+                            @agency["Address1"]<br />
+                            @agency["City"], @agency["State"], @agency["ZipCode"]
+                        </td>
+                        <td align="right" class="fs-13 lh-20">
+                            Statement Date: <span class="fw-semibold">@DateTime.Now.ToString(MasterLookup._ServerDateFormat)</span>
+                        </td>
+                    </tr>
+                </table>
+
+                <table cellpadding="0" border="0" cellspacing="0" width="100%">
+                    <tr><td height="20" class="p-0"></td></tr>
+                </table>
+
+                <table class="agency-billed-table" style="margin-bottom:10px;">
+                    <tr>
+                        <td align="center">
+                            <div class="due-date-alert">
+                                ALL ITEMS SHOWN ARE DUE AS OF THE DATE LISTED UNDER "DUE DATE"
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <table>
+                    @{
+                        var matchingAgents = Model[2].DataTable.AsEnumerable().Where(r => r.Field<long>("AgentDetail_Id") == Convert.ToInt64(agency["AgentDetail_Id"]));
+                        if (matchingAgents.Any())
+                        {
+                            var PoliciesPerAgency = matchingAgents.CopyToDataTable();
+                            foreach (DataRow agencyPolicy in PoliciesPerAgency.Rows)
+                            {
+                                double PolicyNetDueTotal = 0;
+                                double SimplifiedPolicyNetDueTotal = 0;
+                                var invoicesByPolicy = Model[1].DataTable
+                                .AsEnumerable()
+                                .GroupBy(r => r.Field<string>("PolicyNumber").Trim())
+                                .ToDictionary(g => g.Key, g => g.ToList());
+
+                                var policyNumber = agencyPolicy["PolicyNumber"].ToString().Trim();
+
+                                if (invoicesByPolicy.TryGetValue(policyNumber, out var invoices))
+                                {
+                                    var policyRows = invoices.FirstOrDefault();
+
+                                    if (policyRows != null)
+                                    {
+                                        string PDId = policyRows.Field<string>("PolicyNumber");
+                                        var invoice = Model[3].DataTable.AsEnumerable().Where(r => r.Field<string>("PolicyNumber") == PDId);
+                                        var invoicesIds = invoice.GroupBy(r => r.Field<long>("Invoice_Id")).Select(g => g.Key);
+                                        TotalPolicyNetAmount = 0;
+                                        TotalPolicyDueAmount = 0;
+                                        if (invoicesIds.Count() > 0)
+                                        {
+                                            <tbody class="policy-block">
+                                                <tr>
+                                                    <td class="pc-left" style="width:216px; padding-top:4px">
+                                                        <div class="px-8">
+                                                            <span class="fw-semibold fs-13">Policy No.</span>
+                                                            <p class="mb-0 mt-0 fs-12">@agencyPolicy["PolicyNumber"]</p>
+                                                        </div>
+                                                        <div class="px-8">
+                                                            <span class="fw-semibold fs-13">Insured</span>
+                                                            <p class="mb-0 mt-0 fs-12">@agencyPolicy["InsuredName"]</p>
+                                                            <span class="fw-semibold fs-13">LOB</span>
+                                                            <p class="mb-0 mt-0 fs-12">@agencyPolicy["LOBNames"]</p>
+                                                            <span class="fw-semibold fs-13">Carrier</span>
+                                                            <p class="mb-0 mt-0 fs-12">@agencyPolicy["CarrierName"]</p>
+                                                        </div>
+                                                    </td>
+                                                    <td style="width:1000px;">
+                                                        <table class="agency-billed-table fs-12 lh-18 pd-table" cellpadding="0" border="0" cellspacing="0">
+                                                            <thead class="t-head">
+                                                                <tr>
+                                                                    @if (IsSimplifiedView)
+                                                                    {
+                                                                        <td class="border-top-1 border-right-1" style="width:150px;"></td>
+                                                                        <td class="border-top-1">Id #</td>
+                                                                        <td class="border-top-1">Effective</td>
+
+                                                                        @if (!string.IsNullOrEmpty(ReportsInvoiceDate))
+                                                                        {
+                                                                            <td class="border-top-1">Invoice Date</td>
+                                                                        }
+                                                                        <td class="border-top-1" align="right">Gross Amount</td>
+                                                                        @*<td class="border-top-1" align="right">Comm %</td>*@
+                                                                        <td class="border-top-1" align="right">Comm Amt</td>
+                                                                        <td class="border-top-1" align="right">Net Amount Due</td>
+                                                                        <td class="border-top-1" align="right">Financed Paid</td>
+                                                                        <td class="border-top-1" align="right">Amount Paid</td>
+                                                                        <td class="border-top-1" align="right">Balance Due</td>
+                                                                        <td class="border-top-1" align="right">Due Date</td>
+                                                                    }
+                                                                    else
+                                                                    {
+
+                                                                        <td class="border-top-1 border-right-1" style="width:150px;"></td>
+                                                                        <td class="border-top-1">Id #</td>
+                                                                        <td class="border-top-1">Effective</td>
+                                                                        @if (!string.IsNullOrEmpty(ReportsInvoiceDate))
+                                                                        {
+                                                                            <td class="border-top-1">Invoice Date</td>
+                                                                        }
+
+                                                                        <td class="border-top-1" align="right">Gross Amount</td>
+                                                                        <td class="border-top-1" align="right">Comm %</td>
+                                                                        <td class="border-top-1" align="right">Comm Amt</td>
+                                                                        <td class="border-top-1" align="right">NET</td>
+                                                                        <td class="border-top-1" align="right">Due Date</td>
+                                                                    }
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                @{
+                                                                    // var invoiceDetails = Model[1].DataTable.AsEnumerable().Where(r => r.Field<string>("PolicyNumber").Trim() == agencyPolicy["PolicyNumber"].ToString().Trim());
+                                                                    // if (invoiceDetails.Any())
+                                                                    // {
+                                                                    // 	foreach (var policyRow in invoiceDetails)
+                                                                    // 	{
+                                                                    // 		string policyDetailsId = policyRow.Field<string>("PolicyNumber");
+                                                                    // 		var invoiceList = Model[3].DataTable.AsEnumerable().Where(r => r.Field<string>("PolicyNumber") == policyDetailsId);
+                                                                    // 		var invoiceIds = invoiceList.GroupBy(r => r.Field<long>("Invoice_Id")).Select(g => g.Key);
+                                                                    // 		double totalHouseComm = 0;
+                                                                    // 		// foreach (var invoiceId in invoiceIds)
+                                                                    // 		// {
+                                                                    // 		var invoiceDetailsList = Model[3].DataTable.AsEnumerable().Where(r => r.Field<string>("PolicyNumber") == policyDetailsId);
+                                                                    // 		PolicyNetDueTotal += invoiceDetailsList.Sum(r => r.Field<double>("NetAmount"));
+                                                                    // 		foreach (DataRow invoiceDetail in invoiceDetailsList)
+                                                                    // 		{
+                                                                    var policyDetailsId = agencyPolicy["PolicyNumber"].ToString().Trim();
+                                                                    var invoiceDetailsList = Model[3].DataTable.AsEnumerable()
+                                                                    .Where(r => r.Field<string>("PolicyNumber").Trim() == policyDetailsId)
+                                                                    .ToList();
+                                                                    if (!IsSimplifiedView)
+                                                                    {
+                                                                        if (invoiceDetailsList.Any())
+                                                                        {
+                                                                            PolicyNetDueTotal += invoiceDetailsList.Sum(r => r.Field<double>("NetAmount"));
+                                                                            var invoiceIds = invoiceDetailsList
+                                                                            .GroupBy(r => r.Field<long>("Invoice_Id"))
+                                                                            .Select(g => g.Key)
+                                                                            .ToList();
+
+                                                                            double totalHouseComm = 0;
+
+                                                                            foreach (var invoiceId in invoiceIds)
+                                                                            {
+                                                                                var invoiceDetails = invoiceDetailsList
+                                                                                .Where(r => r.Field<long>("Invoice_Id") == invoiceId);
+
+                                                                                foreach (DataRow invoiceDetail in invoiceDetails)
+                                                                                {
+                                                                                    double RemainingBalance = invoiceDetail.Field<double>("RemainingBalance");
+                                                                                    double net = invoiceDetail.Field<double>("NetAmount");
+                                                                                    double gross = invoiceDetail.Field<double>("GrossAmount");
+                                                                                    double commAmt = invoiceDetail.Field<double>("AgentCommission");
+                                                                                    double commPerc = invoiceDetail.Field<double?>("AgentCommPercentage") ?? 0;
+                                                                                    bool IsHouseCommission = invoiceDetail.Field<bool>("IsHouseCommission");
+
+                                                                                    string LineItemDescription = invoiceDetail.Field<string>("LineItemDescription") ?? "";
+                                                                                    TotalPolicyNetAmount += net;
+
+                                                                                    //TotalPolicyDueAmount += RemainingBalance;
+                                                                                    TotalPolicyDueAmount += net;
+
+                                                                                    // if (IsHouseCommission != 1)
+                                                                                    // {
+                                                                                    <tr>
+                                                                                        <td class="border-right-1 border-top-1 fw-400">
+                                                                                            <div class="ps-35">
+                                                                                                @invoiceDetail["LineItemDescription"]
+
+                                                                                            </div>
+                                                                                        </td>
+                                                                                        <td class="border-top-1">
+                                                                                            @invoiceDetail["IdNo"]
+
+                                                                                        </td>
+                                                                                        <td class="border-top-1">@(invoiceDetail.Field<DateTime?>("EffectiveDate")?.ToString(MasterLookup._ServerDateFormat) ?? "")</td>
+                                                                                        @if (!string.IsNullOrEmpty(ReportsInvoiceDate))
+                                                                                        {
+                                                                                            <td class="border-top-1">@(invoiceDetail.Field<DateTime?>("InvoiceDate")?.ToString(MasterLookup._ServerDateFormat) ?? "")</td>
+                                                                                        }
+                                                                                        <td class="border-top-1" align="right">@(gross != 0 ? gross < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(gross), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(gross, false, 2) : "")</td>
+                                                                                        <td class="border-top-1" align="right">@(commPerc != 0 ? $"{CommonUtility.ConvertToCurrencyFormat(commPerc, false, 2)} %" : "")</td>
+                                                                                        <td class="border-top-1" align="right">@(commAmt != 0 ? commAmt < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(commAmt), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(commAmt, false, 2) : "")</td>
+                                                                                        <td class="border-top-1" align="right">@(net != 0 ? net < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(net), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(net, false, 2) : "")</td>
+                                                                                        <td class="border-top-1" align="right">@(invoiceDetail.Field<DateTime?>("DueDate")?.ToString(MasterLookup._ServerDateFormat) ?? "")</td>
+                                                                                    </tr>
+                                                                                    // }
+                                                                                    // else
+                                                                                    // {
+                                                                                    //     totalHouseComm += net;
+                                                                                    // }
+                                                                                }
+                                                                                var invoiceDueDate = invoiceDetailsList.FirstOrDefault()?.Field<DateTime?>("DueDate") ?? DateTime.Now;
+                                                                                <tr class="simplified-block">
+                                                                                    <td align="center" class="border-right-1 border-top-1">
+                                                                                        <span class="fw-semibold">Inv. Balance</span>
+                                                                                    </td>
+                                                                                    <td class="border-top-1"></td>
+                                                                                    <td class="border-top-1"></td>
+                                                                                    @if (!string.IsNullOrEmpty(ReportsInvoiceDate))
+                                                                                    {
+                                                                                        <td class="border-top-1"></td>
+                                                                                    }
+                                                                                    <td class="border-top-1 pt-0" align="right">
+                                                                                        <div class="fw-medium border-top-dark pt-8">
+                                                                                            @{
+                                                                                                double TotalGrossAmount = invoiceDetailsList.Sum(r => r.Field<double>("GrossAmount"));
+                                                                                                var TotalDisplayGrossAmount = TotalGrossAmount < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalGrossAmount), false, 2)})" : Convert.ToString(CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalGrossAmount), false, 2));
+                                                                                            }
+                                                                                            @TotalDisplayGrossAmount
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td class="border-top-1" align="right"></td>
+                                                                                    <td class="border-top-1 pt-0" align="right">
+                                                                                        <div class="fw-medium border-top-dark pt-8">
+                                                                                            @{
+                                                                                                double TotalAgentCommission = invoiceDetailsList.Sum(r => r.Field<double>("AgentCommission"));
+                                                                                                var TotalDisplayAgentCommission = TotalAgentCommission < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalAgentCommission), false, 2)})" : Convert.ToString(CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalAgentCommission), false, 2));
+                                                                                            }
+                                                                                            @TotalDisplayAgentCommission
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td class="border-top-1 pt-0" align="right">
+                                                                                        <div class="fw-medium border-top-dark pt-8">
+                                                                                            @{
+                                                                                                double TotalNetAmount = invoiceDetailsList.Sum(r => r.Field<double>("NetAmount"));
+                                                                                                //TotalNetAmount -= totalHouseComm;
+                                                                                                var TotalDisplayNetAmount = TotalNetAmount < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalNetAmount), false, 2)})" : Convert.ToString(CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalNetAmount), false, 2));
+
+                                                                                            }
+
+                                                                                            @TotalDisplayNetAmount
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td class="border-top-1" align="right">
+                                                                                        @invoiceDueDate.ToString(MasterLookup._ServerDateFormat)
+
+
+                                                                                    </td>
+                                                                                </tr>
+                                                                                //}
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        if (invoiceDetailsList.Any())
+                                                                        {
+                                                                            PolicyNetDueTotal += invoiceDetailsList.Sum(r => r.Field<double>("NetAmount"));
+                                                                            var invoiceIds = invoiceDetailsList
+                                                                            .GroupBy(r => r.Field<long>("Invoice_Id"))
+                                                                            .Select(g => g.Key)
+                                                                            .ToList();
+
+                                                                            double totalHouseComm = 0;
+
+                                                                            foreach (var invoiceId in invoiceIds)
+                                                                            {
+                                                                                var invoiceDetails = invoiceDetailsList
+                                                                                .Where(r => r.Field<long>("Invoice_Id") == invoiceId);
+
+                                                                                foreach (DataRow invoiceDetail in invoiceDetails)
+                                                                                {
+                                                                                    double RemainingBalance = invoiceDetail.Field<double>("RemainingBalance");
+                                                                                    double net = invoiceDetail.Field<double>("NetAmount");
+                                                                                    double gross = invoiceDetail.Field<double>("GrossAmount");
+                                                                                    double commAmt = invoiceDetail.Field<double>("AgentCommission");
+                                                                                    double AmountFinanced = invoiceDetail.Field<double>("AmountFinanced");
+                                                                                    //double amountPaid = invoiceDetail.Field<double>("AmountPaid");
+                                                                                    double amountPaid = invoiceDetail.Field<double>("AmountPaid");
+                                                                                    double commPerc = invoiceDetail.Field<double>("AgentCommPercentage");
+                                                                                    bool IsHouseCommission = invoiceDetail.Field<bool>("IsHouseCommission");
+                                                                                    //double AmountDue = invoiceDetail.Field<double>("AgentCommissionRemainingBalance");
+                                                                                    double amountDue = invoiceDetail.Field<double>("AmountDue");
+                                                                                    int EndorsementNumber = invoiceDetail.Field<int>("EndorsementNumber");
+                                                                                    TotalPolicyNetAmount += net;
+
+                                                                                    SimplifiedPolicyNetDueTotal = amountDue - (amountPaid + AmountFinanced);
+                                                                                    TotalPolicyDueAmount += SimplifiedPolicyNetDueTotal;
+                                                                                    // if (IsHouseCommission != 1)
+                                                                                    // {
+                                                                                    <tr>
+                                                                                        <td class="border-right-1 border-top-1 fw-400">
+                                                                                            @if (invoiceDetail["TransactionType"].ToString() == MasterLookup._EITransactionTypes.END && EndorsementNumber > 0)
+                                                                                            {
+                                                                                                <div class="ps-35">
+                                                                                                    @invoiceDetail["TransactionType"] #@EndorsementNumber
+
+
+
+                                                                                                </div>
+                                                                                            }
+                                                                                            else
+                                                                                            {
+                                                                                                <div class="ps-35">
+                                                                                                    @invoiceDetail["TransactionType"]
+
+
+                                                                                                </div>
+                                                                                            }
+                                                                                        </td>
+                                                                                        <td class="border-top-1">
+                                                                                            @invoiceDetail["IdNo"]
+                                                                                        </td>
+                                                                                        <td class="border-top-1">
+                                                                                            @(invoiceDetail.Field<DateTime?>("EffectiveDate")?.ToString(MasterLookup._ServerDateFormat) ?? "")
+                                                                                        </td>
+                                                                                        @if (!string.IsNullOrEmpty(ReportsInvoiceDate))
+                                                                                        {
+                                                                                            <td class="border-top-1">@(invoiceDetail.Field<DateTime?>("InvoiceDate")?.ToString(MasterLookup._ServerDateFormat) ?? "")</td>
+
+                                                                                        }
+                                                                                        <td class="border-top-1" align="right">@(gross != 0 ? gross < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(gross), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(gross, false, 2) : "$0.00")</td>
+                                                                                        @*<td class="border-top-1" align="right">@(commPerc != 0 ? $"{CommonUtility.ConvertToCurrencyFormat(commPerc, false, 2)} %" : "")</td>*@
+                                                                                        <td class="border-top-1" align="right">@(commAmt != 0 ? commAmt < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(commAmt), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(commAmt, false, 2) : "$0.00")</td>
+                                                                                        @*<td class="border-top-1" align="right">@(RemainingBalance != 0 ? RemainingBalance < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(RemainingBalance), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(RemainingBalance, false, 2) : "")</td>*@
+                                                                                        <td class="border-top-1" align="right">@(amountDue != 0 ? amountDue < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(amountDue), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(amountDue, false, 2) : "$0.00")</td>
+                                                                                        <td class="border-top-1" align="right">@(AmountFinanced != 0 ? AmountFinanced < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(AmountFinanced), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(AmountFinanced, false, 2) : "$0.00")</td>
+                                                                                        <td class="border-top-1" align="right">@(amountPaid != 0 ? amountPaid < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(amountPaid), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(amountPaid, false, 2) : "$0.00")</td>
+                                                                                        @*<td class="border-top-1" align="right">@(net != 0 ? net < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(net), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(net, false, 2) : "")</td>*@
+                                                                                        @* <td class="border-top-1" align="right">@(SimplifiedPolicyNetDueTotal != 0 ? SimplifiedPolicyNetDueTotal < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(SimplifiedPolicyNetDueTotal), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(SimplifiedPolicyNetDueTotal, false, 2) : "")</td>*@
+                                                                                        <td class="border-top-1" align="right">@(SimplifiedPolicyNetDueTotal < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(SimplifiedPolicyNetDueTotal), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(SimplifiedPolicyNetDueTotal, false, 2)) </td>
+                                                                                        <td class="border-top-1" align="right">@(invoiceDetail.Field<DateTime?>("DueDate")?.ToString(MasterLookup._ServerDateFormat) ?? "")</td>
+                                                                                    </tr>
+                                                                                    //}
+                                                                                    // else
+                                                                                    // {
+                                                                                    // 	totalHouseComm += net;
+                                                                                    // }
+                                                                                }
+                                                                                var invoiceDueDate = invoiceDetailsList.FirstOrDefault()?.Field<DateTime?>("DueDate") ?? DateTime.Now;
+                                                                                <tr class="simplified-block">
+                                                                                    <td align="center" class="border-right-1 border-top-1">
+                                                                                        <span class="fw-semibold">Inv. Balance</span>
+                                                                                    </td>
+                                                                                    <td class="border-top-1"></td>
+                                                                                    <td class="border-top-1"></td>
+                                                                                    <td class="border-top-1 pt-0" align="right">
+                                                                                        <div class="fw-medium border-top-dark pt-8">
+                                                                                            @{
+                                                                                                double TotalGrossAmount = invoiceDetailsList.Sum(r => r.Field<double>("GrossAmount"));
+                                                                                                var TotalDisplayGrossAmount = TotalGrossAmount < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalGrossAmount), false, 2)})" : Convert.ToString(CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalGrossAmount), false, 2));
+                                                                                            }
+                                                                                            @TotalDisplayGrossAmount
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td class="border-top-1" align="right"></td>
+                                                                                    <td class="border-top-1 pt-0" align="right">
+                                                                                        <div class="fw-medium border-top-dark pt-8">
+                                                                                            @{
+                                                                                                double TotalAgentCommission = invoiceDetailsList.Sum(r => r.Field<double>("AgentCommission"));
+                                                                                                var TotalDisplayAgentCommission = TotalAgentCommission < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalAgentCommission), false, 2)})" : Convert.ToString(CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalAgentCommission), false, 2));
+                                                                                            }
+                                                                                            @TotalDisplayAgentCommission
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td class="border-top-1 pt-0" align="right">
+                                                                                        <div class="fw-medium border-top-dark pt-8">
+                                                                                            @{
+                                                                                                double TotalNetAmount = invoiceDetailsList.Sum(r => r.Field<double>("NetAmount"));
+                                                                                                //TotalNetAmount -= totalHouseComm;
+                                                                                                var TotalDisplayNetAmount = TotalNetAmount < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalNetAmount), false, 2)})" : Convert.ToString(CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalNetAmount), false, 2));
+
+                                                                                            }
+
+                                                                                            @TotalDisplayNetAmount
+                                                                                        </div>
+                                                                                    </td>
+                                                                                    <td class="border-top-1" align="right">@invoiceDueDate.ToString(MasterLookup._ServerDateFormat)</td>
+                                                                                </tr>
+                                                                                //}
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            </tbody>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                                <tr class="sepearator">
+                                                    <td align="center" class="pc-left" style="width:216px;"></td>
+                                                    <td>
+                                                        <table width="100%">
+                                                            <tr>
+                                                                <td class="border-top-1" width="35%"></td>
+                                                                <td class="fw-semibold ps-50 border-top-1" align="center" colspan="6">Policy @agencyPolicy["PolicyNumber"]</td>
+                                                                <td class="fw-semibold border-top-1" align="right">@(TotalPolicyDueAmount < 0 ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalPolicyDueAmount), false, 2)})" : CommonUtility.ConvertToCurrencyFormat(TotalPolicyDueAmount, false, 2))</td>
+                                                                <td class="fw-semibold border-top-1" colspan="2" style="width:12%;" align="right"></td>
+                                                            </tr>
+                                                        </table>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        }
+                                    }
+                                }
+                                if (!IsSimplifiedView)
+                                {
+                                    AgencyNetDueTotal += PolicyNetDueTotal;
+                                    TotalDueAmount += TotalPolicyDueAmount;
+                                }
+                                else
+                                {
+                                    AgencyNetDueTotal += SimplifiedPolicyNetDueTotal;
+                                    TotalDueAmount += TotalPolicyDueAmount;
+                                }
+                            }
+                        }
+                    }
+
+                </table>
+            </div>
+
+            <table cellpadding="0" border="0" cellspacing="0" width="100%">
+                <tbody><tr><td height="20" class="p-0"></td></tr></tbody>
+            </table>
+            <!-- Due Alert -->
+            <table class="agency-billed-table" cellpadding="0" border="0" cellspacing="0" width="100%">
+                <tr>
+                    <td align="center">
+                        <div class="due-date-alert">Audits are due upon Receipt</div>
+                    </td>
+                </tr>
+            </table>
+
+            <!-- Spacer -->
+            <table cellpadding="0" border="0" cellspacing="0" width="100%">
+                <tr>
+                    <td height="10" class="p-0"></td>
+                </tr>
+            </table>
+
+            <!-- Account Total & Net Due -->
+            <table class="agency-billed-table fs-12 lh-18 pd-table" cellpadding="0" border="0" cellspacing="0">
+                <tbody>
+                    <tr>
+                        <td rowspan="2" style="width: 200px;">
+                            <div><span class="fw-semibold fs-14">Account Total</span></div>
+                        </td>
+                        <td colspan="6"></td>
+                        <td class="fw-semibold fs-14" align="right">NET DUE</td>
+                        <td></td>
+                    </tr>
+                    <tr class="seperator">
+                        <td class="fw-400" colspan="6"></td>
+                        <td class="fw-semibold fs-14 pt-0 pb-0" align="right">
+                            <div class="pt-8 pb-8" style="border-top: 4px solid #000; border-bottom: 4px solid #000; width: 100px;">
+                                @{
+                                    var displayAgencyNetDue = TotalDueAmount < 0
+                                    ? $"({CommonUtility.ConvertToCurrencyFormat(Math.Abs(TotalDueAmount), false, 2)})"
+                                    : CommonUtility.ConvertToCurrencyFormat(TotalDueAmount, false, 2);
+                                }
+                                @displayAgencyNetDue
+                                @* {{TotalNetDue}} *@
+                            </div>
+                        </td>
+                        <td align="right"></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            @if (counter == Model[0].DataTable.Rows.Count)
+            {
+                <!-- Spacer -->
+                <table cellpadding="0" border="0" cellspacing="0" width="100%">
+                    <tr>
+                        <td height="20" class="p-0"></td>
+                    </tr>
+                </table>
+                <!-- Final Warning -->
+                <table class="agency-billed-table" cellpadding="0" border="0" cellspacing="0" width="100%">
+                    <tr>
+                        <td align="center">
+                            <div class="due-date-alert">
+                                ITEMS NOT PAID BY DUE DATE MAY BE CANCELLED BY THE CARRIER WITHOUT FURTHER WARNING
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+                <!-- Spacer -->
+                <table cellpadding="0" border="0" cellspacing="0" width="100%">
+                    <tr>
+                        <td height="10" class="p-0"></td>
+                    </tr>
+                </table>
+            }
+            else
+            {
+                <div class="page-break"></div>
+
+
+            }
+            counter++;
+        }
+    }
+
+}
+
+<style>
+    [data-name="ReportView"] {
+        overflow: auto;
+        min-height: 541.2px;
+        max-height: 455px !important;
+    }
+
+    .header-info-sepeation td {
+        background-color: #f0f0f0;
+        padding: 15px 10px 15px 20px;
+    }
+
+    .header-info-sepeation {
+        border-top: 3px solid #085284;
+        border-bottom: 3px solid #085284;
+    }
+
+    .policy-block {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        display: table-row-group; /* instead of block */
+    }
+
+        .policy-block tr {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+        .policy-block tbody {
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+        }
+
+</style>
