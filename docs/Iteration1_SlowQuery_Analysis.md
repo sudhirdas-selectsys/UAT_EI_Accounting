@@ -270,3 +270,23 @@ Test objects: `..._InvoiceProductionCRMAssignmentReport_PerfTest_V3` (`docs/seed
 **Limits.** Cases B and C compare with V2, not with the original, so they are a weaker check; V2 matched the original once (case A of Addendum 7, 18,458 rows). One 3-day window; other filters (agent, carrier, wholesaler, invoice number, grouping, transaction-date mode) and large page sizes were not tested. The comparison covers the first result set only. Local test timings on a shared, memory-limited machine; no production extrapolation. No change to the application procedure has been made or is proposed without your approval.
 
 **Needs your decision:** whether to recommend this rewrite (V4 logic) to the application team, and the further tests to run first (other filter combinations, a wider date window, concurrency).
+
+## Addendum 9: Transaction history search by PolicyNumber (local test, Standard copy)
+**Symptom.** `USP_Accounting_GetTransactionHistorySearchResults` with a PolicyNumber took 151.9 s (200M logical reads, 463 s CPU) to return 4 rows. The same procedure with an InvoiceNumber took 1.8 s (67K reads). (The first-run 0-row results were harness input errors; see `Iteration1_Benchmark_Results.md`.)
+
+**Cause (actual plans, `07_CapturePlans.ps1`).** Both searches drive from a scan of all 2,492,000 invoices. The InvoiceNo filter applies in that scan (1 row left). PolicyNumber exists only on `Accounting_PolicyDetails`, which the plan reaches last (after InvoiceDetails 15.3M rows, payment line items 5.38M, payments), so the `LIKE '%x%'` runs as a leftover predicate on 5.38M probes and keeps 4 rows. The optimizer estimated about 100 rows for the early steps (actual millions) and chose nested-loop lookups. A leading-wildcard LIKE cannot use an index seek, so a PolicyNumber index would not help while the filter keeps that form.
+
+**Prototype (copy only, original untouched).** `USP_Accounting_GetTransactionHistorySearchResults_PerfTest_V2` (`docs/seed/16_TransactionHistory_PerfTest_V2.sql`): with a PolicyNumber it first stages the matching policies (same Client_Id, Status, LIKE filter) into a temp table and joins from it; with no PolicyNumber it calls the original procedure unchanged.
+
+| Case | Original | V2 | Row-hash differences |
+|---|---|---|---|
+| `PT-POL-00400000` (4 rows) | 136.7 s | 1.2 s | 0 |
+| `PT-POL-0040000` (26 rows) | 130.1 s | 1.3 s | 0 |
+| `PT-POL-0040`, page 2 (60,491 matches) | 93 s | 6.6 s | 100 (tie ordering, see below) |
+| `PT-POL-0040`, all 60,491 rows unpaged | 234.1 s | 116.9 s | 0 |
+
+**Page-2 difference.** The paged query orders only by `APALI.CreatedOn`. The 60,491 matching rows carry 7 distinct CreatedOn values (bulk-load batches), so which 50 rows fall on a later page is not defined and can differ between plans. The unpaged comparison is identical. The original procedure has the same ordering weakness against itself (a latent issue, not introduced by V2); a unique tie-breaker column would fix it and needs the application team's approval.
+
+**Limits.** Only the PolicyNumber filter was tested, not combined with other filters, no concurrency, single runs on a shared machine, local test data only; no production extrapolation. No change to the application procedure has been made or is proposed without your approval.
+
+**Needs your decision:** whether to recommend this rewrite to the application team, after combined-filter tests, and whether to raise the CreatedOn tie-breaking issue.
