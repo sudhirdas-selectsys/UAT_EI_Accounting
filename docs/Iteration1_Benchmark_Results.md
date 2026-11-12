@@ -49,10 +49,12 @@ Raw data: `docs/results/standard_report_benchmark.csv` (reports) and `docs/resul
 | 7 | Accounts Payable | 70.3 | 57.4 | 100 (2,492,000) | 436K | 203.7K | OK |
 | 6 | Accounts Receivable | 32.6 | 26.4 | 100 (2,648,596) | 622K | 66.6K | OK |
 | 12 | Agency Detailed Statement | 0.86 | 0.09 | 300 | 116 | 157 | OK, tiny result (not a valid load test) |
-| 11 | 1099 | 0.39 | 0.17 | 0 (0) | 23K | 452 | OK, returned 0 rows (not a valid load test; see note below the table) |
+| 11 | 1099 | 0.39 | 0.17 | 0 (0) | 23K | 452 | First run: 0 rows (empty, not valid). Re-run after seeding agent payouts: see note below the table |
 | 10 | Journal Entries | 0.11 | 0.01 | 0 (0) | 2 | 0 | OK, empty (journals not generated) |
 
 **1099 (report 11), why it returned 0 rows (local test finding, investigated afterwards by calling the procedure directly):** (1) the procedure filters the date window on `Accounting_AgentDetails.CreatedOn` (when the agent row was created), not on any payment or invoice date. All 300 test agents were created at seeding time (2026-11-11), so the narrow and year windows match no agent; the full window (2025-01-01..2027-12-31) returns all 300. Whether the original 0-row full-window run happened before the agents were seeded was not verified. (2) Even when rows return, `1099 Amount` is NULL for every agent, because the procedure sums payments with `EntityType_Id = 1` and `PaymentDirection_Id = 2` (payments to agents) and the test data has none (all 872,205 agent payments are direction 1). The 0.39 s timing therefore reflects an almost empty result, not the real cost of the report. Making it a valid test needs direction-2 agent payments seeded on the test copy; that is a data change and needs approval.
+
+**1099 re-run after seeding agent payouts (local test, 2026-11-12; raw data `docs/results/standard_report_benchmark_1099_after_payout_seed.csv`):** 6,000 outgoing payments and 747,607 applications were added to the test copy (change #18 in `DB_Change_and_TestData_Log.md`; deviations listed in `docs/seed/15_PerfTest_AgentPayouts.sql`). Full window: 300 agents, **21.9 to 23.3 s** (four runs), 6.6M logical reads, about 22 s CPU, with real 1099 amounts. The narrow and year windows still return 0 rows because the report filters on the agent creation date (2026-11-11), so only the full window is a meaningful timing. A direct call on a warm cache took 4.3 s elapsed, so the timing varies with cache state; use the harness figures. The agent-payout model is simple (one payment per agent per month); real payout volumes are unknown, so this is not a prediction for production.
 
 Scenarios: narrow = 2026-01-01..2026-01-31, year = 2025, full = 2025-01-01..2027-12-31; paged reports at PageSize 100 plus a 10,000-row download.
 
@@ -125,7 +127,7 @@ Note: an invoice's `Amount` equals the sum of its **Accounts Receivable** lines 
 Limitation: the sample does not record which report each number came from, and reports 12 and 10 return no invoice rows.
 
 ## 4. Limitations and open items
-- Reports 10, 11 and 12 are not valid load tests (tiny or empty results; for 1099 the cause is explained in section 1). Reports 12, 13, 15 have no `LU_ReportTemplates` rows for the test client.
+- Reports 10 and 12 are not valid load tests (tiny or empty results). 1099 was empty in the first run; after seeding agent payouts it is a valid test for the full window only (section 1). Reports 12, 13, 15 have no `LU_ReportTemplates` rows for the test client.
 - Four stored procedures referenced from C# are missing in the database (`GetAllInvoicesBasedOnLineItemId`, `GetPaymentsByEntity_Id`, `GetDynamicFilterSQLExpressions`, `Update_LU_LineItems_Directions`).
 - Not yet done: Query Store aggregation, investigation of the 0-row page results, repeating the runs on an otherwise idle machine.
 - The `max server memory` cap on `MSSQLSERVER2022` is still 12,288 MB; revert instructions are at the end of `DB_Change_and_TestData_Log.md`.
