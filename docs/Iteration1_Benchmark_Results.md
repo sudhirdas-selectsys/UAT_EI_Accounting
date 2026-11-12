@@ -1,0 +1,110 @@
+# Iteration 1: Local Benchmark Results (Reports and Pages)
+
+**Scope and labelling.** All figures are **local test-environment findings** on SQL Server 2022 **Standard** (local `MSSQLSERVER2022` instance, database `uat-accounting-perf`, a restored copy of the test database), about 2.49M invoices. They are not production measurements and must not be extrapolated to production. SQL Server Express is not used in UAT or production, so no Express figures are used or compared in this document. No connection strings or credentials appear here.
+
+Raw data: `docs/results/standard_report_benchmark.csv` (reports) and `docs/results/standard_page_benchmark.csv` (pages). Harness: `docs/seed/06_ReportBenchmark.ps1` (300 s timeout per call).
+
+## Test conditions and limits (read before using these numbers)
+- Parallel plans enabled (SQL Server 2022 Standard, compatibility level 150). The copy was verified identical to the source database (178 tables, 566 procedures, 2,492,000 invoices, 0 duplicate invoice numbers).
+- A shared 31.7 GB workstation that also runs other SQL Server instances (54 other databases on this one), browsers and other programs. It is **not** a production server.
+- The runs were repeatedly stopped by low system memory (four times). They were finished in smaller batches after capping this instance's `max server memory` at 12,288 MB (revert note at the end of `DB_Change_and_TestData_Log.md`). Memory pressure may have inflated some timings; this was not measured separately. Repeat runs of the same procedure differed by up to about 35% (for example Invoice Production 547 s and 790 s), so treat single timings as approximate.
+- Reports 1 to 13 come from the run that was killed after report 13; 14 to 17 and the page calls were run in separate batches. Slow reports ran once; reports under 60 s ran twice.
+- The Invoices clustered index was 88.3% fragmented at test time (a side effect of the invoice renumbering), which inflates reads and times.
+- The harness did not pass `@InvoiceDate` to the reports, so the date window may not have been applied by every report. The statement below that "date range barely changes cost" is therefore **unverified**.
+
+## Dataset under test
+890,000 policies; 2,492,000 invoices (all unique, `INV` + 11 digits); 15,308,000 invoice details; 1,744,411 payments; 4,635,147 payment-application line items; 0 orphans; 1,495,220 paid / 249,191 partial / 747,589 unpaid.
+
+## How to read the scenarios
+"Scenario" is the date range (and page size) passed to a report. Each report was run with several inputs.
+
+| Scenario | Input | Purpose |
+|---|---|---|
+| narrow | 2026-01-01 to 2026-01-31 (one month), page size 100 | Smallest window; the usual "last month" run |
+| year | all of 2025, page size 100 | Medium window |
+| full | 2025-01-01 to 2027-12-31 (three years), page size 100 | Covers all test data |
+| full-download-10000 | full range, page size 10,000 | Mimics a large page or export; paged reports only |
+| single | one fixed input | Used by every call in the pages benchmark (section 2) |
+
+- Unpaged statement reports return everything regardless of page size.
+- After a timeout, that report's wider windows were skipped.
+- "Worst" and "Best" in section 1 are the slowest and fastest times across a report's scenarios, not repeat runs.
+- The test data spans several years, so "narrow" is not a small slice of rows for every report.
+
+## 1. Reports (17), worst scenario per report, slowest first
+| # | Report | Worst (s) | Best (s) | Rows returned (total matching) | Logical reads | CPU ms | Result |
+|---|---|---|---|---|---|---|---|
+| 15 | Direct/Insured Comm Statement | 312.0 | 278.7 | 2,136,301 | 52.7M | 629.6K | OK |
+| 14 | BDX | 305.4 | - | none | 0 | 0 | **TIMEOUT** |
+| 1 | Invoice Production | 300.8 | - | none | 634K | 172.3K | **TIMEOUT** |
+| 16 | Earned vs Unearned | 300.4 | - | none | 290K | 343.8K | **TIMEOUT** |
+| 4 | Payment Report | 300.2 | 132.7 | none | 0 | 0 | **TIMEOUT** (see section 3, item 8) |
+| 2 | Agency Billed Acct Statement | 233.9 | 150.6 | 1,700,740 | 3.4M | 401.4K | OK |
+| 9 | Insured Billed Comm Statement | 213.9 | 188.4 | 1,281,901 | 33.9M | 449.1K | OK |
+| 3 | Direct Billed Comm Statement | 134.0 | 118.1 | 854,701 | 21.0M | 312.7K | OK |
+| 5 | Transaction Report | 125.6 | 83.0 | 100 (4,635,147) | 176.3M | 457.0K | OK |
+| 8 | Tax/Fee Passthrough | 113.0 | 52.0 | 10,000 (2,492,000) | 6.5M | 282.0K | OK |
+| 13 | Underwriter Comm Statement | 111.1 | 87.9 | 854,409 | 12.8M | 215.0K | OK |
+| 17 | Paid BDX | 85.1 | 67.4 | 100 (581,449) | 961K | 225.2K | OK |
+| 7 | Accounts Payable | 70.3 | 57.4 | 100 (2,492,000) | 436K | 203.7K | OK |
+| 6 | Accounts Receivable | 32.6 | 26.4 | 100 (2,648,596) | 622K | 66.6K | OK |
+| 12 | Agency Detailed Statement | 0.86 | 0.09 | 300 | 116 | 157 | OK, tiny result (not a valid load test) |
+| 11 | 1099 | 0.39 | 0.17 | 0 (0) | 23K | 452 | OK, returned 0 rows (not a valid load test; cause not investigated) |
+| 10 | Journal Entries | 0.11 | 0.01 | 0 (0) | 2 | 0 | OK, empty (journals not generated) |
+
+Scenarios: narrow = 2026-01-01..2026-01-31, year = 2025, full = 2025-01-01..2027-12-31; paged reports at PageSize 100 plus a 10,000-row download.
+
+## 2. Pages and searches (15 calls), slowest first
+| Call | Time (s) | Rows | Logical reads | CPU (s) | Result |
+|---|---|---|---|---|---|
+| Make payments entities (agency, page 1) | 300.2 | 0 | 2.7M | 570 | **TIMEOUT** |
+| AP search, page 1 (outstanding) | 278.2 | 50 | 70.6M | 976 | OK |
+| Transaction history by PolicyNumber | 198.4 | 0 | 94.1M | 216 | OK |
+| AP search by InvoiceNo (exact) | 154.7 | 2 | 5.3M | 245 | OK |
+| Transaction history by InvoiceNumber | 96.6 | 0 | 49.3M | 116 | OK |
+| AR search, page 1 (outstanding) | 66.6 | 100 | 23.7M | 374 | OK |
+| Transaction history, page 1 | 24.0 | 50 | 0.3M | 65 | OK |
+| Payments search, page 1 (all dates) | 15.6 | 50 | 0.1M | 48 | OK |
+| AR search by PolicyNumber (exact) | 4.6 | 0 | 0.0M | 8 | OK |
+| AR search by InsuredName (partial) | 4.1 | 25 | 0.1M | 7 | OK |
+| AR search by InvoiceNo (exact) | 2.3 | 5 | 0.0M | 10 | OK |
+| Payments search by ReferenceNumber | 2.3 | 0 | 0.1M | 8 | OK |
+| Invoice lookup by number (exact) | 0.54 | 1 | 0.0M | 1 | OK |
+| Policy details: policy | 0.01 | 1 | 0.0M | 0 | OK |
+| Policy details: invoices of policy | 0.01 | 3 | 0.0M | 0 | OK |
+
+## 3. Observations (evidence-based; plan-level causes are in `Iteration1_SlowQuery_Analysis.md`)
+1. Three reports (BDX, Earned vs Unearned, Invoice Production) did not finish within 300 s even for a one-month window. Payment Report also timed out in this run; see item 8.
+2. Date range appears to change cost little for most reports, but this is **unverified** (see the `@InvoiceDate` limit above).
+3. Total CPU is several times the wall time for most slow items (parallel plans do more total work). The same designs that read millions of pages still do so (for example 21M to 53M reads for the statement reports, 70.6M for the AP search).
+4. Transaction Report reads 176.3M pages to return 100 rows.
+5. Statement reports (2, 3, 9, 13, 15) are unpaged and return up to 2.1M rows in one result set.
+6. AP search is far slower than AR search (an exact invoice-number search takes 155 s vs 2.3 s for AR).
+7. No index leads with `InvoiceNo`, so invoice-number lookups scan (about 33K reads); fine now, grows with data. Transaction-history-by-number and make-payments-entities returned 0 rows after heavy reads. **Unverified:** these may be wrong test inputs rather than defects. Not yet investigated.
+8. Payment Report: the timeout is caused by a missing index on `Accounting_PolicyDetails (InsuredDetail_Id)`. With that index added on the test copy the unchanged procedure ran in 2 to 6 s (details in the analysis document). Applying it to the application database needs approval.
+
+## 3a. Invoice numbers shown in reports: verification
+The harness captured invoice-number columns from report output (capped at 20,000 distinct values; this is a sample, not every row shown). Each captured number was checked against `Accounting_Invoices` (read-only):
+
+| Check | Result |
+|---|---|
+| Distinct numbers captured | 20,000 |
+| Not found in `Accounting_Invoices` | 0 |
+| Not `INV` + 11 digits (14 chars) | 0 |
+| Matching invoices belonging to another/NULL client | 0 |
+| Matching invoices with no policy | 0 |
+| AR-direction line total differs from invoice amount (> $0.01) | 0 |
+| Unpaid, unapplied invoices with RemainingBalance <> Amount | 0 |
+
+Note: an invoice's `Amount` equals the sum of its **Accounts Receivable** lines only; payable and internal lines are additional, so summing all lines does not equal `Amount` (that is by design, not a defect).
+Limitation: the sample does not record which report each number came from, and reports 12 and 10 return no invoice rows.
+
+## 4. Limitations and open items
+- Reports 10, 11 and 12 are not valid load tests (tiny or empty results). Reports 12, 13, 15 have no `LU_ReportTemplates` rows for the test client.
+- Four stored procedures referenced from C# are missing in the database (`GetAllInvoicesBasedOnLineItemId`, `GetPaymentsByEntity_Id`, `GetDynamicFilterSQLExpressions`, `Update_LU_LineItems_Directions`).
+- Not yet done: re-running the reports with the correct date parameters, Query Store aggregation, investigation of the 0-row page results, repeating the runs on an otherwise idle machine.
+- The `max server memory` cap on `MSSQLSERVER2022` is still 12,288 MB; revert instructions are at the end of `DB_Change_and_TestData_Log.md`.
+
+## 5. Approval status
+- **Already approved (Iteration1_Answers.md):** finite, evidence-based command timeouts; report file-delivery change with identical contents.
+- **Needs approval (not applied):** changing application procs `InsertInstallmentInvoices`/`InsertUpdateInvoices` (hardcoded length 6) and `USP_Accounting_GenerateInvoiceNo` padding; index changes (including an `InvoiceNo` index and the `PolicyDetails (InsuredDetail_Id)` index); rebuilding the fragmented Invoices index; any code change.
