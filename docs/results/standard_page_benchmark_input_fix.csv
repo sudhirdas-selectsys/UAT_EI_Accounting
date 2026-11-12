@@ -1,0 +1,8 @@
+ReportId,Report,Scenario,Run,Status,WallSec,Rows,ResultSets,LogicalReads,CpuMs,TotalRecords,Note
+P1c,"AR search by PolicyNumber (exact)",single,1,OK,4.11,3,1,37304,7656,,""
+P1c,"AR search by PolicyNumber (exact)",single,2,OK,3.92,3,1,37304,7658,,""
+P3b,"Payments search by ReferenceNumber",single,1,OK,2.48,8,1,60749,8657,8,""
+P3b,"Payments search by ReferenceNumber",single,2,OK,2.18,8,1,60769,7828,8,""
+P4b,"Transaction history by InvoiceNumber",single,1,OK,1.81,5,1,67664,6454,5,""
+P4b,"Transaction history by InvoiceNumber",single,2,OK,1.84,5,1,67664,6278,5,""
+P4c,"Transaction history by PolicyNumber",single,1,OK,151.85,4,1,200371876,463006,4,""

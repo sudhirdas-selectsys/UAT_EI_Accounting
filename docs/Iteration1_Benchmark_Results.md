@@ -86,16 +86,16 @@ What this shows (local test only):
 |---|---|---|---|---|---|
 | Make payments entities (agency, page 1) | 300.2 | 0 | 2.7M | 570 | **TIMEOUT** |
 | AP search, page 1 (outstanding) | 278.2 | 50 | 70.6M | 976 | OK |
-| Transaction history by PolicyNumber | 198.4 | 0 | 94.1M | 216 | OK |
+| Transaction history by PolicyNumber | 198.4 (first run, wrong page) / **151.9** (corrected input) | 0 / 4 | 94.1M / 200.4M | 216 / 463 | OK |
 | AP search by InvoiceNo (exact) | 154.7 | 2 | 5.3M | 245 | OK |
-| Transaction history by InvoiceNumber | 96.6 | 0 | 49.3M | 116 | OK |
+| Transaction history by InvoiceNumber | 96.6 (first run, wrong page) / **1.8** (corrected input) | 0 / 5 | 49.3M / 0.07M | 116 / 6 | OK |
 | AR search, page 1 (outstanding) | 66.6 | 100 | 23.7M | 374 | OK |
 | Transaction history, page 1 | 24.0 | 50 | 0.3M | 65 | OK |
 | Payments search, page 1 (all dates) | 15.6 | 50 | 0.1M | 48 | OK |
-| AR search by PolicyNumber (exact) | 4.6 | 0 | 0.0M | 8 | OK |
+| AR search by PolicyNumber (exact) | 4.6 (first run, wrong bill type) / **4.1** (corrected input) | 0 / 3 | 0.0M | 8 | OK |
 | AR search by InsuredName (partial) | 4.1 | 25 | 0.1M | 7 | OK |
 | AR search by InvoiceNo (exact) | 2.3 | 5 | 0.0M | 10 | OK |
-| Payments search by ReferenceNumber | 2.3 | 0 | 0.1M | 8 | OK |
+| Payments search by ReferenceNumber | 2.3 (first run, nonexistent reference) / **2.3** (corrected input) | 0 / 8 | 0.1M | 8 | OK |
 | Invoice lookup by number (exact) | 0.54 | 1 | 0.0M | 1 | OK |
 | Policy details: policy | 0.01 | 1 | 0.0M | 0 | OK |
 | Policy details: invoices of policy | 0.01 | 3 | 0.0M | 0 | OK |
@@ -107,7 +107,7 @@ What this shows (local test only):
 4. Transaction Report reads 176.3M pages to return 100 rows.
 5. Statement reports (2, 3, 9, 13, 15) are unpaged and return up to 2.1M rows in one result set.
 6. AP search is far slower than AR search (an exact invoice-number search takes 155 s vs 2.3 s for AR).
-7. No index leads with `InvoiceNo`, so invoice-number lookups scan (about 33K reads); fine now, grows with data. Transaction-history-by-number and make-payments-entities returned 0 rows after heavy reads. **Unverified:** these may be wrong test inputs rather than defects. Not yet investigated.
+7. No index leads with `InvoiceNo`, so invoice-number lookups scan (about 33K reads); fine now, grows with data. **The 0-row page results were harness input errors, not defects** (investigated and re-run 2026-11-12; raw data `docs/results/standard_page_benchmark_input_fix.csv`): the transaction-history and payments-search procedures page 0-based (`OFFSET @PageSize * @PageNumber`) and the harness asked for page 1; the AR search by policy used the wrong bill type for a Direct-bill policy (now `BillingType_Id=3`); and the payments reference `PT3000000` did not exist (now `PT61641`). Make payments entities was not 0 rows: it timed out at 300 s. Corrected results are shown alongside the first-run values in section 2. Transaction history by PolicyNumber is still slow (151.9 s, 200M reads, 4 rows) while by InvoiceNumber now takes 1.8 s; the earlier 96.6 s / 49M-read figure for the invoice search was not reproduced with the corrected input, and the reason was not investigated. The Transaction history page-1 (P4a) and Payments search page-1 (P3a) calls also used page 1 (0-based) and were not re-run.
 8. Payment Report: the timeout is caused by a missing index on `Accounting_PolicyDetails (InsuredDetail_Id)`. With that index added on the test copy the unchanged procedure ran in 2 to 6 s (details in the analysis document). Applying it to the application database needs approval.
 
 ## 3a. Invoice numbers shown in reports: verification
@@ -129,7 +129,7 @@ Limitation: the sample does not record which report each number came from, and r
 ## 4. Limitations and open items
 - Reports 10 and 12 are not valid load tests (tiny or empty results). 1099 was empty in the first run; after seeding agent payouts it is a valid test for the full window only (section 1). Reports 12, 13, 15 have no `LU_ReportTemplates` rows for the test client.
 - Four stored procedures referenced from C# are missing in the database (`GetAllInvoicesBasedOnLineItemId`, `GetPaymentsByEntity_Id`, `GetDynamicFilterSQLExpressions`, `Update_LU_LineItems_Directions`).
-- Not yet done: Query Store aggregation, investigation of the 0-row page results, repeating the runs on an otherwise idle machine.
+- Not yet done: Query Store aggregation, repeating the runs on an otherwise idle machine.
 - The `max server memory` cap on `MSSQLSERVER2022` is still 12,288 MB; revert instructions are at the end of `DB_Change_and_TestData_Log.md`.
 
 ## 5. Approval status
