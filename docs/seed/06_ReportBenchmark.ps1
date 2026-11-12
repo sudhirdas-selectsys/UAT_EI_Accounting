@@ -1,7 +1,7 @@
 # Report benchmark harness (Windows PowerShell 5.1; uses System.Data.SqlClient).
 # Calls each report's stored procedure (the one in Accounting_LU_SQLQueries) the way the application's
 # ReportsUtility does: Client_Id + report filters + PageIndex/PageSize/@TotalRecords OUTPUT for paged reports.
-# LOCAL EXPRESS TEST ONLY. Measures the database side; the C# pipeline (DataSet copy, grouping, Excel/PDF
+# LOCAL TEST ONLY. Measures the database side; the C# pipeline (DataSet copy, grouping, Excel/PDF
 # build, base64) is NOT included, so these are lower bounds for what a user waits for.
 # Usage: powershell -NoProfile -File 06_ReportBenchmark.ps1 -OutDir <dir> [-TimeoutSec 300] [-Only 1,6,...]
 param([string]$OutDir, [int]$TimeoutSec = 300, [int[]]$Only, [string]$Mode = 'reports',   # Mode: reports | pages
@@ -26,7 +26,8 @@ function New-Params($rep, $w, $paged, $pageSize) {
     $f = $windows[$w][0]; $t = $windows[$w][1]
     $p = [ordered]@{ Client_Id = 1 }
     switch ($rep.Date) {
-        'InvoiceEffective' { $p.InvoiceEffectiveFromDate = $f; $p.InvoiceEffectiveToDate = $t }
+        # @InvoiceDate selects which date the window applies to; without it these procedures ignore the window.
+        'InvoiceEffective' { $p.InvoiceDate = 'InvoiceEffectiveDate'; $p.InvoiceEffectiveFromDate = $f; $p.InvoiceEffectiveToDate = $t }
         'Payment'          { $p.PaymentFromDate = $f; $p.PaymentToDate = $t }
         'Transaction'      { $p.TransactionFromDate = $f; $p.TransactionToDate = $t }
         'JE'               { $p.FromDate = $f; $p.ToDate = $t }

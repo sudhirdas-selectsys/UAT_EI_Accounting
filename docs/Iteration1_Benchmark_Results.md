@@ -10,7 +10,7 @@ Raw data: `docs/results/standard_report_benchmark.csv` (reports) and `docs/resul
 - The runs were repeatedly stopped by low system memory (four times). They were finished in smaller batches after capping this instance's `max server memory` at 12,288 MB (revert note at the end of `DB_Change_and_TestData_Log.md`). Memory pressure may have inflated some timings; this was not measured separately. Repeat runs of the same procedure differed by up to about 35% (for example Invoice Production 547 s and 790 s), so treat single timings as approximate.
 - Reports 1 to 13 come from the run that was killed after report 13; 14 to 17 and the page calls were run in separate batches. Slow reports ran once; reports under 60 s ran twice.
 - The Invoices clustered index was 88.3% fragmented at test time (a side effect of the invoice renumbering), which inflates reads and times.
-- The harness did not pass `@InvoiceDate` to the reports, so the date window may not have been applied by every report. The statement below that "date range barely changes cost" is therefore **unverified**.
+- The first run (sections 1 and 2) did not pass `@InvoiceDate`, so 11 reports may not have applied the date window. Those 11 were re-run with it applied; see section 1b, which supersedes the section 1 figures for those reports.
 
 ## Dataset under test
 890,000 policies; 2,492,000 invoices (all unique, `INV` + 11 digits); 15,308,000 invoice details; 1,744,411 payments; 4,635,147 payment-application line items; 0 orphans; 1,495,220 paid / 249,191 partial / 747,589 unpaid.
@@ -54,6 +54,29 @@ Raw data: `docs/results/standard_report_benchmark.csv` (reports) and `docs/resul
 
 Scenarios: narrow = 2026-01-01..2026-01-31, year = 2025, full = 2025-01-01..2027-12-31; paged reports at PageSize 100 plus a 10,000-row download.
 
+## 1b. Re-run of 11 reports with the date window applied (`@InvoiceDate = InvoiceEffectiveDate`)
+Run 2026-11-12 20:42 to 22:06 on the same local Standard copy, same machine conditions (free memory 5.7 to 7.2 GB). Raw data: `docs/results/standard_report_benchmark_datewindow.csv`. Report 7 year/full rows are missing from that CSV (two reports wrote to it at the same time); they are in the run log and quoted below. Single runs unless two shown.
+
+| # | Report | narrow (s) | year (s) | full (s) | Earlier worst (s) |
+|---|---|---|---|---|---|
+| 6 | Accounts Receivable | 23.0 / 26.8 | 27.4 / 29.1 | 31.6 / 32.9 (10,000-row page 30.4 / 35.2) | 32.6 |
+| 7 | Accounts Payable | 26.5 / 35.7 | 50.6 / 54.1 | 58.5 / 66.1 (10,000-row page 67.8) | 70.3 |
+| 8 | Tax/Fee Passthrough | 43.6 / 55.7 | 73.2 | 69.5 (10,000-row page 84.4) | 113.0 |
+| 16 | Earned vs Unearned | 73.4 | **TIMEOUT** (300 s) | not run | 300.4 (timeout) |
+| 1 | Invoice Production | **TIMEOUT** (300 s) | not run | not run | 300.8 (timeout) |
+| 13 | Underwriter Comm Statement | 87.5 | 104.4 | 100.4 | 111.1 |
+| 3 | Direct Billed Comm Statement | 85.8 | 107.9 | 118.9 | 134.0 |
+| 2 | Agency Billed Acct Statement | 110.8 | 138.5 | 165.0 | 233.9 |
+| 9 | Insured Billed Comm Statement | 155.6 | 177.4 | 248.9 | 213.9 |
+| 15 | Direct/Insured Comm Statement | 311.2 | 344.0 | 329.2 | 312.0 |
+| 12 | Agency Detailed Statement | 0.1 to 0.8 | 0.1 | 0.1 | 0.86 (tiny result, not a valid load test) |
+
+What this shows (local test only):
+- The date window is now applied (matching rows grow with the window, for example Accounts Receivable 152,796 / 1,786,983 / 2,648,596). Cost grows with the window for the statement reports and Accounts Payable, but not proportionally: a one-month window still costs roughly 45 to 100% of the full range. Accounts Receivable is nearly flat (23 to 33 s).
+- A one-month window still does not finish within 300 s for Invoice Production, and Earned vs Unearned only finishes for the one-month window. Direct/Insured Comm Statement takes about 5 minutes even for one month.
+- Insured Billed Comm Statement full (248.9 s) is slower than the earlier 213.9 s, within the run-to-run variation noted above.
+- Unchanged and not re-run: reports 4, 5, 10, 11, 14, 17 (they use their own date parameters) and the page benchmark.
+
 ## 2. Pages and searches (15 calls), slowest first
 | Call | Time (s) | Rows | Logical reads | CPU (s) | Result |
 |---|---|---|---|---|---|
@@ -75,7 +98,7 @@ Scenarios: narrow = 2026-01-01..2026-01-31, year = 2025, full = 2025-01-01..2027
 
 ## 3. Observations (evidence-based; plan-level causes are in `Iteration1_SlowQuery_Analysis.md`)
 1. Three reports (BDX, Earned vs Unearned, Invoice Production) did not finish within 300 s even for a one-month window. Payment Report also timed out in this run; see item 8.
-2. Date range appears to change cost little for most reports, but this is **unverified** (see the `@InvoiceDate` limit above).
+2. With the date window applied (section 1b), the date range changes cost moderately: a one-month window costs roughly 45 to 100% of the full range, depending on the report. Narrowing the window alone does not fix the slow reports.
 3. Total CPU is several times the wall time for most slow items (parallel plans do more total work). The same designs that read millions of pages still do so (for example 21M to 53M reads for the statement reports, 70.6M for the AP search).
 4. Transaction Report reads 176.3M pages to return 100 rows.
 5. Statement reports (2, 3, 9, 13, 15) are unpaged and return up to 2.1M rows in one result set.
@@ -102,7 +125,7 @@ Limitation: the sample does not record which report each number came from, and r
 ## 4. Limitations and open items
 - Reports 10, 11 and 12 are not valid load tests (tiny or empty results). Reports 12, 13, 15 have no `LU_ReportTemplates` rows for the test client.
 - Four stored procedures referenced from C# are missing in the database (`GetAllInvoicesBasedOnLineItemId`, `GetPaymentsByEntity_Id`, `GetDynamicFilterSQLExpressions`, `Update_LU_LineItems_Directions`).
-- Not yet done: re-running the reports with the correct date parameters, Query Store aggregation, investigation of the 0-row page results, repeating the runs on an otherwise idle machine.
+- Not yet done: Query Store aggregation, investigation of the 0-row page results, repeating the runs on an otherwise idle machine.
 - The `max server memory` cap on `MSSQLSERVER2022` is still 12,288 MB; revert instructions are at the end of `DB_Change_and_TestData_Log.md`.
 
 ## 5. Approval status
