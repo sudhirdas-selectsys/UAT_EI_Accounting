@@ -18,6 +18,8 @@
 
 **Recommendation.** Change 1 is the smallest and best supported; test its write cost and apply it to `uat-accounting` first if you agree. Changes 2 and 3 are procedure changes for the application team; test the remaining filter combinations and a wider window before recommending them.
 
+**Delivered (2026-11-13):** the migration script for change 1 is in the repo as `Accounting.Web/SQLMigrations/[11132026] PolicyDetails InsuredDetail_Id Index.sql` (additive, re-runnable, revert command in its header). It has only been syntax-checked (parse-only); it has not been run anywhere, and its write cost is still unmeasured. Applying it to any shared UAT or production database is a separate step for you or the application team.
+
 ### Not recommended from the evidence
 - **Candidate indexes on `InvoiceDetails` and `PolicyDetailsLineItems`** (Addendum 6): 790 MB, 16 to 28% slower inserts, and no read gain (AP and AR searches got slower). Both are still on the copy.
 - **Payment Report join rewrite** (Addendum 3): it helps only until change 1 exists, then adds nothing.
