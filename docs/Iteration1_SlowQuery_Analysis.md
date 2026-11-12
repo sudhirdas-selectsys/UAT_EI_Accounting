@@ -290,3 +290,19 @@ Test objects: `..._InvoiceProductionCRMAssignmentReport_PerfTest_V3` (`docs/seed
 **Limits.** Only the PolicyNumber filter was tested, not combined with other filters, no concurrency, single runs on a shared machine, local test data only; no production extrapolation. No change to the application procedure has been made or is proposed without your approval.
 
 **Needs your decision:** whether to recommend this rewrite to the application team, after combined-filter tests, and whether to raise the CreatedOn tie-breaking issue.
+
+**Addendum 9, combined-filter test (local test, 2026-11-12, Standard copy).** `PerfTest_V2` vs the original, all with `PolicyNumber = PT-POL-004000` (matches 100 policies), unpaged (`PageSize = 0`) so row order cannot matter; first result set compared as a multiset of row hashes. Single runs.
+
+| Extra filter | Rows | Original | V2 | Row-hash differences |
+|---|---|---|---|---|
+| Direction_Id = 1 | 527 | 89.5 s | 4.4 s | 0 |
+| PaymentType_Id = 4 | 186 | 84.6 s | 1.5 s | 0 |
+| PaymentStatus_Id = 14 | 604 | 77.6 s | 1.8 s | 0 |
+| EntityName = 'PerfTest Agency 3' | 20 | 79.2 s | 0.9 s | 0 |
+| InvoiceNumber = 'INV0000650' | 0 | 53.5 s | 0.8 s | 0 |
+| Amount_From 1000, Amount_To 3000 | 85 | 30.2 s | 0.9 s | 0 |
+| TransactionDate = 2026-11-11 | 527 | 70.7 s | 1.7 s | 0 |
+| Direction 1 + PaymentType 4 + EntityName 'PerfTest' | 181 | 73.7 s | 1.2 s | 0 |
+| PolicyNumber matching nothing | 0 | 29.5 s | 0.6 s | 0 |
+
+Limits: the InvoiceNumber case returned 0 rows in both procedures (it checks the empty result, not row content); only unpaged results were compared (page ordering within CreatedOn ties is the separate latent issue above); one policy set, no concurrency, single runs on a shared machine; local test data only, no production extrapolation. The recommendation decision above is unchanged and still needs your approval.
