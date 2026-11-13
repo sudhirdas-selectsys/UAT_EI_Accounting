@@ -1,6 +1,6 @@
 # Iteration 1: Decision Summary
 
-**Scope and labelling.** Every number here is a **local test finding** from the restored copy `uat-accounting-perf` (SQL Server 2022 Standard, about 2.49M synthetic invoices, one shared workstation). Nothing is a production measurement or a production prediction. **No change has been applied outside that test copy**, and the source database `uat-accounting` was not modified. Details and raw data are in `Iteration1_Benchmark_Results.md`, `Iteration1_SlowQuery_Analysis.md` (Addenda 1 to 9) and `DB_Change_and_TestData_Log.md`. No connection strings or credentials appear in these documents.
+**Scope and labelling.** Every number here is a **local test finding** from the restored copy `uat-accounting-perf` (SQL Server 2022 Standard, about 2.49M synthetic invoices, one shared workstation). Nothing is a production measurement or a production prediction. **No change has been applied outside that test copy**, and the source database `uat-accounting` was not modified. Details and raw data are in `Iteration1_Benchmark_Results.md`, `Iteration1_SlowQuery_Analysis.md` (Addenda 1 to 10) and `DB_Change_and_TestData_Log.md`. No connection strings or credentials appear in these documents.
 
 ## Bottom line
 - Two slow calls have a **tested, output-verified fix** on the copy: Payment Report (one index; re-confirmed after a statistics refresh: 123.5 s without it, 2.7 s with it) and Invoice Production (procedure rewrite V4). A third candidate, Transaction history by PolicyNumber, **did not hold up** (see change 3). A further group of "problems" (1099, page calls with 0 rows, missing date window) turned out to be test-input errors and is closed (section 5).
@@ -43,11 +43,11 @@ The paged Transaction history query orders only by `CreatedOn`. Rows loaded in o
 
 | Call | Worst time | What is known |
 |---|---|---|
-| Direct/Insured Comm Statement (report 15) | 311 to 344 s, even for one month | No plan analysis in Addenda 1 to 9 as far as I can tell; not analysed here |
+| Direct/Insured Comm Statement (report 15) | 311 to 344 s, even for one month | No plan analysis in Addenda 1 to 10 as far as I can tell; not analysed here |
 | BDX (14) | timeout (300 s) | Early analysis (Addenda 1 and 2) has the plan patterns; no tested fix |
 | Earned vs Unearned (16) | one month 73 s; year window timeout | No tested fix |
 | AP search page 1 | 278 s | Searches are far slower than AR (155 s vs 2.3 s for an exact invoice number); no tested fix |
-| Make payments entities | timeout (300 s) | Whole-table temp copy of 15.3M detail rows, estimates far below actual (Addendum 2); no tested fix |
+| Make payments entities | 300 s timeout in the first run; **with correct inputs 338.6 s, 50 rows** (Addendum 10) | Cause known: about 20 staging tables are built for every invoice of the client before any filter or paging applies (16 temp-table index builds take 194.5 s of 457 s staging in the captured run). Earlier "timeout" and "0 rows" results included harness input errors. No tested fix |
 | Transaction Report (5) | 125 s | Reads 176.3M pages to return 100 rows |
 | Statement reports (2, 3, 9, 13) | 86 to 249 s | Unpaged, up to 1.7M rows; one-month window still 45 to 100% of the full-range cost |
 | Invoice Production, one month | timeout (300 s) | Fix 2 was tested only on a 3-day window (18,458 invoices), not on one month |

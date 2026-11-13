@@ -317,3 +317,18 @@ Limits: the InvoiceNumber case returned 0 rows in both procedures (it checks the
 | Original | 18,458 | 18,458 | 546 s |
 
 Row-hash multiset comparison: 0 differences. The gain (about 12x) is the same order as before (531.6 s vs 63.9 s), so it comes from building the staging data only for the returned page, not from the earlier stale-statistics plan. Limits unchanged: one 3-day window, no other filters, wider windows or concurrency; local test timing, no production extrapolation.
+
+# Addendum 10: Make payments entities (`USP_Accounting_GetMakePaymentsEntities_V6`), cause and corrected benchmark (Standard test copy only, 2026-11-13)
+
+**Corrected benchmark input.** The harness call returned 0 rows for two reasons that were input errors, not defects. `Direction_Id=1` keeps only invoice lines with `RemainingBalance < 0`, and the test data has none (0 of 3.83M direction-1 agency lines). With `@OutstandingBalances = 1` the procedure also needs `@AmountDueBasedOnType_Id` set to 1 or 2 (the application always sends it, `MakePaymentsRepository.cs`); with it empty, the final filter keeps nothing. Corrected call (`docs/seed/06_ReportBenchmark.ps1`, P5a): client 1, `EntityType_Id=1` (agency), `Direction_Id=2`, `OutstandingBalances=1`, `AmountDueBasedOnType_Id=1`, page 1 of 50, one run, shared machine:
+
+| Call | Time | Rows | Logical reads | CPU |
+|---|---|---|---|---|
+| Direction 2, no amount-due type (0 rows, filter empties the result) | 365.8 s | 0 | 16.18M | 1,129 s |
+| Direction 2, `AmountDueBasedOnType_Id=1` | **338.6 s** | 50 | 16.18M | 1,138 s |
+
+The call finishes inside a 900 s limit but is far over the 300 s limit used earlier, which is why the first run was recorded as a timeout.
+
+**Cause (from the plan capture and source reading).** The procedure builds about 20 staging temp tables for all invoices of the client (base policy and invoice rows, a copy of the invoice detail lines, payment-application sums and the commission and pass-through aggregates) before the dynamic final query. The entity filter, outstanding-balance filter and paging are applied only at the end. In the captured run, 16 temp-table index builds took 194.5 s of the 457 s staging time and the final query took 3 s. The work is the same whether the page asks for 50 rows or 1,000, and a narrow entity filter does not shrink it.
+
+**What was not done.** No rewrite was written or tested. A candidate would restrict the staging tables by the entity type and direction before building them, but the result sets and the later `Accounting_BillProcessInvoiceLineItems` adjustment make equivalence a larger check than for Invoice Production. Local test timings on a shared, memory-limited machine; no production extrapolation.

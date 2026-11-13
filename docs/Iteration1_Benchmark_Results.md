@@ -84,7 +84,7 @@ What this shows (local test only):
 ## 2. Pages and searches (15 calls), slowest first
 | Call | Time (s) | Rows | Logical reads | CPU (s) | Result |
 |---|---|---|---|---|---|
-| Make payments entities (agency, page 1) | 300.2 | 0 | 2.7M | 570 | **TIMEOUT** |
+| Make payments entities (agency, page 1) | 300.2 | 0 | 2.7M | 570 | **TIMEOUT** (inputs later corrected; 338.6 s and 50 rows, see Addendum 10) |
 | AP search, page 1 (outstanding) | 278.2 | 50 | 70.6M | 976 | OK |
 | Transaction history by PolicyNumber | 198.4 (first run, wrong page) / **151.9** (corrected input) | 0 / 4 | 94.1M / 200.4M | 216 / 463 | OK |
 | AP search by InvoiceNo (exact) | 154.7 | 2 | 5.3M | 245 | OK |
